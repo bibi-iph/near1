@@ -80,12 +80,22 @@ workflows:
           w = re.sub(r"gradle-[0-9.]+-(all|bin)\.zip", "gradle-8.11.1-all.zip", w)
           io.open(wpath, "w", encoding="utf-8").write(w)
 
-          # 5) Исправляем опечатку в коде плагина: dataOriginsFilter -> dataOriginFilter
+          # 5) Исправляем два бага в коде плагина:
+          #    (а) опечатку dataOriginsFilter -> dataOriginFilter
+          #    (б) вызов suspend-функции hasPermission из обычного контекста —
+          #        делаем hasPermission обычной функцией-обёрткой через runBlocking
           fixed = 0
+          decl = "private suspend fun hasPermission(p: CapHealthPermission): Boolean {"
+          wrap = ("private fun hasPermission(p: CapHealthPermission): Boolean = "
+                  "kotlinx.coroutines.runBlocking { hasPermissionSuspend(p) }\n\n"
+                  "    private suspend fun hasPermissionSuspend(p: CapHealthPermission): Boolean {")
           for f in glob.glob("node_modules/capacitor-health/android/src/main/**/*.kt", recursive=True):
               t = io.open(f, encoding="utf-8").read()
-              if "dataOriginsFilter" in t:
-                  t = t.replace("dataOriginsFilter", "dataOriginFilter")
+              orig = t
+              t = t.replace("dataOriginsFilter", "dataOriginFilter")
+              if decl in t and "hasPermissionSuspend" not in t:
+                  t = t.replace(decl, wrap)
+              if t != orig:
                   io.open(f, "w", encoding="utf-8").write(t)
                   fixed += 1
                   print("плагин пропатчен:", f)
