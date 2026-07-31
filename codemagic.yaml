@@ -1,6 +1,6 @@
 # Codemagic — облачная сборка Near под Android (с фитнес-браслетом через Health Connect).
-# Правка: заставляем взять свежую библиотеку Health Connect (connect-client 1.2.0-alpha04),
-# на которую рассчитан код плагина. Плюс разрешения Health Connect и минимум Android 8.
+# Правки: разрешения Health Connect, минимум Android 8, нужные версии инструментов,
+# и исправление опечатки в коде плагина (dataOriginsFilter -> dataOriginFilter).
 
 workflows:
   android-debug:
@@ -16,10 +16,10 @@ workflows:
       - name: Добавить платформу Android
         script: npx cap add android || true
 
-      - name: Правки для Health Connect (разрешения, версии, библиотека)
+      - name: Правки Health Connect и исправление плагина
         script: |
           python3 - <<'PY'
-          import re, io
+          import re, io, glob
           # 1) AndroidManifest.xml — разрешения здоровья и активность-обоснование
           mpath = "android/app/src/main/AndroidManifest.xml"
           m = io.open(mpath, encoding="utf-8").read()
@@ -80,20 +80,16 @@ workflows:
           w = re.sub(r"gradle-[0-9.]+-(all|bin)\.zip", "gradle-8.11.1-all.zip", w)
           io.open(wpath, "w", encoding="utf-8").write(w)
 
-          # 5) Заставляем взять свежую библиотеку Health Connect (в ней есть нужный параметр)
-          apath = "android/app/build.gradle"
-          a = io.open(apath, encoding="utf-8").read()
-          if "connect-client:1.2.0-alpha04" not in a:
-              a += '''
-
-          configurations.all {
-              resolutionStrategy {
-                  force 'androidx.health.connect:connect-client:1.2.0-alpha04'
-              }
-          }
-          '''
-              io.open(apath, "w", encoding="utf-8").write(a)
-              print("force connect-client 1.2.0-alpha04 добавлен")
+          # 5) Исправляем опечатку в коде плагина: dataOriginsFilter -> dataOriginFilter
+          fixed = 0
+          for f in glob.glob("node_modules/capacitor-health/android/src/main/**/*.kt", recursive=True):
+              t = io.open(f, encoding="utf-8").read()
+              if "dataOriginsFilter" in t:
+                  t = t.replace("dataOriginsFilter", "dataOriginFilter")
+                  io.open(f, "w", encoding="utf-8").write(t)
+                  fixed += 1
+                  print("плагин пропатчен:", f)
+          print("исправлено файлов плагина:", fixed)
           PY
 
       - name: Синхронизировать веб-код в приложение
