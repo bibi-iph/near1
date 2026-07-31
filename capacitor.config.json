@@ -1,0 +1,11 @@
+{
+  "appId": "app.near.care",
+  "appName": "Near",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "Health": {}
+  }
+}

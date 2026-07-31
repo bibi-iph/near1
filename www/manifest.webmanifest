@@ -1,0 +1,19 @@
+{
+  "name": "Near — забота о близких",
+  "short_name": "Near",
+  "description": "Помощник для людей с ранней деменцией и их родственников: тренировка памяти, напоминания, связь с родными, наблюдение за активностью.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f1ea",
+  "theme_color": "#2c5f8a",
+  "lang": "ru",
+  "dir": "ltr",
+  "categories": ["health", "medical", "lifestyle"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

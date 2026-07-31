@@ -1,0 +1,23 @@
+{
+  "name": "near",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Near — забота о близких (Android + iOS, с фитнес-браслетом)",
+  "scripts": {
+    "add:android": "cap add android",
+    "add:ios": "cap add ios",
+    "sync": "cap sync",
+    "open:android": "cap open android",
+    "open:ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/geolocation": "^7.0.0",
+    "capacitor-health": "^7.1.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}

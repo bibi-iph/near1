@@ -1,0 +1,92 @@
+# Codemagic — облачная сборка Near под Android (с фитнес-браслетом через Health Connect).
+#
+# Как пользоваться:
+#  1) Загрузите содержимое папки near-native в репозиторий на GitHub.
+#  2) На codemagic.io войдите через GitHub, добавьте репозиторий — он сам найдёт этот файл.
+#  3) Запустите workflow "Near Android (debug APK)".
+#  4) На почту придёт файл .apk — установите его на Android-телефон (разрешив установку из этого источника).
+#
+# Это debug-сборка для теста на своём телефоне — аккаунт разработчика и подпись НЕ нужны.
+# Скрипт сам дописывает в приложение разрешения Health Connect и минимум Android 8 (minSdk 26).
+
+workflows:
+  android-debug:
+    name: Near Android (debug APK)
+    max_build_duration: 45
+    environment:
+      node: 20
+      java: 21
+    scripts:
+      - name: Установить зависимости
+        script: npm install
+
+      - name: Добавить платформу Android
+        script: npx cap add android || true
+
+      - name: Прописать разрешения Health Connect и минимум Android 8
+        script: |
+          python3 - <<'PY'
+          import re, io, os
+          # 1) AndroidManifest.xml — разрешения здоровья, запрос к Health Connect, активность-обоснование
+          mpath = "android/app/src/main/AndroidManifest.xml"
+          m = io.open(mpath, encoding="utf-8").read()
+          if "READ_STEPS" not in m:
+              activities = '''
+              <activity
+                  android:name="com.fit_up.health.capacitor.PermissionsRationaleActivity"
+                  android:exported="true">
+                  <intent-filter>
+                      <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+                  </intent-filter>
+              </activity>
+              <activity-alias
+                  android:name="ViewPermissionUsageActivity"
+                  android:exported="true"
+                  android:targetActivity="com.fit_up.health.capacitor.PermissionsRationaleActivity"
+                  android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+                  <intent-filter>
+                      <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                      <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+                  </intent-filter>
+              </activity-alias>
+          '''
+              m = m.replace("</application>", activities + "    </application>", 1)
+              health = '''
+              <queries>
+                  <package android:name="com.google.android.apps.healthdata" />
+              </queries>
+              <uses-permission android:name="android.permission.health.READ_STEPS" />
+              <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
+              <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+              <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+              <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTE" />
+              <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+          '''
+              m = m.replace("</manifest>", health + "</manifest>", 1)
+              io.open(mpath, "w", encoding="utf-8").write(m)
+              print("AndroidManifest.xml пропатчен")
+          else:
+              print("AndroidManifest.xml уже содержит разрешения — пропуск")
+
+          # 2) minSdkVersion = 26 (нужно для Health Connect)
+          vpath = "android/variables.gradle"
+          v = io.open(vpath, encoding="utf-8").read()
+          v = re.sub(r"minSdkVersion\s*=\s*\d+", "minSdkVersion = 26", v)
+          io.open(vpath, "w", encoding="utf-8").write(v)
+          print("minSdkVersion =", [l for l in v.splitlines() if "minSdkVersion" in l])
+          PY
+
+      - name: Синхронизировать веб-код в приложение
+        script: npx cap sync android
+
+      - name: Собрать debug APK
+        script: |
+          chmod +x android/gradlew || true
+          cd android
+          ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/**/*.apk
+    publishing:
+      email:
+        recipients:
+          - hhzzzd@seznam.cz

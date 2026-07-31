@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    // Пожилой человек одобрил этого родственника?
+    function approvedRel(pid) {
+      return exists(/databases/$(database)/documents/pensioners/$(pid)/rel/$(request.auth.uid))
+        && get(/databases/$(database)/documents/pensioners/$(pid)/rel/$(request.auth.uid)).data.status == 'approved';
+    }
+
+    // Профиль пользователя (пожилого или родственника — у каждого свой uid)
+    match /pensioners/{pid} {
+      allow read:  if request.auth.uid == pid || approvedRel(pid);
+      allow write: if request.auth.uid == pid;
+
+      // Живые данные: местоположение, шаги, статус, SOS
+      match /live/{doc} {
+        allow read:  if request.auth.uid == pid || approvedRel(pid);
+        allow write: if request.auth.uid == pid;
+      }
+
+      // Запись голоса / память
+      match /recordings/{doc} {
+        allow read:  if request.auth.uid == pid || approvedRel(pid);
+        allow write: if request.auth.uid == pid;
+      }
+
+      // Заявки родственников на подключение
+      match /rel/{relUid} {
+        allow read:   if request.auth.uid == pid || request.auth.uid == relUid;
+        // родственник создаёт заявку только со статусом «ожидает»
+        allow create: if request.auth.uid == relUid
+                      && request.resource.data.status == 'pending';
+        // одобряет только пожилой; родственник может менять лишь своё имя/телефон
+        allow update: if request.auth.uid == pid
+                      || (request.auth.uid == relUid
+                          && request.resource.data.status == resource.data.status);
+        allow delete: if request.auth.uid == pid || request.auth.uid == relUid;
+      }
+    }
+
+    // Список пожилых у родственника
+    match /rels/{relUid}/pens/{pid} {
+      allow read, write: if request.auth.uid == relUid || request.auth.uid == pid;
+    }
+
+    // Код для связки (4 цифры -> id пожилого)
+    match /codes/{code} {
+      allow read:   if signedIn();
+      allow create: if signedIn() && request.resource.data.pid == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.pid == request.auth.uid;
+    }
+
+    // Переписка. id чата = "idПожилого__idРодственника" — оба участника есть в id.
+    match /chats/{chatId}/msgs/{msg} {
+      allow read, write: if signedIn()
+        && chatId.matches('.*' + request.auth.uid + '.*');
+    }
+  }
+}

@@ -1,0 +1,2790 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#2c5f8a">
+<title>Near</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Near">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --blue:#6c5ce7; --blue-d:#5847d6; --green:#22c55e; --green-d:#16a34a;
+    --warm:#ff7aa2; --warm-d:#f2618c; --bg:#eef0fb; --card:#ffffff;
+    --text:#26224b; --muted:#7c7aa6; --danger:#ff5c8a; --line:#eae8fb;
+    --shadow:0 12px 30px rgba(108,92,231,.13);
+    --grad:linear-gradient(135deg,#5b8cf6 0%,#8b6cf0 100%);
+    --grad-green:linear-gradient(135deg,#22c55e,#4ade80);
+    --grad-warm:linear-gradient(135deg,#ff8fb1,#ff7aa2);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+    background:linear-gradient(180deg,#f3f2ff 0%,#ecebfb 100%); background-attachment:fixed; color:var(--text);
+    font-size:20px; line-height:1.4;
+    max-width:520px; margin:0 auto; min-height:100vh;
+    display:flex; flex-direction:column;
+  }
+  header.appbar{
+    background:var(--grad); color:#fff; padding:16px 20px;
+    display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:10;
+    box-shadow:0 4px 18px rgba(85,102,246,.28);
+  }
+  header.appbar .logo{font-size:26px; font-weight:800; letter-spacing:.5px;}
+  header.appbar .sub{font-size:15px; opacity:.85; margin-left:auto;}
+  .back{
+    background:rgba(255,255,255,.18); border:none; color:#fff;
+    font-size:22px; width:44px; height:44px; border-radius:12px; cursor:pointer;
+    display:none; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  main{flex:1; padding:18px 16px 90px;}
+  .screen{display:none; animation:fade .25s ease;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+
+  .hello{font-size:26px; font-weight:800; margin:6px 2px 2px;}
+  .today{color:var(--muted); font-size:19px; margin:0 2px 18px;}
+
+  .tiles{display:grid; grid-template-columns:1fr; gap:16px;}
+  .tile{
+    background:var(--card); border:none; border-radius:22px; padding:22px 20px;
+    box-shadow:var(--shadow); cursor:pointer; text-align:left;
+    display:flex; align-items:center; gap:18px; width:100%;
+    transition:transform .08s ease;
+  }
+  .tile:active{transform:scale(.98);}
+  .tile .ico{
+    width:62px; height:62px; border-radius:18px; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; font-size:34px;
+  }
+  .tile .txt b{display:block; font-size:23px; font-weight:800;}
+  .tile .txt span{color:var(--muted); font-size:17px;}
+  .tile.memory .ico{background:#e7f0f8;}
+  .tile.remind .ico{background:#fdeede;}
+  .tile.family .ico{background:#e6f4ec;}
+
+  .card{
+    background:var(--card); border-radius:20px; padding:20px; box-shadow:var(--shadow);
+    margin-bottom:16px;
+  }
+  h2.title{font-size:24px; font-weight:800; margin:2px 2px 16px;}
+
+  .bigbtn{
+    display:flex; align-items:center; justify-content:center; gap:12px;
+    width:100%; border:none; border-radius:18px; padding:20px;
+    font-size:22px; font-weight:800; color:#fff; cursor:pointer; margin-top:6px;
+  }
+  .bigbtn:active{filter:brightness(.95);}
+  .bigbtn.blue{background:var(--grad); box-shadow:0 6px 16px rgba(85,102,246,.28);}
+  .bigbtn.green{background:var(--grad-green); box-shadow:0 6px 16px rgba(18,184,134,.26);}
+  .bigbtn.warm{background:var(--grad-warm); box-shadow:0 6px 16px rgba(255,122,92,.26);}
+  .bigbtn.ghost{background:#eef1fb; color:var(--blue); box-shadow:none;}
+
+  /* Reminders */
+  .rem{
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:14px 2px; border-bottom:1px solid var(--line);
+  }
+  .rem:last-child{border-bottom:none;}
+  .rem .time{font-size:22px; font-weight:800; color:var(--blue); flex:0 0 auto; white-space:nowrap;}
+  .rem .rtxt{flex:1 1 60%; min-width:150px;}
+  .rem .rtxt b{display:block; font-size:19px; overflow-wrap:break-word; word-break:normal;}
+  .rem .rtxt span{color:var(--muted); font-size:15px; overflow-wrap:break-word; word-break:normal;}
+  .remActions{display:flex; gap:8px; margin-left:auto; flex:0 0 auto;}
+  .rem .check{
+    width:46px; height:46px; border-radius:50%; border:3px solid var(--line);
+    background:#fff; font-size:24px; cursor:pointer; flex:0 0 auto; color:transparent;
+  }
+  .rem.done .check{background:var(--green); border-color:var(--green); color:#fff;}
+  .rem.done .rtxt b{text-decoration:line-through; color:var(--muted);}
+  .speak{
+    background:#eef1f4; border:none; width:46px; height:46px; border-radius:50%;
+    font-size:22px; cursor:pointer; flex:0 0 auto;
+  }
+
+  /* Family */
+  .person{
+    display:flex; align-items:center; gap:16px; padding:16px 4px; border-bottom:1px solid var(--line);
+  }
+  .person:last-child{border-bottom:none;}
+  .avatar{
+    width:58px; height:58px; border-radius:50%; flex:0 0 auto; color:#fff; font-weight:800;
+    display:flex; align-items:center; justify-content:center; font-size:24px;
+  }
+  .person .pn{font-size:21px; font-weight:700;}
+  .person .pr{color:var(--muted); font-size:16px;}
+  .callbtns{margin-left:auto; display:flex; gap:10px;}
+  .rbtn{width:56px; height:56px; border-radius:16px; border:none; font-size:26px; cursor:pointer; color:#fff;}
+  .rbtn.call{background:var(--green);}
+  .rbtn.msg{background:var(--blue);}
+
+  /* Memory game */
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:8px;}
+  .mcard{
+    aspect-ratio:1/1; border-radius:16px; border:none; cursor:pointer;
+    font-size:40px; display:flex; align-items:center; justify-content:center;
+    background:var(--blue); color:var(--blue);
+  }
+  .mcard.up{background:#fff; box-shadow:var(--shadow); color:var(--text);}
+  .mcard.matched{background:#e6f4ec; color:var(--text); cursor:default;}
+  .stat{display:flex; justify-content:space-between; font-size:18px; color:var(--muted); margin:4px 2px 10px;}
+
+  .banner{
+    background:#e6f4ec; color:var(--green-d); border-radius:16px; padding:16px;
+    font-size:18px; font-weight:700; text-align:center; margin-top:8px; display:none;
+  }
+  .banner.show{display:block;}
+
+  /* toast */
+  .toast{
+    position:fixed; left:50%; bottom:104px; transform:translateX(-50%) translateY(20px);
+    background:var(--text); color:#fff; padding:14px 22px; border-radius:14px; font-size:18px;
+    box-shadow:0 6px 20px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition:.3s; z-index:50;
+    max-width:90%; text-align:center;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; touch-action:pan-y;}
+
+  /* bottom nav */
+  nav.tabs{
+    position:fixed; bottom:0; left:0; right:0; max-width:520px; margin:0 auto;
+    background:#fff; border-top:1px solid var(--line); display:flex; z-index:20;
+  }
+  nav.tabs button{
+    flex:1; background:none; border:none; padding:10px 4px 12px; cursor:pointer;
+    font-size:13px; color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  nav.tabs button .ni{font-size:24px;}
+  nav.tabs button.active{color:var(--blue); font-weight:700;}
+
+  /* caregiver */
+  .metric{display:flex; align-items:center; gap:14px; padding:14px 2px; border-bottom:1px solid var(--line);}
+  .metric:last-child{border-bottom:none;}
+  .metric .mi{font-size:28px; width:44px; text-align:center;}
+  .metric .mv b{font-size:19px; display:block;}
+  .metric .mv span{color:var(--muted); font-size:15px;}
+  .trend{margin-left:auto; font-weight:800; font-size:16px;}
+  .trend.up{color:var(--green);} .trend.down{color:var(--warm-d);} .trend.flat{color:var(--muted);} .trend.warn{color:#b9770f;}
+  .bio{display:flex; gap:14px; padding:14px 2px; border-bottom:1px solid var(--line); align-items:flex-start;}
+  .bio:last-child{border-bottom:none;}
+  .bio .mi{font-size:26px; width:38px; text-align:center; flex:0 0 auto;}
+  .bio .bv{flex:1; min-width:0;}
+  .bio .bv b{font-size:18px; display:block; margin-bottom:3px;}
+  .bio .was{color:var(--muted); font-size:15px; display:block;}
+  .bio .now{color:var(--text); font-size:15px; display:block; font-weight:600;}
+  .bio .trend{margin-left:8px; flex:0 0 auto; font-size:15px; font-weight:800; white-space:nowrap;}
+  .music{display:flex; align-items:center; gap:14px; padding:14px 2px; border-bottom:1px solid var(--line);}
+  .music:last-child{border-bottom:none;}
+  .music .pbtn{width:48px; height:48px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:20px; cursor:pointer; flex:0 0 auto;}
+  .photo{border-radius:16px; padding:0; overflow:hidden; background:#fff; box-shadow:var(--shadow); text-align:center;}
+  .photo .pic{font-size:52px; padding:22px 0 10px; display:block;}
+  .photo .cap{font-size:14px; color:var(--muted); padding:0 6px 12px; display:block;}
+  .consent{display:flex; align-items:center; gap:12px; padding:13px 2px; border-bottom:1px solid var(--line);}
+  .consent:last-child{border-bottom:none;}
+  .consent .ci{font-size:22px; width:32px; text-align:center;}
+  .consent .cl{flex:1; font-size:16px;}
+  .toggle{width:52px; height:30px; border-radius:15px; background:var(--green); position:relative; flex:0 0 auto; cursor:pointer; transition:background .15s;}
+  .toggle::after{content:''; position:absolute; top:3px; right:3px; width:24px; height:24px; border-radius:50%; background:#fff; transition:.15s;}
+  .toggle.off{background:#c9cfd6;}
+  .toggle.off::after{right:auto; left:3px;}
+  .seqpad{aspect-ratio:1/1; border-radius:18px; border:none; cursor:pointer; opacity:.55; transition:opacity .12s, transform .12s;}
+  .seqpad.lit{opacity:1; transform:scale(1.04);}
+  /* battery */
+  .batt{display:flex; align-items:center; gap:12px; padding:10px 2px;}
+  .batt .bi{font-size:24px; width:34px; text-align:center;}
+  .batt .bl{flex:1;}
+  .batt .bl b{font-size:16px; display:block;}
+  .batt .bar{height:12px; border-radius:7px; background:var(--line); overflow:hidden; margin-top:4px;}
+  .batt .fill{height:100%; border-radius:7px;}
+  .batt .pct{font-weight:800; font-size:18px; min-width:52px; text-align:right;}
+  /* chat */
+  .chat{display:flex; flex-direction:column; gap:10px; padding:6px 0; max-height:360px; overflow-y:auto;}
+  .bub{max-width:78%; padding:11px 15px; border-radius:18px; font-size:17px; line-height:1.35;}
+  .bub.them{background:#eef1f4; align-self:flex-start; border-bottom-left-radius:5px;}
+  .bub.me{background:var(--blue); color:#fff; align-self:flex-end; border-bottom-right-radius:5px;}
+  .bub .who{display:block; font-size:12px; opacity:.7; margin-bottom:2px;}
+  .chatbar{display:flex; gap:8px; margin-top:10px;}
+  .chatbar input{flex:1; font-size:17px; padding:13px 14px; border:2px solid var(--line); border-radius:14px;}
+  .chatbar button{border:none; background:var(--green); color:#fff; font-size:20px; width:52px; border-radius:14px; cursor:pointer;}
+  /* sleep/activity bars */
+  .days{display:flex; align-items:flex-end; gap:8px; height:130px; padding:6px 2px 0;}
+  .day{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; justify-content:flex-end;}
+  .day .col{width:70%; border-radius:6px 6px 0 0; background:var(--blue); position:relative;}
+  .day .dl{font-size:13px; color:var(--muted);}
+  .day .dv{font-size:12px; color:var(--muted);}
+  /* mini trend */
+  .spark{display:flex; align-items:flex-end; gap:3px; height:34px;}
+  .spark span{flex:1; background:var(--warm); border-radius:2px 2px 0 0; opacity:.85;}
+  /* map */
+  .mapwrap{position:relative; border-radius:18px; overflow:hidden; box-shadow:var(--shadow); background:#dfe8e0;}
+  .maproute{width:100%; display:block;}
+  .place{display:flex; align-items:center; gap:12px; padding:12px 2px; border-bottom:1px solid var(--line);}
+  .place:last-child{border-bottom:none;}
+  .place .pt{font-size:22px; width:34px; text-align:center;}
+  .place .pl b{font-size:17px; display:block;} .place .pl span{color:var(--muted); font-size:14px;}
+  .place .ptime{margin-left:auto; color:var(--muted); font-size:15px; font-weight:700;}
+  .live{display:inline-flex; align-items:center; gap:6px; color:var(--green); font-weight:700; font-size:15px;}
+  .live::before{content:''; width:10px; height:10px; border-radius:50%; background:var(--green); animation:pulse 1.4s infinite;}
+  .dayrow{display:flex; gap:8px; overflow-x:auto; margin-top:12px; padding-bottom:2px;}
+  .daychip{flex:0 0 auto; padding:9px 15px; border-radius:20px; border:2px solid var(--line); background:#fff; font-size:15px; font-weight:700; color:var(--muted); cursor:pointer; white-space:nowrap;}
+  .daychip.on{background:var(--blue); color:#fff; border-color:var(--blue);}
+  .leaflet-container{font:inherit;}
+  /* ===== reference-style refinements (blue/purple) ===== */
+  .card{ border-radius:24px; }
+  .tile{ border-radius:26px; }
+  .bigbtn{ border-radius:20px; }
+  nav.tabs{ border-top:none; box-shadow:0 -6px 24px rgba(108,92,231,.10); border-radius:26px 26px 0 0; }
+  nav.tabs button .ni{ width:44px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:13px; transition:background .15s; }
+  nav.tabs button.active .ni{ background:rgba(108,92,231,.15); }
+  /* pensioner: big, bright, high-contrast icons for low vision */
+  body.elder .tile .ico{ width:66px; height:66px; border-radius:20px; font-size:38px; box-shadow:0 6px 14px rgba(108,92,231,.18); }
+  body.elder .tile{ gap:20px; }
+  .ico-blue{ background:#5b8cf6 !important; }
+  .ico-purple{ background:#8b6cf0 !important; }
+  .ico-pink{ background:#ff7aa2 !important; }
+  .ico-orange{ background:#ff9f5a !important; }
+  .ico-green{ background:#22c55e !important; }
+  .ico-teal{ background:#25c9c1 !important; }
+  .ico-gray{ background:#8b90b8 !important; }
+  /* charts */
+  .rings{ display:flex; gap:10px; justify-content:space-between; }
+  .ringcell{ flex:1; text-align:center; }
+  .ringcell .rl{ font-size:13px; color:var(--muted); margin-top:4px; font-weight:700; }
+  .chartcard svg{ display:block; width:100%; }
+  #sleepDays{ display:block; height:auto; }
+  #sleepDays svg, #activityChart svg{ display:block; width:100%; }
+  .placelabel{ background:#6c5ce7; color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:700; padding:3px 8px; box-shadow:0 2px 6px rgba(108,92,231,.35); }
+  .placelabel::before{ display:none; }
+  .myplace{ display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:1px solid var(--line); }
+  .myplace:last-child{ border-bottom:none; }
+  .myplace .pn2{ flex:1; font-weight:700; }
+  .myplace .visited{ font-size:12px; color:var(--green-d); font-weight:700; white-space:nowrap; }
+  /* ===== phone overflow safety — ничего не съезжает ===== */
+  img, svg { max-width:100%; }
+  input, textarea { max-width:100%; box-sizing:border-box; }
+  .tile .txt { flex:1; min-width:0; }
+  .tile .txt b, .tile .txt span,
+  .rtxt, .rtxt b, .rtxt span, .bv, .pl, .pl b, .pl span, .mv, .rl, .pn, .pn2, .pr, .bub, .cap, .today, .hello {
+    min-width:0; overflow-wrap:anywhere; word-break:break-word;
+  }
+  .rtxt, .bv, .pl, .mv { flex:1; min-width:0; }
+  .person > div:not(.avatar):not(.callbtns) { min-width:0; overflow:hidden; }
+  .rings { gap:6px; }
+  .ringcell { min-width:0; }
+  .rl { line-height:1.15; }
+  .appbar .logo { white-space:nowrap; }
+  .sub { white-space:nowrap; }
+  main { overflow-x:hidden; }
+  /* ===== premium polish ===== */
+  .bigbtn{ transition:transform .09s ease, filter .12s ease; letter-spacing:.2px; }
+  .bigbtn:active{ transform:scale(.98); }
+  h2.title{ letter-spacing:.2px; }
+  .card{ transition:box-shadow .2s ease; }
+  .note{ line-height:1.5; }
+  .empty{ text-align:center; color:var(--muted); padding:26px 14px; }
+  .empty .ei{ font-size:42px; display:block; margin-bottom:10px; opacity:.75; }
+  .empty b{ color:var(--text); display:block; margin-bottom:4px; font-size:17px; }
+  .brandbadge{ width:80px; height:80px; margin:0 auto 14px; border-radius:24px; background:var(--grad); display:flex; align-items:center; justify-content:center; box-shadow:0 12px 28px rgba(108,92,231,.32); }
+  .authinput{ width:100%; font-size:18px; padding:14px 15px; border:2px solid var(--line); border-radius:15px; box-sizing:border-box; transition:border-color .15s; }
+  .authinput:focus{ outline:none; border-color:var(--blue); }
+  .chip{ display:inline-block; background:#eef1fb; color:var(--blue-d); font-size:12px; font-weight:800; padding:4px 10px; border-radius:20px; letter-spacing:.3px; }
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(18,184,134,.5);}70%{box-shadow:0 0 0 8px rgba(18,184,134,0);}100%{box-shadow:0 0 0 0 rgba(18,184,134,0);}}
+  /* modern hairline on cards/tiles */
+  .card, .tile{ border:1px solid rgba(230,233,242,.9); }
+  /* ELDER — large, clear, but modern & pleasant */
+  body.elder .tile{ border-radius:26px; padding:24px 20px; }
+  body.elder h2.title{ font-size:26px; }
+  body.elder .tile .txt b{ font-size:24px; }
+  body.elder .bub{ font-size:19px; padding:14px 18px; max-width:82%; }
+  body.elder .chatbar input{ font-size:19px; padding:15px; }
+  body.elder .chatbar button{ width:58px; font-size:22px; }
+  /* RELATIVE — sleek & compact, smaller type */
+  body.relative main{ padding:16px 15px 94px; }
+  body.relative h2.title{ font-size:20px; margin-bottom:12px; }
+  body.relative .card{ padding:16px; border-radius:16px; margin-bottom:13px; }
+  body.relative .bio{ padding:12px 2px; }
+  body.relative .bio .mi{ font-size:22px; }
+  body.relative .bio .bv b{ font-size:15px; }
+  body.relative .bio .was, body.relative .bio .now{ font-size:13.5px; }
+  body.relative .bio .trend{ font-size:13.5px; }
+  body.relative .metric .mv b{ font-size:16px; }
+  body.relative .place .pl b{ font-size:15px; }
+  body.relative .place .pt{ font-size:19px; }
+  body.relative .bub{ font-size:15px; padding:10px 14px; }
+  body.relative .switchrow button{ font-size:14px; padding:11px; }
+  body.relative nav.tabs button{ font-size:11.5px; }
+  body.relative nav.tabs button .ni{ font-size:22px; }
+  body.relative .title{ letter-spacing:.2px; }
+  .alert{
+    background:#fdeede; border-left:5px solid var(--warm); border-radius:12px; padding:14px 16px;
+    font-size:17px; margin-bottom:12px;
+  }
+  .note{font-size:14px; color:var(--muted); text-align:center; margin:18px 6px 0; line-height:1.5;}
+  .switchrow{display:flex; gap:10px; margin-bottom:16px;}
+  .switchrow button{
+    flex:1; padding:12px; border-radius:14px; border:2px solid var(--line); background:#fff;
+    font-size:16px; font-weight:700; color:var(--muted); cursor:pointer;
+  }
+  .switchrow button.on{background:var(--blue); color:#fff; border-color:var(--blue);}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar">
+  <button class="back" id="backBtn" onclick="goBack()">‹</button>
+  <span class="logo">Near</span>
+  <span class="sub" id="clock"></span>
+  <button class="back" id="acctBtn" onclick="show('login')" title="Сменить роль" style="display:flex; margin-left:10px">👤</button>
+</header>
+
+<main>
+  <!-- LOGIN / ROLE -->
+  <section class="screen active" id="login">
+    <div style="text-align:center; padding:26px 0 6px">
+      <div class="brandbadge">
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </div>
+      <div style="font-size:38px; font-weight:800; letter-spacing:.5px; color:var(--text)">Near</div>
+      <p style="color:var(--muted); margin:8px 22px 0; line-height:1.45">Забота о близких с ранней деменцией — рядом, даже на расстоянии</p>
+    </div>
+
+    <div class="card" id="onlineCard">
+      <p style="margin-top:0; font-weight:700">🌐 Онлайн-режим <span class="chip" style="vertical-align:middle">для&nbsp;теста&nbsp;вдвоём</span></p>
+      <div id="onlineBody"></div>
+    </div>
+
+    <p style="text-align:center; font-size:15px; font-weight:700; margin:18px 2px 12px; color:var(--muted)">— или демо без регистрации —</p>
+    <button class="tile" onclick="loginAs('elder')" style="margin-bottom:12px">
+      <div class="ico ico-blue">👵</div>
+      <div class="txt"><b>Я — пожилой человек</b><span>Демо-режим</span></div>
+    </button>
+    <button class="tile" onclick="loginAs('relative')">
+      <div class="ico ico-green">👨‍👧</div>
+      <div class="txt"><b>Я — родственник</b><span>Демо-режим</span></div>
+    </button>
+    <p class="note">Демо работает на одном телефоне. Для теста вдвоём (на двух телефонах) используйте онлайн-режим.</p>
+  </section>
+
+  <!-- AUTH: login / register -->
+  <section class="screen" id="auth">
+    <h2 class="title" id="authTitle">Вход</h2>
+    <div class="card">
+      <div id="authRoleRow" style="display:none">
+        <p style="margin-top:0; font-weight:700">Кто вы?</p>
+        <div class="switchrow">
+          <button id="ar_elder" class="on" onclick="authSetRole('elder')">Пожилой человек</button>
+          <button id="ar_rel" onclick="authSetRole('relative')">Родственник</button>
+        </div>
+        <input id="authName" placeholder="Ваше имя" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px; margin-bottom:10px">
+      </div>
+      <input id="authEmail" type="email" autocomplete="email" placeholder="Почта" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px; margin-bottom:10px">
+      <input id="authPass" type="password" autocomplete="current-password" placeholder="Пароль (минимум 6 знаков)" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px">
+      <button class="bigbtn blue" id="authSubmit" style="margin-top:12px" onclick="authSubmit()">Войти</button>
+      <div class="banner" id="authMsg" style="text-align:left"></div>
+      <p style="text-align:center; margin:14px 0 0"><span id="authToggle" onclick="authToggle()" style="color:var(--blue); font-weight:700; cursor:pointer">Нет аккаунта? Зарегистрироваться →</span></p>
+      <p style="text-align:center; margin:8px 0 0" id="authResetRow"><span onclick="authReset()" style="color:var(--muted); cursor:pointer; font-size:14px">Забыли пароль?</span></p>
+    </div>
+  </section>
+
+  <!-- FIREBASE SETUP -->
+  <section class="screen" id="fbsetup">
+    <h2 class="title">Настройка онлайн-режима</h2>
+    <div class="card">
+      <p style="margin-top:0">Вставьте конфиг вашего проекта Firebase (объект <b>firebaseConfig</b> из консоли Firebase). Пошагово — в файле «НАСТРОЙКА_ОНЛАЙН».</p>
+      <textarea id="fbInput" rows="9" placeholder='{ "apiKey": "...", "authDomain": "...", "projectId": "...", "appId": "..." }' style="width:100%; font-size:13px; padding:12px; border:2px solid var(--line); border-radius:12px; font-family:monospace"></textarea>
+      <button class="bigbtn blue" style="margin-top:10px" onclick="saveFbConfig()">Сохранить и включить</button>
+      <div class="banner" id="fbMsg" style="text-align:left"></div>
+    </div>
+  </section>
+
+  <!-- HOME -->
+  <section class="screen" id="home">
+    <div class="hello" id="hello">Здравствуйте, Мария!</div>
+    <div class="today" id="today"></div>
+
+    <div class="card" id="liveCard" style="margin-bottom:16px">
+      <div style="display:flex; align-items:center; gap:14px">
+        <div style="font-size:32px">👟</div>
+        <div style="flex:1"><span id="liveStepsVal" style="font-size:26px; font-weight:800">—</span> <span style="color:var(--muted)">шагов сегодня</span></div>
+        <div style="font-size:18px; font-weight:700; color:var(--muted)" id="liveBattIco"></div>
+      </div>
+      <div id="liveExtra" style="color:var(--muted); font-size:15px; margin-top:4px"></div>
+      <div id="liveSource" style="font-size:14px; font-weight:700; margin-top:6px"></div>
+      <div id="liveHint" style="color:var(--muted); font-size:15px; margin-top:6px">Подключите фитнес-браслет или часы. Если их нет — данные возьмём с телефона.</div>
+      <button class="bigbtn ghost" style="margin-top:10px" id="enableSensorsBtn" onclick="connectHealth()">Подключить браслет или часы</button>
+    </div>
+
+    <div class="card" id="sosCard" style="margin-bottom:16px; border:2px solid #ffd6e0; background:#fff5f8">
+      <div id="sosBody"></div>
+    </div>
+
+    <div class="card" id="geoShareCard" style="margin-bottom:16px">
+      <div style="display:flex; align-items:center; gap:12px">
+        <div style="font-size:28px">📍</div>
+        <div style="flex:1"><b>Поделиться местоположением</b><div id="geoShareHint" style="color:var(--muted); font-size:14px">Выключено — родные не видят, где вы</div></div>
+      </div>
+      <button class="bigbtn ghost" style="margin-top:10px" id="geoShareBtn" onclick="shareLocation()">Включить</button>
+    </div>
+
+    <button class="tile" onclick="show('daily')" style="margin-bottom:16px">
+      <div class="ico ico-blue">🎙️</div>
+      <div class="txt"><b>Вопрос дня</b><span>Расскажите, как прошёл ваш день</span></div>
+    </button>
+
+    <div class="tiles">
+      <button class="tile memory" onclick="show('memory')">
+        <div class="ico ico-purple">🧩</div>
+        <div class="txt"><b>Тренировка памяти</b><span>Короткие задания, 20–40 секунд</span></div>
+      </button>
+      <button class="tile remind" onclick="show('reminders')">
+        <div class="ico ico-orange">⏰</div>
+        <div class="txt"><b>Напоминания</b><span id="remCount">Задачи на день</span></div>
+      </button>
+      <button class="tile family" onclick="show('family')">
+        <div class="ico ico-pink">❤️</div>
+        <div class="txt"><b>Позвонить близким</b><span>Родные всегда рядом</span></div>
+      </button>
+      <button class="tile" onclick="show('memories')">
+        <div class="ico ico-green">📷</div>
+        <div class="txt"><b>Воспоминания</b><span>Фотографии и любимая музыка</span></div>
+      </button>
+      <button class="tile" onclick="show('connect')">
+        <div class="ico ico-teal">🔗</div>
+        <div class="txt"><b>Подключение и устройства</b><span>Код для родных и фитнес-браслет</span></div>
+      </button>
+      <button class="tile" onclick="show('settings')">
+        <div class="ico ico-gray">⚙️</div>
+        <div class="txt"><b>Настройки</b><span>Имя, размер шрифта, близкие</span></div>
+      </button>
+    </div>
+    <button class="bigbtn green" style="margin-top:20px" onclick="imOk()">✓ Со мной всё хорошо</button>
+    <div id="okStatusLine" style="text-align:center; color:var(--green-d); font-weight:700; margin-top:8px; font-size:15px"></div>
+    <p class="note">Нажмите зелёную кнопку — родные получат весточку, что у вас всё в порядке.</p>
+  </section>
+
+  <!-- MEMORY MENU -->
+  <section class="screen" id="memory">
+    <h2 class="title">🧩 Тренировка памяти</h2>
+    <p style="margin:0 2px 14px; color:var(--muted)">Выберите упражнение на сегодня.</p>
+    <div class="tiles">
+      <button class="tile memory" onclick="show('mem_pairs')">
+        <div class="ico ico-purple">🃏</div>
+        <div class="txt"><b>Найди пары</b><span>Откройте одинаковые карточки</span></div>
+      </button>
+      <button class="tile remind" onclick="show('mem_numbers')">
+        <div class="ico ico-blue">🔢</div>
+        <div class="txt"><b>Числа по порядку</b><span>Нажимайте 1, 2, 3… на скорость</span></div>
+      </button>
+      <button class="tile family" onclick="show('mem_objects')">
+        <div class="ico ico-pink">🖼️</div>
+        <div class="txt"><b>Что было на картинке</b><span>Запомните предметы, потом выберите их</span></div>
+      </button>
+      <button class="tile" onclick="show('mem_sequence')">
+        <div class="ico ico-orange">🔆</div>
+        <div class="txt"><b>Повторить последовательность</b><span>Запомните, какие кнопки загорелись</span></div>
+      </button>
+    </div>
+  </section>
+
+  <!-- MEMORY: PAIRS -->
+  <section class="screen" id="mem_pairs">
+    <h2 class="title">🃏 Найди пары</h2>
+    <div class="card">
+      <p style="margin-top:0">Найдите одинаковые пары. Нажимайте на карточки.</p>
+      <div class="stat"><span>Ходы: <b id="moves">0</b></span><span>Пары: <b id="pairs">0</b> из 6</span></div>
+      <div class="grid" id="grid"></div>
+      <div class="banner" id="winBanner">🎉 Отлично! Вы нашли все пары!</div>
+      <button class="bigbtn ghost" style="margin-top:16px" onclick="newGame()">↻ Начать заново</button>
+    </div>
+  </section>
+
+  <!-- MEMORY: NUMBERS -->
+  <section class="screen" id="mem_numbers">
+    <h2 class="title">🔢 Числа по порядку</h2>
+    <div class="card">
+      <p style="margin-top:0" id="numHint">Нажимайте числа по порядку: сначала 1, потом 2, и так далее. Как можно быстрее!</p>
+      <div class="stat"><span>Время: <b id="numTime">0.0</b> сек</span><span>Найдено: <b id="numFound">0</b> из 9</span></div>
+      <div class="grid" id="numGrid"></div>
+      <div class="banner" id="numBanner"></div>
+      <button class="bigbtn blue" style="margin-top:16px" onclick="newNumbers()">▶ Играть</button>
+    </div>
+  </section>
+
+  <!-- MEMORY: OBJECTS -->
+  <section class="screen" id="mem_objects">
+    <h2 class="title">🖼️ Что было на картинке</h2>
+    <div class="card">
+      <p style="margin-top:0" id="objHint">Запомните предметы. Через несколько секунд они исчезнут — выберите те, что были.</p>
+      <div class="grid" id="objShow" style="margin-bottom:8px"></div>
+      <div id="objChoiceWrap" style="display:none">
+        <p style="font-weight:700; margin:6px 2px">Какие предметы были на картинке?</p>
+        <div class="grid" id="objChoice"></div>
+        <button class="bigbtn green" style="margin-top:16px" id="objCheckBtn" onclick="checkObjects()">Проверить</button>
+      </div>
+      <div class="banner" id="objBanner"></div>
+      <button class="bigbtn blue" style="margin-top:16px" onclick="newObjects()">▶ Играть</button>
+    </div>
+  </section>
+
+  <!-- MEMORY: SEQUENCE -->
+  <section class="screen" id="mem_sequence">
+    <h2 class="title">🔆 Повторить последовательность</h2>
+    <div class="card">
+      <p style="margin-top:0" id="seqHint">Смотрите, какие кнопки загорятся, потом повторите их в том же порядке.</p>
+      <div class="stat"><span>Уровень: <b id="seqLevel">1</b></span><span>Лучший: <b id="seqBest">0</b></span></div>
+      <div class="grid" id="seqGrid" style="grid-template-columns:repeat(2,1fr)"></div>
+      <div class="banner" id="seqBanner"></div>
+      <button class="bigbtn blue" style="margin-top:16px" onclick="newSequence()">▶ Играть</button>
+    </div>
+  </section>
+
+  <!-- REMINDERS -->
+  <section class="screen" id="reminders">
+    <h2 class="title">⏰ Напоминания на сегодня</h2>
+    <div class="card" id="remList"></div>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Добавить напоминание</p>
+      <div style="display:flex; gap:10px; margin-bottom:10px">
+        <input id="remTime" type="time" value="12:00" style="font-size:20px; padding:12px; border:2px solid var(--line); border-radius:14px; flex:0 0 auto">
+        <input id="remText" placeholder="Например: выпить воду" style="font-size:18px; padding:12px; border:2px solid var(--line); border-radius:14px; flex:1; min-width:0">
+      </div>
+      <button class="bigbtn blue" onclick="addReminder()">＋ Добавить</button>
+    </div>
+    <p class="note">Кнопка 🔊 проговорит напоминание вслух. Отметьте ✓, когда выполнили. Крестик — удалить.</p>
+  </section>
+
+  <!-- FAMILY -->
+  <section class="screen" id="family">
+    <h2 class="title">❤️ Мои близкие</h2>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Ваш номер телефона</p>
+      <input id="elderPhone" type="tel" placeholder="+420 …" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px; box-sizing:border-box">
+      <p style="color:var(--muted); font-size:13px; margin:6px 2px 0">По нему родные смогут вам позвонить. Можно менять в любой момент.</p>
+    </div>
+    <div class="card" id="famList"></div>
+    <p class="note">Зелёная кнопка — позвонить, синяя — открыть переписку.</p>
+  </section>
+
+  <!-- ELDER CHAT -->
+  <section class="screen" id="elder_chat">
+    <h2 class="title" id="echatTitle">💬 Переписка</h2>
+    <div class="card">
+      <div class="chat" id="echatBox" style="max-height:none"></div>
+    </div>
+    <div class="card">
+      <div class="chatbar">
+        <input id="echatInput" placeholder="Написать сообщение…" onkeydown="if(event.key==='Enter')sendElderChat()">
+        <button onclick="sendElderChat()" title="Отправить">➤</button>
+      </div>
+      <button class="bigbtn ghost" style="margin-top:10px" onclick="readLastChat()">🔊 Прочитать последнее вслух</button>
+    </div>
+    <p class="note">Напишите родному человеку. Кнопка 🔊 прочитает последнее сообщение вслух.</p>
+  </section>
+
+  <!-- DAILY QUESTION (speech) -->
+  <section class="screen" id="daily">
+    <h2 class="title">🎙️ Вопрос дня</h2>
+    <div class="card">
+      <p style="margin-top:0; font-size:22px; font-weight:700">Расскажите, как прошёл ваш день?</p>
+      <p style="color:var(--muted); margin-top:0">Говорите свободно, одну-две минуты. Можно про погоду, еду, звонки, настроение.</p>
+      <div id="micWrap" style="text-align:center; padding:10px 0 4px">
+        <button id="micBtn" onclick="toggleRec()" style="width:120px; height:120px; border-radius:50%; border:none; background:var(--warm); color:#fff; font-size:52px; cursor:pointer; box-shadow:var(--shadow)">🎙️</button>
+        <div id="micLabel" style="margin-top:14px; font-size:19px; font-weight:700; color:var(--muted)">Нажмите и расскажите</div>
+      </div>
+      <div class="banner" id="dailyBanner" style="text-align:left"></div>
+    </div>
+    <p class="note">Это не проверка. Приложение не ставит диагноз. Оно бережно сравнивает ваш рассказ с прошлыми — как меняется речь со временем — и делится этим только с теми, кому вы разрешили.</p>
+  </section>
+
+  <!-- MEMORIES (reminiscence) -->
+  <section class="screen" id="memories">
+    <h2 class="title">📷 Воспоминания</h2>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Мои альбомы</p>
+      <div class="grid" id="albumGrid" style="grid-template-columns:repeat(2,1fr)"></div>
+      <div style="margin-top:14px; border-top:1px solid var(--line); padding-top:12px">
+        <p style="font-weight:700; margin:0 0 6px">Новый альбом</p>
+        <div id="emojiPick" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px"></div>
+        <div style="display:flex; gap:8px">
+          <input id="albumName" placeholder="Название (Семья, Море…)" style="flex:1; min-width:0; font-size:16px; padding:11px; border:2px solid var(--line); border-radius:12px">
+          <button class="bigbtn blue" style="margin:0; width:auto; padding:11px 16px; font-size:15px" onclick="createAlbum()">＋ Создать</button>
+        </div>
+      </div>
+    </div>
+    <p class="note">Знакомые фотографии помогают памяти и настроению. Создавайте альбомы и добавляйте в них снимки.</p>
+  </section>
+
+  <!-- ALBUM VIEW -->
+  <section class="screen" id="album_view">
+    <h2 class="title" id="albumTitle">Альбом</h2>
+    <div class="card">
+      <div class="grid" id="albumPhotos" style="grid-template-columns:repeat(2,1fr)"></div>
+      <input type="file" id="albumPhotoInput" accept="image/*" style="display:none" onchange="addPhotoToAlbum(event)">
+      <button class="bigbtn blue" style="margin-top:12px" onclick="document.getElementById('albumPhotoInput').click()">＋ Добавить фото</button>
+    </div>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Настройки альбома</p>
+      <input id="albumRename" placeholder="Название альбома" style="width:100%; font-size:16px; padding:11px; border:2px solid var(--line); border-radius:12px; box-sizing:border-box">
+      <div id="emojiPick2" style="display:flex; flex-wrap:wrap; gap:6px; margin:10px 0"></div>
+      <button class="bigbtn ghost" onclick="saveAlbumMeta()">Сохранить название и значок</button>
+      <button class="bigbtn ghost" style="margin-top:10px; color:var(--danger)" onclick="deleteAlbum()">Удалить альбом</button>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="screen" id="settings">
+    <h2 class="title">⚙️ Настройки</h2>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Как вас зовут?</p>
+      <input id="setName" placeholder="Ваше имя" style="width:100%; font-size:20px; padding:14px; border:2px solid var(--line); border-radius:14px">
+      <p style="font-weight:700; margin:14px 0 6px">Ваш номер телефона</p>
+      <input id="setPhone" type="tel" placeholder="+420 …" style="width:100%; font-size:20px; padding:14px; border:2px solid var(--line); border-radius:14px">
+      <p style="color:var(--muted); font-size:14px; margin:6px 2px 0">По этому номеру родные смогут вам позвонить.</p>
+    </div>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Размер шрифта</p>
+      <div class="switchrow" id="fontRow">
+        <button data-f="small" onclick="setFont('small')">А</button>
+        <button data-f="normal" onclick="setFont('normal')" style="font-size:18px">А</button>
+        <button data-f="large" onclick="setFont('large')" style="font-size:22px">А</button>
+        <button data-f="huge" onclick="setFont('huge')" style="font-size:26px">А</button>
+      </div>
+    </div>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Мои близкие</p>
+      <div id="setFamList"></div>
+      <div style="display:flex; gap:10px; margin-top:10px">
+        <input id="setFamName" placeholder="Имя" style="font-size:17px; padding:11px; border:2px solid var(--line); border-radius:12px; flex:1; min-width:0">
+        <input id="setFamRel" placeholder="кто (сын…)" style="font-size:17px; padding:11px; border:2px solid var(--line); border-radius:12px; flex:1; min-width:0">
+      </div>
+      <input id="setFamPhone" type="tel" placeholder="Телефон (+420 …)" style="width:100%; font-size:17px; padding:11px; border:2px solid var(--line); border-radius:12px; margin-top:10px">
+      <button class="bigbtn ghost" style="margin-top:10px" onclick="addFamily()">＋ Добавить близкого</button>
+    </div>
+    <button class="bigbtn blue" id="installBtn" style="display:none; margin-bottom:12px" onclick="installApp()">⬇️ Установить приложение на телефон</button>
+    <button class="bigbtn ghost" style="color:var(--danger)" onclick="resetAll()">Сбросить все данные</button>
+    <p class="note">Настройки и данные сохраняются на этом устройстве и остаются после закрытия приложения.</p>
+  </section>
+
+  <!-- CAREGIVER -->
+  <section class="screen" id="care">
+    <h2 class="title">👀 Панель для семьи и врача</h2>
+    <div class="card" style="background:#eef4fa">
+      <p style="margin:0; font-size:17px">Мы сравниваем показатели человека <b>не с другими людьми, а с ним самим раньше</b>. Приложение <b>не ставит диагноз</b> — оно бережно показывает, что меняется со временем.</p>
+    </div>
+
+    <div class="card chartcard">
+      <p style="margin-top:0; font-weight:700">Активность в сравнении с собой раньше</p>
+      <div class="rings" id="careRings"></div>
+      <p style="color:var(--muted); font-size:14px; margin:10px 2px 0">100 — обычная норма человека. Меньше — реже, чем раньше.</p>
+    </div>
+
+    <div class="card"><div id="careBattery"></div></div>
+
+    <div class="switchrow">
+      <button class="on" onclick="switchCareView(this,'year')">Год назад → сейчас</button>
+      <button onclick="switchCareView(this,'week')">Эта неделя</button>
+    </div>
+
+    <div id="careAlerts"></div>
+    <div class="card" id="bioList"></div>
+
+    <button class="bigbtn blue" onclick="doctorReport()">📄 Сформировать отчёт для врача</button>
+    <button class="bigbtn ghost" style="margin-top:12px" onclick="show('consent')">🔒 Данные и согласие</button>
+  </section>
+
+  <!-- CONSENT -->
+  <section class="screen" id="consent">
+    <h2 class="title">🔒 Данные и согласие</h2>
+    <div class="card">
+      <p style="margin-top:0"><b>Что собирает приложение</b> (только с вашего разрешения):</p>
+      <div id="consentList"></div>
+    </div>
+    <div class="card">
+      <p style="margin-top:0"><b>Наши принципы</b></p>
+      <p style="margin:6px 0">✔️ Мы <b>не ставим диагноз</b> и не заменяем врача.</p>
+      <p style="margin:6px 0">✔️ Мы сравниваем человека <b>только с ним самим</b>, а не с другими.</p>
+      <p style="margin:6px 0">✔️ Данные хранятся защищённо, в ЕС (GDPR).</p>
+      <p style="margin:6px 0">✔️ Вы можете <b>отключить</b> любой источник данных в любой момент.</p>
+      <p style="margin:6px 0">✔️ Отчёт врачу отправляется <b>только по вашему согласию</b>.</p>
+    </div>
+    <p class="note">Это демонстрация экрана согласия. В реальном приложении каждый пункт — отдельный переключатель, а согласие можно отозвать.</p>
+  </section>
+
+  <!-- CONNECT (elder side) -->
+  <section class="screen" id="connect">
+    <h2 class="title">🔗 Подключение и устройства</h2>
+
+    <div class="card" style="text-align:center; background:#eef4fa">
+      <p style="margin:0 0 6px; font-weight:700">Код для подключения родных</p>
+      <div id="connCode" style="font-size:44px; font-weight:800; letter-spacing:8px; color:var(--blue)">4827</div>
+      <p style="color:var(--muted); font-size:15px; margin:6px 0 12px">Продиктуйте этот код родственнику. Действует один раз.</p>
+      <button class="bigbtn ghost" onclick="newCode()">↻ Обновить код</button>
+    </div>
+
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Заявки на подключение</p>
+      <div id="reqList"><p style="color:var(--muted); margin:6px 2px">Пока нет новых заявок.</p></div>
+      <button class="bigbtn ghost" style="margin-top:10px" onclick="demoRelativeEntersCode()">▶ Демо: родственник ввёл код</button>
+    </div>
+
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Подключённые родственники</p>
+      <div id="famConnList"><p style="color:var(--muted); margin:6px 2px">Пока никто не подключён.</p></div>
+    </div>
+
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">⌚ Фитнес-браслет и часы</p>
+      <p style="color:var(--muted); margin:4px 0 12px">Приложение подключается к Apple Health (iPhone) и Health Connect (Android) и читает данные с <b>Apple Watch</b> и большинства браслетов (Fitbit, Garmin, Samsung, Xiaomi и др.): шаги, сон, пульс, активность. Если браслета нет — данные берутся с телефона.</p>
+      <div id="braceletBox"></div>
+    </div>
+    <p class="note">Так работает защита от мошенников: чужой человек не подключится без кода пенсионера и подтверждения, а новых родственников одобряет ещё и первый (главный) родственник.</p>
+  </section>
+
+  <!-- RELATIVE: enter code -->
+  <section class="screen" id="rel_enter">
+    <h2 class="title">👨‍👧 Добавить пожилого человека</h2>
+    <div class="card">
+      <p style="margin-top:0">Попросите пожилого человека открыть в его приложении «Подключение и устройства» и продиктовать вам код. Введите код ниже.</p>
+      <input id="codeInput" inputmode="numeric" maxlength="4" placeholder="код"
+        style="width:100%; font-size:34px; text-align:center; letter-spacing:10px; padding:16px; border:2px solid var(--line); border-radius:16px; margin:8px 0; box-sizing:border-box">
+      <button class="bigbtn green" onclick="relSubmitCode()">Добавить по коду</button>
+      <div class="banner" id="relBanner" style="text-align:left"></div>
+    </div>
+    <p class="note">После ввода кода заявку подтверждает сам пожилой человек. Как только он подтвердит — здесь появятся его данные.</p>
+    <div id="relEnterFoot"></div>
+  </section>
+
+  <!-- RELATIVE: MAP / geoposition -->
+  <section class="screen" id="rmap">
+    <h2 class="title">🗺️ Где Мария</h2>
+    <div class="card">
+      <div style="display:flex; align-items:center; margin-bottom:10px">
+        <span class="live" id="liveLabel">В сети • сейчас дома</span>
+        <span style="margin-left:auto; color:var(--muted); font-size:14px" id="mapUpdated">обновлено только что</span>
+      </div>
+      <div style="position:relative">
+        <div id="mapWrap" style="height:280px; border-radius:16px; overflow:hidden; background:#e2e8e2"></div>
+        <div id="mapCross" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); pointer-events:none; font-size:22px; color:#6c5ce7; text-shadow:0 0 3px #fff; z-index:500">⊕</div>
+      </div>
+      <div class="dayrow" id="dayRow"></div>
+      <button class="bigbtn ghost" id="geoBtn" style="margin-top:10px" onclick="toggleGeo()">📍 Вести по GPS в реальном времени</button>
+      <div id="placeList" style="margin-top:6px"></div>
+      <div style="margin-top:14px; border-top:1px solid var(--line); padding-top:12px">
+        <p style="font-weight:700; margin:0 0 4px">📌 Мои места</p>
+        <p style="color:var(--muted); font-size:13px; margin:0 0 8px">Подвиньте карту так, чтобы нужное место было под прицелом ⊕, впишите название и нажмите «На карту».</p>
+        <div style="display:flex; gap:8px">
+          <input id="placeName" placeholder="Дом, Рынок, Аптека…" style="flex:1; min-width:0; font-size:16px; padding:11px; border:2px solid var(--line); border-radius:12px">
+          <button class="bigbtn blue" style="margin:0; width:auto; padding:11px 16px; font-size:15px" onclick="addPlace()">＋ На карту</button>
+        </div>
+        <div id="myPlaces" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">🔋 Заряд устройств</p>
+      <div id="mapBattery"></div>
+    </div>
+  </section>
+
+  <!-- RELATIVE: HEALTH -->
+  <section class="screen" id="health">
+    <h2 class="title">💗 Здоровье Марии</h2>
+
+    <div class="card chartcard">
+      <p style="margin-top:0; font-weight:700">Показатели за неделю</p>
+      <div class="rings" id="healthRings"></div>
+    </div>
+
+    <div class="card chartcard">
+      <p style="margin-top:0; font-weight:700">🚶 Активность за неделю</p>
+      <p style="color:var(--muted); margin:0 0 6px; font-size:14px">Шаги по дням</p>
+      <div id="activityChart"></div>
+    </div>
+
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">🧠 Нейро-статистика</p>
+      <p style="color:var(--muted); margin:0 0 8px; font-size:15px">Сравнение с собой раньше. Не диагноз.</p>
+      <div id="neuroList"></div>
+    </div>
+
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">😴 Сон и бодрствование</p>
+      <p style="color:var(--muted); margin:0 0 6px; font-size:15px">Часы сна за неделю (с фитнес-браслета)</p>
+      <div class="days" id="sleepDays"></div>
+      <div id="sleepSummary" style="margin-top:12px; font-size:16px"></div>
+    </div>
+
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">🎙️ Аудио-ответы на «Вопрос дня»</p>
+      <p style="color:var(--muted); margin:0 0 6px; font-size:15px">Записи «Вопроса дня».</p>
+      <div id="audioList"></div>
+    </div>
+  </section>
+
+  <!-- RELATIVE: CONTACT -->
+  <section class="screen" id="contact">
+    <h2 class="title">💬 Связь с Марией</h2>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Ваш номер телефона</p>
+      <input id="relPhone" type="tel" placeholder="+420 …" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px; box-sizing:border-box">
+      <p style="color:var(--muted); font-size:13px; margin:6px 2px 0">Пожилой человек сможет вам позвонить. Можно менять в любой момент.</p>
+    </div>
+    <div class="card" style="display:flex; gap:12px">
+      <button class="bigbtn green" style="margin:0" onclick="callPensioner()">📞 Позвонить</button>
+      <button class="bigbtn blue" style="margin:0" onclick="videoPensioner()">📹 Видео</button>
+    </div>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Чат</p>
+      <div class="chat" id="chatBox"></div>
+      <div class="chatbar">
+        <input id="chatInput" placeholder="Написать сообщение…" onkeydown="if(event.key==='Enter')sendChat()">
+        <button onclick="sendChat()">➤</button>
+      </div>
+    </div>
+    <button class="bigbtn ghost" onclick="show('rel_enter')">＋ Подключиться к другому близкому по коду</button>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<nav class="tabs" id="appNav" style="display:none"></nav>
+
+<script>
+/* ---------- state (in-memory only) ---------- */
+const state = {
+  reminders: [
+    {time:"08:00", text:"Принять таблетку от давления", sub:"1 таблетка, после завтрака", done:true},
+    {time:"12:30", text:"Обед", sub:"Не забудьте поесть", done:false},
+    {time:"15:00", text:"Позвонить дочери Анне", sub:"Она ждёт вашего звонка", done:false},
+    {time:"18:00", text:"Оплатить счёт за электричество", sub:"Срок — сегодня", done:false},
+    {time:"21:00", text:"Вечерние лекарства", sub:"2 таблетки перед сном", done:false},
+  ],
+  family: [
+    {name:"Анна", rel:"дочь", color:"#e0788f", phone:"+420 601 111 222"},
+    {name:"Пётр", rel:"сын", color:"#4a86c5", phone:"+420 602 333 444"},
+    {name:"Ольга", rel:"внучка", color:"#5aa87a", phone:"+420 603 555 666"},
+    {name:"Иван", rel:"брат", color:"#c58b4a", phone:"+420 604 777 888"},
+  ],
+};
+
+/* ---------- persistent storage (safe) ---------- */
+const Store = {
+  get(k, def){ try{ const v=localStorage.getItem('near_'+k); return v==null?def:JSON.parse(v); }catch(e){ return def; } },
+  set(k, val){ try{ localStorage.setItem('near_'+k, JSON.stringify(val)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem('near_'+k); }catch(e){} },
+};
+const settings = Object.assign({ name:'Мария', font:'normal', phone:'+420 601 234 567' }, Store.get('settings', {}));
+(function loadSaved(){
+  const r=Store.get('reminders',null); if(Array.isArray(r)) state.reminders=r;
+  const f=Store.get('family',null); if(Array.isArray(f)) state.family=f;
+})();
+function saveReminders(){ Store.set('reminders', state.reminders); }
+function saveFamily(){ Store.set('family', state.family); }
+function saveSettings(){ Store.set('settings', settings); }
+const FONTPX={ small:18, normal:20, large:23, huge:27 };
+function applySettings(){
+  const isRel = account.role==='relative';
+  document.body.classList.toggle('relative', isRel);
+  document.body.classList.toggle('elder', !isRel);
+  document.body.style.fontSize = isRel ? '16px' : (FONTPX[settings.font]||20)+'px';
+  const hello=document.getElementById('hello'); if(hello) hello.textContent='Здравствуйте, '+settings.name+'!';
+}
+
+/* ---------- navigation ---------- */
+const parentScreen = { mem_pairs:'memory', mem_numbers:'memory', mem_objects:'memory', mem_sequence:'memory', memory:'home', daily:'home', connect:'home', consent:'care', rel_enter:'contact', elder_chat:'family', settings:'home', auth:'login', fbsetup:'login', album_view:'memories' };
+const tabFor = { memory:'home', mem_pairs:'home', mem_numbers:'home', mem_objects:'home', mem_sequence:'home', daily:'home', connect:'home', consent:'care', elder_chat:'family', settings:'home', album_view:'memories' };
+const topLevel = ['login','home','reminders','family','memories','care','rmap','health','contact'];
+const noNav = ['login','rel_enter','auth','fbsetup'];
+let currentScreen = 'home';
+function show(id){
+  currentScreen = id;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('backBtn').style.display = (topLevel.includes(id)||id==='rel_enter') ? 'none' : 'flex';
+  document.getElementById('acctBtn').style.display = (id==='login') ? 'none' : 'flex';
+  document.getElementById('appNav').style.display = noNav.includes(id) ? 'none' : 'flex';
+  const tabTarget = tabFor[id] || id;
+  document.querySelectorAll('nav.tabs button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.scr===tabTarget);
+  });
+  window.scrollTo(0,0);
+  if(id==='mem_pairs') newGame();
+  if(id==='mem_numbers') newNumbers();
+  if(id==='mem_objects') newObjects();
+  if(id==='mem_sequence') newSequence();
+  if(id==='daily') resetDaily();
+  if(id==='memories') renderMemories();
+  if(id==='care') renderCare();
+  if(id==='consent') renderConsent();
+  if(id==='connect') renderConnect();
+  if(id==='rmap') renderMap();
+  if(id==='health') renderHealth();
+  if(id==='contact') renderContact();
+  if(id==='settings') renderSettings();
+  if(id==='elder_chat') renderElderChat();
+  if(id==='home'){ renderLiveCard(); renderOkStatus(); renderSOS(); }
+  if(id==='login') initAuthUI();
+  if(id==='rel_enter') renderRelEnterFoot();
+  if(id==='album_view') renderAlbumView();
+}
+const NAVS={
+  elder:[{scr:'home',i:'🏠',t:'Главная'},{scr:'reminders',i:'⏰',t:'Дела'},{scr:'family',i:'❤️',t:'Близкие'},{scr:'memories',i:'📷',t:'Фото'}],
+  relative:[{scr:'care',i:'📊',t:'Обзор'},{scr:'rmap',i:'🗺️',t:'Карта'},{scr:'health',i:'💗',t:'Здоровье'},{scr:'contact',i:'💬',t:'Связь'}],
+};
+function buildNav(role){
+  const nav=document.getElementById('appNav'); nav.innerHTML='';
+  (NAVS[role]||[]).forEach(x=>{
+    const b=document.createElement('button'); b.dataset.scr=x.scr; b.onclick=()=>show(x.scr);
+    b.innerHTML=`<span class="ni">${x.i}</span>${x.t}`; nav.appendChild(b);
+  });
+}
+function loginAs(role){
+  account.role = role; account.cloud=false; buildNav(role); applySettings();
+  if(role==='elder'){ show('home'); toast('Демо: пожилой человек'); }
+  else { show('care'); toast('Демо: родственник'); }
+}
+
+/* ---------- cloud (Firebase) accounts + sync ---------- */
+let authMode='login', authRole='elder', cloudLive=null, cloudSyncTimer=null, cloudRecording=null;
+let cloudCode='—', cloudPending=[], cloudRelatives=[], cloudAuthAttached=false;
+function cloudEnabled(){ return !!(window.NearCloud && window.NearCloud.enabled); }
+function cloudRel(){ return !!(account.cloud && account.role==='relative' && cloudEnabled()); }
+let cloudLinked=false;
+function patientName(){
+  if(account.role!=='relative') return settings.name;
+  if(cloudLive&&cloudLive.name) return cloudLive.name;
+  if(account.cloud) return cloudLinked ? 'близкий' : '';
+  return 'Мария';
+}
+function initAuthUI(){
+  const body=document.getElementById('onlineBody'); if(!body) return;
+  if(cloudEnabled()){
+    const prof=window.NearCloud._profile;
+    if(prof && prof.role){
+      body.innerHTML=`<p style="color:var(--muted); font-size:14px; margin:2px 0 12px">Вы вошли: <b>${prof.name||''}</b> (${prof.role==='elder'?'пожилой человек':'родственник'}).</p>
+        <button class="bigbtn blue" style="margin-bottom:10px" onclick="show('${prof.role==='elder'?'home':'care'}')">Открыть приложение</button>
+        <button class="bigbtn ghost" onclick="cloudLogout()">Выйти из аккаунта</button>`;
+    } else {
+      body.innerHTML=`<p style="color:var(--muted); font-size:14px; margin:2px 0 12px">Зарегистрируйтесь или войдите — вы с близким увидите данные друг друга на разных телефонах.</p>
+        <button class="bigbtn blue" style="margin-bottom:10px" onclick="openAuth('login')">Войти</button>
+        <button class="bigbtn ghost" onclick="openAuth('register')">Регистрация</button>`;
+    }
+  } else {
+    const err=window.NearCloud && window.NearCloud.error;
+    if(err){
+      body.innerHTML=`<p style="color:var(--muted); font-size:14px; margin:2px 0 12px">Нет связи с сервером. Проверьте интернет и обновите приложение.</p>
+        <button class="bigbtn blue" onclick="location.reload()">Обновить</button>`;
+    } else {
+      body.innerHTML=`<p style="color:var(--muted); font-size:14px; margin:2px 0 12px">Онлайн-режим ещё не настроен (нужен бесплатный проект Firebase — см. файл «НАСТРОЙКА_ОНЛАЙН»).</p>
+        <button class="bigbtn blue" onclick="show('fbsetup')">Настроить онлайн-режим</button>`;
+    }
+  }
+}
+function openAuth(mode){
+  authMode=mode; syncAuthUI();
+  const e=document.getElementById('authEmail'), pw=document.getElementById('authPass'), n=document.getElementById('authName');
+  if(e) e.value=''; if(pw) pw.value=''; if(n) n.value='';
+  show('auth');
+}
+function authToggle(){ authMode=authMode==='login'?'register':'login'; syncAuthUI(); }
+function authSetRole(r){ authRole=r; document.getElementById('ar_elder').classList.toggle('on',r==='elder'); document.getElementById('ar_rel').classList.toggle('on',r==='relative'); }
+function syncAuthUI(){
+  const finish=authMode==='finish', reg=authMode==='register';
+  document.getElementById('authTitle').textContent=finish?'Завершение регистрации':(reg?'Регистрация':'Вход');
+  document.getElementById('authRoleRow').style.display=(reg||finish)?'block':'none';
+  document.getElementById('authEmail').style.display=finish?'none':'block';
+  document.getElementById('authPass').style.display=finish?'none':'block';
+  document.getElementById('authSubmit').textContent=finish?'Завершить':(reg?'Зарегистрироваться':'Войти');
+  const tg=document.getElementById('authToggle'); tg.style.display=finish?'none':'inline';
+  tg.textContent=reg?'Уже есть аккаунт? Войти →':'Нет аккаунта? Зарегистрироваться →';
+  const rr=document.getElementById('authResetRow'); if(rr) rr.style.display=(!finish&&!reg)?'block':'none';
+  document.getElementById('authMsg').classList.remove('show');
+}
+function authReset(){
+  const email=document.getElementById('authEmail').value.trim().toLowerCase();
+  const msg=document.getElementById('authMsg');
+  if(!email){ msg.textContent='Впишите почту, затем нажмите «Забыли пароль?»'; msg.classList.add('show'); return; }
+  window.NearCloud.resetPassword(email).then(()=>{ msg.innerHTML='Письмо для сброса пароля отправлено на '+email+'. Проверьте почту.'; msg.classList.add('show'); }).catch(e=>{ msg.innerHTML='Ошибка: '+cloudErr(e); msg.classList.add('show'); });
+}
+function cloudErr(e){ const m=String((e&&e.code)||(e&&e.message)||e); if(/email-already/.test(m))return 'почта уже зарегистрирована'; if(/invalid-email/.test(m))return 'неверная почта'; if(/weak-password/.test(m))return 'слишком простой пароль (мин. 6 знаков)'; if(/wrong-password|invalid-credential/.test(m))return 'неверная почта или пароль'; if(/user-not-found/.test(m))return 'аккаунт не найден'; if(/network/.test(m))return 'нет сети'; return m; }
+async function authSubmit(){
+  const msg=document.getElementById('authMsg');
+  const btnF=document.getElementById('authSubmit');
+  if(authMode==='finish'){
+    const name=document.getElementById('authName').value.trim();
+    const old=btnF.textContent; btnF.disabled=true; btnF.textContent='Подождите…';
+    try{ await window.NearCloud.setProfile(authRole, name); }
+    catch(e){ msg.innerHTML='Ошибка: '+cloudErr(e); msg.classList.add('show'); }
+    finally{ btnF.disabled=false; btnF.textContent=old; }
+    return;
+  }
+  const email=document.getElementById('authEmail').value.trim().toLowerCase();
+  const pass=document.getElementById('authPass').value;
+  if(!email||!pass){ msg.textContent='Введите почту и пароль'; msg.classList.add('show'); return; }
+  if(authMode==='register' && pass.length<6){ msg.textContent='Пароль минимум 6 знаков'; msg.classList.add('show'); return; }
+  msg.classList.remove('show');
+  const btn=document.getElementById('authSubmit'); const old=btn.textContent; btn.disabled=true; btn.textContent='Подождите…';
+  try{
+    if(authMode==='register'){ await window.NearCloud.register({email,pass,role:authRole,name:document.getElementById('authName').value.trim()}); }
+    else { await window.NearCloud.login({email,pass}); }
+  }catch(e){
+    const code=String((e&&e.code)||(e&&e.message)||'');
+    if(authMode==='register' && /email-already-in-use|invalid-credential|wrong-password/.test(code)){
+      authMode='login'; syncAuthUI();
+      document.getElementById('authEmail').value=email; document.getElementById('authPass').value='';
+      msg.innerHTML='Эта почта уже зарегистрирована. Нажмите «Войти» под этой почтой (или используйте другую).';
+      msg.classList.add('show');
+    } else {
+      msg.innerHTML='Ошибка: '+cloudErr(e); msg.classList.add('show');
+    }
+  } finally { btn.disabled=false; btn.textContent=old; }
+}
+function attachCloudAuth(){
+  if(cloudAuthAttached || !cloudEnabled()) return; cloudAuthAttached=true;
+  window.NearCloud.onAuth((profile)=>{
+    if(profile && profile.role){
+      account.role=profile.role; account.cloud=true; cloudLinked=false;
+      if(profile.name){ settings.name=profile.name; saveSettings(); }
+      buildNav(profile.role); applySettings(); startCloudSync(profile.role);
+      show(profile.role==='elder'?'home':'rel_enter');
+      toast('Вход выполнен ✓');
+    } else if(profile && !profile.role){
+      account.cloud=true; authMode='finish'; syncAuthUI(); show('auth');
+      const m=document.getElementById('authMsg'); m.innerHTML='Почти готово — выберите, кто вы, укажите имя и нажмите «Завершить».'; m.classList.add('show');
+    } else if(profile===null){
+      account.cloud=false; stopCloudSync();
+      if(!['auth','fbsetup'].includes(currentScreen)) show('login');
+    }
+  });
+}
+async function cloudLogout(){ try{ await window.NearCloud.logout(); }catch(e){} account.cloud=false; stopCloudSync(); show('login'); toast('Вы вышли из аккаунта'); }
+function saveFbConfig(){
+  const raw=document.getElementById('fbInput').value.trim();
+  const msg=document.getElementById('fbMsg');
+  try{
+    const m=raw.match(/\{[\s\S]*\}/); if(!m) throw new Error('не найден объект { ... }');
+    const obj=JSON.parse(m[0].replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g,'$1"$2":').replace(/'/g,'"').replace(/,(\s*})/g,'$1'));
+    if(!obj.apiKey||!obj.projectId) throw new Error('нет apiKey или projectId');
+    localStorage.setItem('near_fbconfig', JSON.stringify(obj));
+    msg.innerHTML='✅ Сохранено. Закройте и снова откройте приложение — онлайн-режим включится.'; msg.classList.add('show');
+    toast('Готово — перезапустите приложение');
+  }catch(e){ msg.innerHTML='Не удалось прочитать конфиг: '+String(e.message||e); msg.classList.add('show'); }
+}
+let cloudPid=null, cloudRelUid=null, cloudChatUnsub=null, cloudChatMsgs=[], cloudChatId=null;
+function startCloudSync(role){
+  stopCloudSync(); if(!cloudEnabled()) return;
+  if(role==='elder'){
+    try{ if('Notification'in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){}
+    window.NearCloud.ensureCode().then(c=>{ cloudCode=c; if(currentScreen==='connect') renderConnect(); }).catch(()=>{});
+    window.NearCloud.watchPending(list=>{ cloudPending=list; if(currentScreen==='connect') renderConnect(); });
+    window.NearCloud.watchRelatives(list=>{ cloudRelatives=list; const ap=list.find(r=>r.status==='approved'); cloudRelUid=ap?ap.uid:null; subscribeChat(); if(currentScreen==='connect') renderConnect(); if(currentScreen==='elder_chat') renderElderChat(); });
+    cloudSyncTimer=setInterval(pushCloudLive, 15000); setTimeout(pushCloudLive,2000);
+  } else {
+    cloudLinked=false;
+    try{ if('Notification'in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){}
+    window.NearCloud.watchRecording((r)=>{ cloudRecording=r; if(currentScreen==='health') renderHealth(); });
+    window.NearCloud.watchPensioner((live,pid)=>{
+      cloudLive=live; cloudPid=pid; subscribeChat();
+      if(cloudLive && cloudLive.sos && cloudLive.sos.ts && cloudLive.sos.ts!==lastSosTs){ lastSosTs=cloudLive.sos.ts; notifySOS(cloudLive); }
+      const linked=!!pid;
+      if(linked!==cloudLinked){
+        cloudLinked=linked;
+        if(linked && currentScreen==='rel_enter'){ show('care'); toast('Пожилой человек подключён ✓'); }
+        else if(!linked && ['care','rmap','health','contact'].includes(currentScreen)){ show('rel_enter'); }
+      }
+      if(currentScreen==='care') renderCare();
+      if(currentScreen==='rmap') renderMap();
+      if(currentScreen==='contact') renderContact();
+      if(currentScreen==='rel_enter') renderRelEnterFoot();
+    });
+  }
+}
+function renderRelEnterFoot(){
+  const el=document.getElementById('relEnterFoot'); if(!el) return; el.innerHTML='';
+  const b=document.createElement('button'); b.className='bigbtn ghost';
+  if(cloudLinked){ b.textContent='← К обзору'; b.onclick=()=>show('care'); }
+  else { b.textContent='Выйти из аккаунта'; b.onclick=()=>cloudLogout(); }
+  el.appendChild(b);
+}
+function stopCloudSync(){ if(cloudSyncTimer){ clearInterval(cloudSyncTimer); cloudSyncTimer=null; } if(cloudChatUnsub){ try{cloudChatUnsub();}catch(e){} cloudChatUnsub=null; } cloudChatId=null; cloudChatMsgs=[]; chatFirstSnap=true; lastChatNotifyTs=0; try{ window.NearCloud&&window.NearCloud.detach&&window.NearCloud.detach(); }catch(e){} cloudLive=null; cloudRecording=null; cloudPending=[]; cloudRelatives=[]; cloudPid=null; cloudRelUid=null; }
+function pushCloudLive(){
+  if(!cloudEnabled()||account.role!=='elder') return;
+  const last=realRoute.length? realRoute[realRoute.length-1]:null;
+  const ok=Store.get('okStatus',null);
+  const route=realRoute.slice(-30).map(p=>[p[0],p[1]]);
+  const ex=Store.get('exStats',null);
+  const speech=Store.get('lastSpeech',null);
+  try{ window.NearCloud.pushLive({ name:settings.name, phone:settings.phone||null, steps:liveSteps||0, battery:liveBattery, lat:last?last[1]:null, lng:last?last[0]:null, ok: ok? (ok.day+', '+ok.time):null, route, ex: ex||null, speech: speech||null, sos: sosActive||null }); }catch(e){}
+}
+let sosActive=null, lastSosTs=0;
+function sendSOS(){
+  let t=''; try{ t=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); }catch(e){}
+  let ms=1; try{ ms=Date.now(); }catch(e){}
+  sosActive={time:t, ts:ms};
+  if(account.cloud&&account.role==='elder') pushCloudLive();
+  toast('🆘 Сигнал отправлен родным'); speak('Сигнал о помощи отправлен родным.');
+  renderSOS();
+  const rel=(cloudRelatives||[]).find(r=>r.status==='approved' && r.phone);
+  const num=(rel&&rel.phone)||(state.family[0]&&state.family[0].phone);
+  if(num) setTimeout(()=>dialNumber(num, rel?rel.name:''),300);
+}
+function cancelSOS(){ sosActive=null; if(account.cloud&&account.role==='elder') pushCloudLive(); toast('Тревога отменена'); renderSOS(); }
+function renderSOS(){
+  const el=document.getElementById('sosBody'); if(!el) return; el.innerHTML='';
+  if(sosActive){
+    const h=document.createElement('div'); h.style.cssText='text-align:center; font-size:17px; font-weight:800; color:var(--danger); margin-bottom:10px'; h.textContent='🆘 Тревога отправлена родным ('+sosActive.time+')'; el.appendChild(h);
+    const b=document.createElement('button'); b.className='bigbtn ghost'; b.textContent='Отменить тревогу'; b.onclick=cancelSOS; el.appendChild(b);
+  } else {
+    const b=document.createElement('button'); b.className='bigbtn'; b.style.cssText='background:linear-gradient(135deg,#ff5c8a,#ff7a5c); color:#fff; box-shadow:0 6px 16px rgba(255,92,138,.3); font-size:22px'; b.innerHTML='🆘 Мне нужна помощь'; b.onclick=sendSOS; el.appendChild(b);
+    const p=document.createElement('p'); p.className='note'; p.style.margin='8px 2px 0'; p.textContent='Нажмите — родным придёт срочный сигнал, и телефон позвонит родственнику.'; el.appendChild(p);
+  }
+}
+function notifySOS(live){
+  const nm=(live&&live.name)||patientName()||'Близкий';
+  const t=(live&&live.sos&&live.sos.time)||'';
+  toast('🆘 '+nm+' просит помощи! '+t); speak(nm+' просит помощи.');
+  try{ if('Notification'in window && Notification.permission==='granted') new Notification('🆘 Near — тревога', {body:nm+' просит помощи '+t}); }catch(e){}
+  if(account.role==='relative' && currentScreen!=='care') show('care');
+}
+function exDone(extra){
+  const s=Store.get('exStats', {done:0}); s.done=(s.done||0)+1;
+  if(extra&&extra.numTime!=null) s.numTime=extra.numTime;
+  if(extra&&extra.last) s.last=extra.last;
+  Store.set('exStats', s);
+  if(account.cloud&&account.role==='elder') pushCloudLive();
+}
+async function initBattery(){
+  if(navigator.getBattery){ try{ const bt=await navigator.getBattery(); const upd=()=>{ liveBattery=Math.round(bt.level*100); renderLiveCard(); if(account.cloud&&account.role==='elder') pushCloudLive(); }; bt.addEventListener('levelchange',upd); upd(); }catch(e){} }
+}
+/* cloud chat helpers */
+function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function cloudChatIdFor(){
+  const my=window.NearCloud.uid&&window.NearCloud.uid(); if(!my) return null;
+  if(account.role==='relative'){ return cloudPid? (cloudPid+'__'+my) : null; }
+  return cloudRelUid? (my+'__'+cloudRelUid) : null;
+}
+let chatFirstSnap=true, lastChatNotifyTs=0;
+function subscribeChat(){
+  const id=cloudChatIdFor();
+  if(id===cloudChatId && cloudChatUnsub) return;
+  if(cloudChatUnsub){ try{cloudChatUnsub();}catch(e){} cloudChatUnsub=null; }
+  cloudChatId=id; cloudChatMsgs=[]; chatFirstSnap=true;
+  if(!id) return;
+  cloudChatUnsub=window.NearCloud.watchMessages(id,(list)=>{
+    cloudChatMsgs=list;
+    const my=window.NearCloud.uid&&window.NearCloud.uid();
+    const last=list[list.length-1];
+    if(chatFirstSnap){ chatFirstSnap=false; if(last&&last.ts) lastChatNotifyTs=last.ts; }
+    else if(last && last.from!==my && last.ts && last.ts>lastChatNotifyTs){
+      lastChatNotifyTs=last.ts;
+      if(currentScreen!=='contact' && currentScreen!=='elder_chat') notifyChat(last.text);
+    }
+    if(currentScreen==='contact') renderContact();
+    if(currentScreen==='elder_chat') renderElderChat();
+  });
+}
+function ensureCloudChat(){ subscribeChat(); }
+function notifyChat(text){
+  const who = account.role==='relative' ? (patientName()||'Близкий') : (curChat||'Родственник');
+  toast('💬 '+who+': '+text);
+  try{ if('Notification'in window && Notification.permission==='granted') new Notification('💬 Near — новое сообщение', {body:(who?who+': ':'')+text}); }catch(e){}
+}
+function cloudSend(text){ const id=cloudChatIdFor(); if(!id||!text){ if(!id) toast('Сначала подключитесь к близкому'); return; } window.NearCloud.sendMessage(id,text).catch(e=>toast('Ошибка: '+cloudErr(e))); }
+function renderChatBox(boxId, msgs, otherName){
+  const box=document.getElementById(boxId); if(!box) return; box.innerHTML='';
+  if(!msgs.length){ box.innerHTML='<p style="color:var(--muted); margin:6px 2px">Сообщений пока нет. Напишите первое.</p>'; return; }
+  const my=window.NearCloud.uid&&window.NearCloud.uid();
+  msgs.forEach(m=>{
+    const mine=(m.from===my);
+    const d=document.createElement('div'); d.className='bub '+(mine?'me':'them');
+    d.innerHTML=`<span class="who">${mine?'Вы':escapeHtml(otherName||'Близкий')}</span>${escapeHtml(m.text)}`;
+    box.appendChild(d);
+  });
+  box.scrollTop=box.scrollHeight;
+}
+function goBack(){ show(parentScreen[currentScreen] || 'home'); }
+function goHome(){ show('home'); }
+
+/* ---------- clock & date ---------- */
+function tick(){
+  const now=new Date();
+  const days=["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"];
+  const months=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  document.getElementById('clock').textContent =
+    String(now.getHours()).padStart(2,'0')+":"+String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('today').textContent =
+    `Сегодня ${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+}
+tick(); setInterval(tick,10000);
+
+/* ---------- toast & speech ---------- */
+let toastT;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.style.transform=''; t.style.opacity=''; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),3200);
+}
+function setupToastSwipe(){
+  const t=document.getElementById('toast'); if(!t) return;
+  let sx=null, dx=0;
+  t.addEventListener('touchstart',e=>{ sx=e.touches[0].clientX; dx=0; t.style.transition='none'; },{passive:true});
+  t.addEventListener('touchmove',e=>{ if(sx==null) return; dx=e.touches[0].clientX-sx; if(dx<0){ t.style.transform='translateX(calc(-50% + '+dx+'px))'; t.style.opacity=String(Math.max(0,1+dx/160)); } },{passive:true});
+  t.addEventListener('touchend',()=>{ t.style.transition=''; if(dx<-55){ t.classList.remove('show'); } t.style.transform=''; t.style.opacity=''; sx=null; },{passive:true});
+  t.addEventListener('click',()=>t.classList.remove('show'));
+}
+function speak(text){
+  try{
+    if('speechSynthesis' in window){
+      speechSynthesis.cancel();
+      const u=new SpeechSynthesisUtterance(text); u.lang='ru-RU'; u.rate=.95;
+      speechSynthesis.speak(u);
+    }
+  }catch(e){}
+}
+
+/* ---------- reminders ---------- */
+function renderReminders(){
+  const el=document.getElementById('remList'); el.innerHTML='';
+  if(!state.reminders.length){ el.innerHTML='<p style="color:var(--muted); margin:6px 2px">Пока нет напоминаний. Добавьте первое ниже.</p>'; }
+  state.reminders.forEach((r,i)=>{
+    const d=document.createElement('div'); d.className='rem'+(r.done?' done':'');
+    d.innerHTML=`
+      <div class="time">${r.time}</div>
+      <div class="rtxt"><b>${escapeHtml(r.text)}</b><span>${escapeHtml(r.sub||'')}</span></div>
+      <div class="remActions">
+        <button class="speak" title="Прочитать вслух">🔊</button>
+        <button class="check">✓</button>
+        <button class="speak del" title="Удалить" style="background:#f7e0dc; color:var(--danger)">✕</button>
+      </div>`;
+    d.querySelector('.speak').onclick=()=>{ speak(`${r.text}. ${r.sub||''}`); toast('🔊 Читаю вслух'); };
+    d.querySelector('.check').onclick=()=>{ r.done=!r.done; saveReminders(); renderReminders(); updateRemCount(); if(r.done) toast('Отмечено ✓'); };
+    d.querySelector('.del').onclick=()=>{ state.reminders.splice(i,1); saveReminders(); renderReminders(); updateRemCount(); toast('Напоминание удалено'); };
+    el.appendChild(d);
+  });
+}
+function updateRemCount(){
+  const left=state.reminders.filter(r=>!r.done).length;
+  const c=document.getElementById('remCount'); if(c) c.textContent = left? `Осталось дел: ${left}` : 'Все дела выполнены 🎉';
+}
+function addReminder(){
+  const time=document.getElementById('remTime').value||'12:00';
+  const text=document.getElementById('remText').value.trim();
+  if(!text){ toast('Введите текст напоминания'); return; }
+  state.reminders.push({time, text, sub:'', done:false});
+  state.reminders.sort((a,b)=>a.time.localeCompare(b.time));
+  saveReminders();
+  document.getElementById('remText').value='';
+  renderReminders(); updateRemCount(); toast('Напоминание добавлено ✓');
+  try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){}
+}
+
+/* ---------- real reminder notifications (while app open) ---------- */
+let firedReminders={};
+function fireReminder(r){
+  toast('⏰ '+r.text);
+  speak('Напоминание: '+r.text);
+  try{ if('Notification' in window && Notification.permission==='granted'){ new Notification('Near — напоминание', {body:r.time+' · '+r.text}); } }catch(e){}
+}
+function checkReminders(){
+  let now; try{ now=new Date(); }catch(e){ return; }
+  const hhmm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const dkey=now.toDateString();
+  (state.reminders||[]).forEach(r=>{
+    if(!r.done && r.time===hhmm){
+      const key=dkey+'|'+r.time+'|'+r.text;
+      if(!firedReminders[key]){ firedReminders[key]=true; fireReminder(r); }
+    }
+  });
+}
+setInterval(checkReminders, 20000);
+
+/* ---------- family ---------- */
+function renderFamily(){
+  const ep=document.getElementById('elderPhone');
+  if(ep){ ep.value=settings.phone||''; ep.oninput=()=>{ settings.phone=ep.value.trim(); saveSettings(); if(account.cloud&&account.role==='elder') pushCloudLive(); }; }
+  const el=document.getElementById('famList'); el.innerHTML='';
+  if(account.cloud && account.role==='elder' && cloudEnabled()){
+    const rels=(cloudRelatives||[]).filter(r=>r.status==='approved');
+    if(!rels.length){ el.innerHTML='<p style="color:var(--muted); margin:6px 2px">Пока никто из родных не подключён. Продиктуйте им ваш код из раздела «Подключение и устройства».</p>'; return; }
+    rels.forEach(p=>{
+      const d=document.createElement('div'); d.className='person';
+      d.innerHTML=`
+        <div class="avatar" style="background:#5aa87a">${escapeHtml((p.name||'Р')[0])}</div>
+        <div><div class="pn">${escapeHtml(p.name||'Родственник')}</div><div class="pr">${p.phone?escapeHtml(p.phone):'номер не указан'}</div></div>
+        <div class="callbtns">
+          <button class="rbtn call" title="Позвонить">📞</button>
+          <button class="rbtn msg" title="Сообщение">💬</button>
+        </div>`;
+      d.querySelector('.call').onclick=()=>dialNumber(p.phone, p.name);
+      d.querySelector('.msg').onclick=()=>openElderChat(p.name);
+      el.appendChild(d);
+    });
+    return;
+  }
+  state.family.forEach(p=>{
+    const d=document.createElement('div'); d.className='person';
+    d.innerHTML=`
+      <div class="avatar" style="background:${p.color}">${p.name[0]}</div>
+      <div><div class="pn">${p.name}</div><div class="pr">${p.rel}</div></div>
+      <div class="callbtns">
+        <button class="rbtn call" title="Позвонить">📞</button>
+        <button class="rbtn msg" title="Сообщение">💬</button>
+      </div>`;
+    d.querySelector('.call').onclick=()=>dialNumber(p.phone, p.name);
+    d.querySelector('.msg').onclick=()=>openElderChat(p.name);
+    el.appendChild(d);
+  });
+}
+function imOk(){
+  let t='',dl=''; try{ const n=new Date(); t=n.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); dl=n.toLocaleDateString('ru-RU',{day:'numeric',month:'long'}); }catch(e){}
+  Store.set('okStatus', {time:t, day:dl});
+  speak('Спасибо! Родные получили сообщение, что у вас всё хорошо.');
+  toast('✓ Родные получили весточку в '+t);
+  renderOkStatus();
+}
+function renderOkStatus(){
+  const s=Store.get('okStatus', null);
+  const el=document.getElementById('okStatusLine');
+  if(el) el.textContent = s ? ('✓ Вы отметили «всё хорошо»: '+(s.day||'')+', '+(s.time||'')) : '';
+}
+function dialNumber(num, name){
+  if(!num){ toast('Номер не указан — добавьте его в настройках'); return; }
+  toast('📞 Звоним'+(name?': '+name:'')+'…');
+  try{ window.location.href='tel:'+String(num).replace(/[^\d+]/g,''); }catch(e){}
+}
+
+/* ---------- elder chat with relatives ---------- */
+const chats = Store.get('chats', {
+  'Анна':[
+    {who:'them',text:'Мама, привет! Как ты сегодня? 🌷'},
+    {who:'me',text:'Здравствуй, доченька! Всё хорошо, спасибо.'},
+    {who:'them',text:'Вечером позвоню, целую ❤️'},
+  ],
+});
+let curChat=null;
+function saveChats(){ Store.set('chats', chats); }
+function openElderChat(name){
+  if(account.cloud && cloudEnabled()){ const ap=cloudRelatives.find(r=>r.status==='approved'); curChat=(ap&&ap.name)||'Родственник'; show('elder_chat'); return; }
+  curChat=name; if(!chats[name]) chats[name]=[]; show('elder_chat');
+}
+function renderElderChat(){
+  document.getElementById('echatTitle').textContent='💬 '+(curChat||'Переписка');
+  if(account.cloud && cloudEnabled()){
+    const inp=document.getElementById('echatInput'); if(inp) inp.placeholder='Написать: '+(curChat||'')+'…';
+    ensureCloudChat(); renderChatBox('echatBox', cloudChatMsgs, curChat);
+    return;
+  }
+  const box=document.getElementById('echatBox'); box.innerHTML='';
+  const arr=chats[curChat]||[];
+  if(!arr.length) box.innerHTML='<p style="color:var(--muted); margin:6px 2px">Начните переписку — напишите первое сообщение.</p>';
+  arr.forEach(m=>{
+    const d=document.createElement('div'); d.className='bub '+(m.who==='me'?'me':'them');
+    d.innerHTML=`<span class="who">${m.who==='me'?'Вы':curChat}</span>${m.text}`;
+    box.appendChild(d);
+  });
+  box.scrollTop=box.scrollHeight;
+  const inp=document.getElementById('echatInput'); if(inp) inp.placeholder='Написать: '+curChat+'…';
+}
+function sendElderChat(){
+  const inp=document.getElementById('echatInput'); const t=inp.value.trim(); if(!t) return;
+  if(account.cloud && cloudEnabled()){ cloudSend(t); inp.value=''; return; }
+  if(!curChat) return;
+  chats[curChat].push({who:'me',text:t}); inp.value=''; saveChats(); renderElderChat();
+  setTimeout(()=>{ chats[curChat].push({who:'them',text:'Спасибо, что написала! Обнимаю ❤️'}); saveChats(); renderElderChat(); toast('💬 Новое сообщение от '+curChat); },1300);
+}
+function readLastChat(){
+  if(account.cloud && cloudEnabled()){
+    const my=window.NearCloud.uid&&window.NearCloud.uid();
+    const last=[...cloudChatMsgs].reverse().find(m=>m.from!==my);
+    if(last) speak((curChat||'Близкий')+' пишет: '+last.text); else toast('Пока нет входящих сообщений');
+    return;
+  }
+  const arr=chats[curChat]||[]; const last=[...arr].reverse().find(m=>m.who==='them');
+  if(last) speak((curChat||'')+' пишет: '+last.text); else toast('Пока нет входящих сообщений');
+}
+
+/* ---------- memory game ---------- */
+const EMOJI=["🌻","🐈","🍎","🚗","🏠","🌙"];
+let deck=[], first=null, lock=false, moves=0, pairs=0;
+function newGame(){
+  deck=[...EMOJI,...EMOJI].map((e,i)=>({id:i,e,up:false,matched:false}))
+    .sort(()=>Math.random()-0.5);
+  first=null; lock=false; moves=0; pairs=0;
+  document.getElementById('moves').textContent=0;
+  document.getElementById('pairs').textContent=0;
+  document.getElementById('winBanner').classList.remove('show');
+  renderGrid();
+}
+function renderGrid(){
+  const g=document.getElementById('grid'); g.innerHTML='';
+  deck.forEach((c,idx)=>{
+    const b=document.createElement('button');
+    b.className='mcard'+(c.up?' up':'')+(c.matched?' matched':'');
+    b.textContent=(c.up||c.matched)?c.e:'?';
+    b.onclick=()=>flip(idx);
+    g.appendChild(b);
+  });
+}
+function flip(idx){
+  if(lock) return;
+  const c=deck[idx]; if(c.up||c.matched) return;
+  c.up=true; renderGrid();
+  if(first===null){ first=idx; return; }
+  moves++; document.getElementById('moves').textContent=moves;
+  const a=deck[first], b=deck[idx];
+  if(a.e===b.e){
+    a.matched=b.matched=true; pairs++;
+    document.getElementById('pairs').textContent=pairs;
+    first=null; renderGrid();
+    if(pairs===EMOJI.length){ document.getElementById('winBanner').classList.add('show'); speak('Отлично! Вы нашли все пары. Прекрасная работа!'); exDone({last:'Найди пары'}); }
+  }else{
+    lock=true;
+    setTimeout(()=>{ a.up=b.up=false; first=null; lock=false; renderGrid(); },850);
+  }
+}
+
+/* ---------- game: numbers in order ---------- */
+let numNext=1, numTimer=null, numStart=0, numRunning=false;
+function newNumbers(){
+  clearInterval(numTimer); numRunning=false; numNext=1;
+  document.getElementById('numTime').textContent='0.0';
+  document.getElementById('numFound').textContent='0';
+  document.getElementById('numBanner').classList.remove('show');
+  const nums=[1,2,3,4,5,6,7,8,9].sort(()=>Math.random()-0.5);
+  const g=document.getElementById('numGrid'); g.innerHTML='';
+  nums.forEach(n=>{
+    const b=document.createElement('button');
+    b.className='mcard up'; b.style.fontSize='34px'; b.style.fontWeight='800';
+    b.textContent=n; b.dataset.n=n;
+    b.onclick=()=>tapNumber(b,n);
+    g.appendChild(b);
+  });
+}
+function tapNumber(btn,n){
+  if(btn.classList.contains('matched')) return;
+  if(n!==numNext){ btn.animate([{transform:'scale(1)'},{transform:'scale(.9)',background:'#f6d3cd'},{transform:'scale(1)'}],{duration:250}); return; }
+  if(!numRunning){ numRunning=true; numStart=Date.now(); numTimer=setInterval(()=>{ document.getElementById('numTime').textContent=((Date.now()-numStart)/1000).toFixed(1); },100); }
+  btn.classList.remove('up'); btn.classList.add('matched');
+  numNext++; document.getElementById('numFound').textContent=numNext-1;
+  if(numNext>9){
+    clearInterval(numTimer); numRunning=false;
+    const t=((Date.now()-numStart)/1000).toFixed(1);
+    const bn=document.getElementById('numBanner');
+    bn.textContent=`🎉 Готово за ${t} секунд! Отличная скорость!`; bn.classList.add('show');
+    speak(`Отлично! Готово за ${t} секунд.`);
+    exDone({numTime:parseFloat(t), last:'Числа по порядку'});
+  }
+}
+
+/* ---------- game: what was on the picture ---------- */
+const OBJ_POOL=["🍎","🌻","🐕","🚗","🏠","🔑","☂️","🎈","⌚","📚","🍋","🐟","🌵","🎩","🧦","🕯️"];
+let objTarget=[];
+function newObjects(){
+  document.getElementById('objBanner').classList.remove('show');
+  document.getElementById('objChoiceWrap').style.display='none';
+  const pool=[...OBJ_POOL].sort(()=>Math.random()-0.5);
+  objTarget=pool.slice(0,4);
+  const showG=document.getElementById('objShow');
+  showG.style.display='grid'; showG.innerHTML='';
+  document.getElementById('objHint').textContent='Запомните эти предметы…';
+  objTarget.forEach(e=>{
+    const d=document.createElement('div'); d.className='mcard matched'; d.textContent=e; showG.appendChild(d);
+  });
+  // countdown then hide
+  let left=4;
+  const hintEl=document.getElementById('objHint');
+  const cd=setInterval(()=>{
+    left--; hintEl.textContent=`Запомните эти предметы… ${left}`;
+    if(left<=0){ clearInterval(cd); startObjChoice(pool); }
+  },1000);
+}
+function startObjChoice(pool){
+  document.getElementById('objShow').style.display='none';
+  document.getElementById('objHint').textContent='Предметы спрятаны. Какие из них были на картинке? Можно выбрать несколько.';
+  const choices=[...objTarget, ...pool.filter(e=>!objTarget.includes(e)).slice(0,5)].sort(()=>Math.random()-0.5);
+  const cg=document.getElementById('objChoice'); cg.innerHTML='';
+  choices.forEach(e=>{
+    const b=document.createElement('button'); b.className='mcard up'; b.textContent=e; b.dataset.e=e; b.dataset.sel='0';
+    b.onclick=()=>{ const s=b.dataset.sel==='1'; b.dataset.sel=s?'0':'1'; b.style.outline=s?'none':'4px solid var(--blue)'; b.style.background=s?'#fff':'#dbe9f6'; };
+    cg.appendChild(b);
+  });
+  document.getElementById('objChoiceWrap').style.display='block';
+}
+function checkObjects(){
+  const chosen=[...document.querySelectorAll('#objChoice .mcard')].filter(b=>b.dataset.sel==='1').map(b=>b.dataset.e);
+  const correct=objTarget.filter(e=>chosen.includes(e)).length;
+  const wrong=chosen.filter(e=>!objTarget.includes(e)).length;
+  const bn=document.getElementById('objBanner');
+  if(correct===objTarget.length && wrong===0){ bn.textContent='🎉 Всё верно! Прекрасная память!'; speak('Всё верно! Прекрасная память.'); }
+  else{ bn.textContent=`Правильно: ${correct} из ${objTarget.length}${wrong?`, лишних: ${wrong}`:''}. Попробуйте ещё раз!`; }
+  bn.classList.add('show');
+  exDone({last:'Что было на картинке'});
+}
+
+/* ---------- caregiver / digital biomarkers ---------- */
+const CARE = {
+  year: {
+    alerts:[
+      '🌙 Изменился сон: раньше отход ко сну около 22:00, теперь замечена ночная активность.',
+      '🚶 За год повседневная активность снизилась примерно втрое.'
+    ],
+    bio:[
+      {icon:'🚶',name:'Активность (шаги)',before:'Раньше: ≈ 5000 в день',after:'Сейчас: ≈ 1500 в день',trend:'down',badge:'↓ втрое'},
+      {icon:'🌳',name:'Прогулки на улице',before:'Раньше: каждый день',after:'Сейчас: выходит редко',trend:'down',badge:'↓'},
+      {icon:'📞',name:'Звонки близким',before:'Раньше: каждый день',after:'Сейчас: раз в неделю',trend:'down',badge:'↓'},
+      {icon:'🌙',name:'Сон и режим дня',before:'Раньше: ложилась в 22:00',after:'Сейчас: ночная активность',trend:'warn',badge:'⚠'},
+      {icon:'🗣️',name:'Речь («Вопрос дня»)',before:'Раньше: длинные связные рассказы',after:'Сейчас: короче фразы, больше пауз, уже словарь',trend:'down',badge:'↓'},
+      {icon:'⚡',name:'Скорость реакции (игры)',before:'Раньше: быстрые ответы',after:'Сейчас: медленнее примерно на треть',trend:'down',badge:'↓'},
+      {icon:'🗺️',name:'Привычные маршруты',before:'Раньше: по вторникам в магазин',after:'Сейчас: маршрут исчез',trend:'down',badge:'↓'},
+      {icon:'⌨️',name:'Набор текста в телефоне',before:'Раньше: ровный, мало правок',after:'Сейчас: медленнее, больше исправлений',trend:'down',badge:'↓'},
+      {icon:'💊',name:'Приём лекарств',before:'Раньше: почти без пропусков',after:'Сейчас: пропуски участились',trend:'down',badge:'↓'},
+    ]
+  },
+  week: {
+    alerts:['ℹ️ За эту неделю было только 1 звонок близким — реже обычного.'],
+    bio:[
+      {icon:'🚶',name:'Активность (шаги)',before:'Обычно: ≈ 1800 в день',after:'Эта неделя: ≈ 1500 в день',trend:'down',badge:'↓'},
+      {icon:'📞',name:'Звонки близким',before:'Обычно: 3–4 в неделю',after:'Эта неделя: 1',trend:'down',badge:'↓'},
+      {icon:'🧩',name:'Мини-игры выполнено',before:'Обычно: 4–5',after:'Эта неделя: 6',trend:'up',badge:'↑'},
+      {icon:'💊',name:'Лекарства по расписанию',before:'Цель: 100%',after:'Эта неделя: 80%',trend:'warn',badge:'80%'},
+      {icon:'🌙',name:'Ночная активность',before:'Обычно: нет',after:'Эта неделя: 2 ночи',trend:'warn',badge:'⚠'},
+    ]
+  }
+};
+let careView='year';
+function battCloudRow(label,pct){ return `<div class="batt"><div class="bi">📱</div><div class="bl"><b>${escapeHtml(label)}</b><div class="bar"><div class="fill" style="width:${pct}%; background:${battColor(pct)}"></div></div></div><div class="pct" style="color:${battColor(pct)}">${pct}%</div></div>`; }
+function renderMapBattery(){
+  const el=document.getElementById('mapBattery'); if(!el) return;
+  if(cloudRel()){
+    if(cloudLive && cloudLive.battery!=null) el.innerHTML=battCloudRow('Телефон '+(patientName()||'близкого'), cloudLive.battery);
+    else el.innerHTML='<div style="color:var(--muted); font-size:15px; padding:4px 2px">🔋 Заряд устройства пока неизвестен</div>';
+  } else { renderBattery('mapBattery'); }
+}
+function renderCareCloud(){
+  const nm=patientName()||'близкий';
+  const sr=document.querySelector('#care .switchrow'); if(sr) sr.style.display='none';
+  document.getElementById('careRings').innerHTML='<div style="color:var(--muted); font-size:14px; padding:4px 2px">Сравнение с личной нормой появится, когда накопятся данные.</div>';
+  const bb=document.getElementById('careBattery');
+  if(cloudLive && cloudLive.battery!=null) bb.innerHTML=battCloudRow('Телефон '+nm, cloudLive.battery);
+  else bb.innerHTML='<div style="color:var(--muted); font-size:15px; padding:4px 2px">🔋 Заряд устройств пока неизвестен</div>';
+  const al=document.getElementById('careAlerts'); al.innerHTML='';
+  if(cloudLive && cloudLive.sos){
+    const s=document.createElement('div'); s.className='alert'; s.style.background='#ffe3ec'; s.style.borderLeftColor='var(--danger)'; s.style.color='var(--danger)'; s.style.fontWeight='800';
+    s.textContent='🆘 '+nm+' просит помощи ('+(cloudLive.sos.time||'')+')!';
+    al.appendChild(s);
+  }
+  const hasData = cloudLive && (cloudLive.steps!=null || cloudLive.lat!=null || cloudLive.ok);
+  const g=document.createElement('div'); g.className='alert'; g.style.background='#eef2ff'; g.style.borderLeftColor='var(--blue)';
+  if(hasData){ const bits=[]; if(cloudLive.steps!=null) bits.push('шагов: '+cloudLive.steps); if(cloudLive.ok) bits.push('«всё хорошо»: '+cloudLive.ok); g.textContent='🟢 На связи — '+nm+(bits.length?' · '+bits.join(' · '):''); }
+  else { g.textContent='Пока нет данных от '+nm+'. Они появятся, когда он(а) поделится активностью и геопозицией с телефона или браслета.'; }
+  al.appendChild(g);
+  const list=document.getElementById('bioList'); list.innerHTML='';
+  if(cloudLive && cloudLive.steps!=null){
+    const d=document.createElement('div'); d.className='bio';
+    d.innerHTML=`<div class="mi">🚶</div><div class="bv"><b>Активность сегодня</b><span class="now">${cloudLive.steps} шагов</span></div><div class="trend up">✓</div>`;
+    list.appendChild(d);
+  } else { list.innerHTML='<div style="color:var(--muted); padding:10px 2px">Данных об активности нет.</div>'; }
+}
+function renderCare(){
+  if(cloudRel()){ renderCareCloud(); return; }
+  const sr=document.querySelector('#care .switchrow'); if(sr) sr.style.display='';
+  renderBattery('careBattery');
+  renderRings('careRings', [{label:'Актив.',value:52},{label:'Сон',value:68},{label:'Общение',value:40}]);
+  const data=CARE[careView];
+  const al=document.getElementById('careAlerts'); al.innerHTML='';
+  if(account.cloud && cloudLive){
+    const bits=[];
+    if(cloudLive.steps!=null) bits.push('шагов: '+cloudLive.steps);
+    if(cloudLive.battery!=null) bits.push('заряд '+cloudLive.battery+'%');
+    if(cloudLive.ok) bits.push('«всё хорошо»: '+cloudLive.ok);
+    const g=document.createElement('div'); g.className='alert'; g.style.background='#eef2ff'; g.style.borderLeftColor='var(--blue)';
+    g.textContent='🟢 Онлайн — '+(cloudLive.name||settings.name)+(bits.length?' · '+bits.join(' · '):' (ждём данные с телефона)');
+    al.appendChild(g);
+  }
+  const ok=Store.get('okStatus',null);
+  if(ok && !account.cloud){ const g=document.createElement('div'); g.className='alert'; g.style.background='#e7f9ef'; g.style.borderLeftColor='var(--green)'; g.textContent='✓ '+settings.name+' отметил(а) «всё хорошо»: '+(ok.day||'')+', '+(ok.time||''); al.appendChild(g); }
+  data.alerts.forEach(a=>{ const d=document.createElement('div'); d.className='alert'; d.textContent=a; al.appendChild(d); });
+  const list=document.getElementById('bioList'); list.innerHTML='';
+  const src=document.createElement('div'); src.className='bio';
+  src.innerHTML = braceletConnected
+    ? `<div class="mi">⌚</div><div class="bv"><b>Источник данных</b><span class="now">Сон и активность — с фитнес-браслета</span></div><div class="trend up">✅</div>`
+    : `<div class="mi">⌚</div><div class="bv"><b>Источник данных</b><span class="was">Браслет не подключён — данные приблизительные</span></div><div class="trend warn">⚠</div>`;
+  list.appendChild(src);
+  data.bio.forEach(b=>{
+    const d=document.createElement('div'); d.className='bio';
+    d.innerHTML=`<div class="mi">${b.icon}</div>
+      <div class="bv"><b>${b.name}</b><span class="was">${b.before}</span><span class="now">${b.after}</span></div>
+      <div class="trend ${b.trend}">${b.badge}</div>`;
+    list.appendChild(d);
+  });
+}
+function switchCareView(btn,which){
+  document.querySelectorAll('.switchrow button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on'); careView=which; renderCare();
+}
+function buildReportHTML(){
+  const bio=CARE.year.bio.map(b=>`<tr><td>${b.name}</td><td>${b.before.replace(/^Раньше:\s*/,'')}</td><td>${b.after.replace(/^Сейчас:\s*/,'')}</td></tr>`).join('');
+  const avg=(SLEEP.reduce((a,s)=>a+s.h,0)/SLEEP.length).toFixed(1);
+  let d=''; try{ d=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}); }catch(e){ d=''; }
+  return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Near — отчёт</title>
+  <style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:720px;margin:24px auto;color:#26224b;padding:0 16px}
+  h1{color:#6c5ce7} table{width:100%;border-collapse:collapse;margin:12px 0} td,th{border:1px solid #eae8fb;padding:8px;text-align:left;font-size:14px}
+  th{background:#f3f2ff} .muted{color:#7c7aa6;font-size:13px}</style></head><body>
+  <h1>Near — сводка для врача</h1>
+  <p><b>Человек:</b> ${settings.name}<br><b>Дата:</b> ${d}</p>
+  <p class="muted">Это вспомогательная сводка наблюдений на дому. Приложение не ставит диагноз и не заменяет обследование. Данные предоставлены с согласия пользователя.</p>
+  <h3>Изменения «раньше → сейчас» (сравнение человека с собой)</h3>
+  <table><tr><th>Показатель</th><th>Раньше</th><th>Сейчас</th></tr>${bio}</table>
+  <h3>Сон</h3><p>Средняя продолжительность сна за неделю: <b>${avg} ч</b>. Отмечены ночи с коротким/прерывистым сном.</p>
+  <h3>Активность и связь</h3><p>Снижение повседневной активности и частоты звонков близким по сравнению с личной нормой; изменения в речи (короче фразы, больше пауз).</p>
+  <p class="muted">Сформировано приложением Near, ${d}.</p>
+  </body></html>`;
+}
+function doctorReport(){
+  try{
+    const blob=new Blob([buildReportHTML()],{type:'text/html'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='Near-otchet.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    toast('📄 Отчёт сохранён на устройство');
+  }catch(e){ toast('Не удалось сформировать отчёт'); }
+}
+
+/* ---------- consent screen ---------- */
+const CONSENT=[
+  {i:'🚶',t:'Активность и шаги'},
+  {i:'🌙',t:'Сон и режим дня'},
+  {i:'⌨️',t:'Скорость набора и исправления'},
+  {i:'📱',t:'Использование приложений'},
+  {i:'🗣️',t:'Речь в «Вопросе дня»'},
+  {i:'🧩',t:'Результаты мини-игр'},
+  {i:'📍',t:'Геопозиция и маршруты'},
+  {i:'🔋',t:'Заряд браслета и телефона'},
+];
+let consentState = Store.get('consent', {});
+function renderConsent(){
+  const el=document.getElementById('consentList'); el.innerHTML='';
+  CONSENT.forEach((c,i)=>{
+    if(consentState[i]===undefined) consentState[i]=true;
+    const on=consentState[i];
+    const d=document.createElement('div'); d.className='consent';
+    d.innerHTML=`<div class="ci">${c.i}</div><div class="cl">${c.t}</div><div class="toggle${on?'':' off'}"></div>`;
+    d.querySelector('.toggle').onclick=()=>{ consentState[i]=!consentState[i]; Store.set('consent',consentState); renderConsent(); toast(consentState[i]?'Источник включён':'Источник отключён'); };
+    el.appendChild(d);
+  });
+}
+
+/* ---------- reminiscence ---------- */
+const MUSIC=['Подмосковные вечера','Любимый вальс','Песни военных лет'];
+const ALBUM_EMOJIS=['📸','👨‍👩‍👧','🏖️','🎂','🌷','🐶','🎄','🎓','❤️','🏡','🎵','⛰️','🍰','🚗','🌻','⛪'];
+let albums = Store.get('albums', null);
+if(!albums){
+  const old=Store.get('userPhotos',[]);
+  albums=[
+    {id:'a1', name:'Мои фото', emoji:'📸', photos: old.map(u=>(u&&u.src)||u).filter(Boolean)},
+    {id:'a2', name:'Семья', emoji:'👨‍👩‍👧', photos:[]},
+  ];
+  Store.set('albums',albums);
+}
+function saveAlbums(){ Store.set('albums',albums); }
+let newAlbumEmoji='📸', curAlbum=null, albumEmojiEdit='📸';
+function emojiPicker(containerId, current, onPick){
+  const el=document.getElementById(containerId); if(!el) return; el.innerHTML='';
+  ALBUM_EMOJIS.forEach(e=>{
+    const b=document.createElement('button'); b.textContent=e;
+    b.style.cssText='font-size:22px; width:40px; height:40px; border-radius:12px; border:2px solid '+(e===current?'var(--blue)':'var(--line)')+'; background:'+(e===current?'#eef1fb':'#fff')+'; cursor:pointer';
+    b.onclick=()=>onPick(e); el.appendChild(b);
+  });
+}
+function pickNew(e){ newAlbumEmoji=e; emojiPicker('emojiPick', newAlbumEmoji, pickNew); }
+function pickEdit(e){ albumEmojiEdit=e; emojiPicker('emojiPick2', albumEmojiEdit, pickEdit); }
+function renderMemories(){
+  const g=document.getElementById('albumGrid'); g.innerHTML='';
+  if(!albums.length) g.innerHTML='<div style="color:var(--muted); padding:8px 2px">Пока нет альбомов. Создайте первый ниже.</div>';
+  albums.forEach(a=>{
+    const cover = (a.photos&&a.photos.length) ? `<img src="${a.photos[0]}" style="width:100%;height:96px;object-fit:cover;display:block">` : `<span class="pic" style="font-size:44px; padding:22px 0 6px">${a.emoji||'📸'}</span>`;
+    const d=document.createElement('div'); d.className='photo'; d.style.cursor='pointer';
+    d.innerHTML=`${cover}<span class="cap"><b>${escapeHtml(a.name)}</b> · ${(a.photos||[]).length} фото</span>`;
+    d.onclick=()=>openAlbum(a.id);
+    g.appendChild(d);
+  });
+  emojiPicker('emojiPick', newAlbumEmoji, pickNew);
+}
+function createAlbum(){
+  const name=(document.getElementById('albumName').value||'').trim();
+  if(!name){ toast('Впишите название альбома'); return; }
+  let id='a'; try{ id='a'+Date.now(); }catch(e){ id='a'+(albums.length+1); }
+  albums.push({id, name, emoji:newAlbumEmoji, photos:[]});
+  saveAlbums(); document.getElementById('albumName').value=''; newAlbumEmoji='📸'; renderMemories(); toast('Альбом создан ✓');
+}
+function getAlbum(){ return albums.find(a=>a.id===curAlbum); }
+function openAlbum(id){ curAlbum=id; show('album_view'); }
+function renderAlbumView(){
+  const a=getAlbum(); if(!a){ show('memories'); return; }
+  albumEmojiEdit=a.emoji||'📸';
+  document.getElementById('albumTitle').textContent=(a.emoji||'📸')+' '+a.name;
+  const g=document.getElementById('albumPhotos'); g.innerHTML='';
+  if(!a.photos.length) g.innerHTML='<div style="color:var(--muted); padding:8px 2px">В альбоме пока нет фото. Добавьте первое.</div>';
+  a.photos.forEach((src,i)=>{
+    const d=document.createElement('div'); d.className='photo'; d.style.position='relative';
+    d.innerHTML=`<img src="${src}" style="width:100%;height:120px;object-fit:cover;display:block">
+      <button title="Удалить" style="position:absolute; top:6px; right:6px; width:28px; height:28px; border:none; border-radius:50%; background:rgba(0,0,0,.5); color:#fff; cursor:pointer">✕</button>`;
+    d.querySelector('button').onclick=()=>{ a.photos.splice(i,1); saveAlbums(); renderAlbumView(); toast('Фото удалено'); };
+    g.appendChild(d);
+  });
+  document.getElementById('albumRename').value=a.name;
+  emojiPicker('emojiPick2', albumEmojiEdit, pickEdit);
+}
+function saveAlbumMeta(){
+  const a=getAlbum(); if(!a) return;
+  const name=(document.getElementById('albumRename').value||'').trim();
+  if(name) a.name=name; a.emoji=albumEmojiEdit; saveAlbums(); renderAlbumView(); toast('Сохранено ✓');
+}
+function deleteAlbum(){ albums=albums.filter(a=>a.id!==curAlbum); saveAlbums(); show('memories'); toast('Альбом удалён'); }
+function addPhotoToAlbum(ev){
+  const f=ev.target.files && ev.target.files[0]; if(!f) return;
+  const a=getAlbum(); if(!a) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=1000; let w=img.width,h=img.height;
+      if(w>max||h>max){ if(w>h){ h=Math.round(h*max/w); w=max; } else { w=Math.round(w*max/h); h=max; } }
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
+      let src; try{ src=cv.toDataURL('image/jpeg',0.7); }catch(e){ src=reader.result; }
+      a.photos.unshift(src); while(a.photos.length>30) a.photos.pop(); saveAlbums(); renderAlbumView(); toast('Фото добавлено ✓');
+    };
+    img.onerror=()=>{ a.photos.unshift(reader.result); saveAlbums(); renderAlbumView(); };
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(f); ev.target.value='';
+}
+
+/* ---------- daily speech question ---------- */
+let recOn=false, recAnim=null, recSeconds=0;
+let mediaRec=null, recChunks=[], recStream=null;
+/* --- speech recognition (built-in AI) --- */
+let speechRec=null, speechText='', speechConf=[];
+function startSpeechRec(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  speechText=''; speechConf=[];
+  if(!SR) return false;
+  try{
+    speechRec=new SR(); speechRec.lang='ru-RU'; speechRec.continuous=true; speechRec.interimResults=false;
+    speechRec.onresult=(ev)=>{ for(let i=ev.resultIndex;i<ev.results.length;i++){ const r=ev.results[i]; if(r.isFinal){ speechText+=' '+r[0].transcript; if(typeof r[0].confidence==='number' && r[0].confidence>0) speechConf.push(r[0].confidence); } } };
+    speechRec.onerror=()=>{};
+    speechRec.start(); return true;
+  }catch(e){ speechRec=null; return false; }
+}
+function stopSpeechRec(){ try{ speechRec&&speechRec.stop(); }catch(e){} }
+function analyzeSpeech(text, durSec){
+  text=(text||'').trim().toLowerCase();
+  const words=text?text.split(/\s+/).filter(Boolean):[];
+  const n=words.length;
+  const wpm = (durSec>0 && n>0) ? Math.round(n/(durSec/60)) : 0;
+  let repeats=0; for(let i=1;i<n;i++){ if(words[i]===words[i-1] && words[i].length>2) repeats++; }
+  const FILL=['ну','это','эээ','ээ','мм','ммм','значит','вот','типа','короче'];
+  const fillers = words.filter(w=>FILL.includes(w)).length;
+  const avgConf = speechConf.length ? speechConf.reduce((a,b)=>a+b,0)/speechConf.length : null;
+  let rate='обычная'; if(wpm){ if(wpm<80) rate='медленная'; else if(wpm>170) rate='быстрая'; }
+  let clarity=null; if(avgConf!=null){ clarity = avgConf>0.82?'разборчивая':(avgConf>0.6?'нормальная':'менее разборчивая'); }
+  return {words:n, wpm, rate, repeats, fillers, clarity};
+}
+function speechSummary(m){
+  if(!m || !m.words) return '';
+  const p=['слов: '+m.words];
+  if(m.wpm) p.push('темп: '+m.rate+' ('+m.wpm+' сл/мин)');
+  if(m.repeats) p.push('повторов подряд: '+m.repeats);
+  if(m.fillers) p.push('слов-заминок: '+m.fillers);
+  if(m.clarity) p.push('разборчивость: '+m.clarity);
+  return p.join(' · ');
+}
+function getRecordings(){
+  const r=Store.get('recordings', []);
+  let cut=0; try{ cut=Date.now()-3*24*3600*1000; }catch(e){}
+  const pr = cut ? r.filter(x=>!x.ts || x.ts>=cut) : r;
+  if(pr.length!==r.length) Store.set('recordings', pr);
+  return pr;
+}
+function fmtDur(s){ const m=Math.floor(s/60), ss=String(s%60).padStart(2,'0'); return m+':'+ss; }
+function nowLabel(){ try{ const n=new Date(); return n.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})+', '+n.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return 'запись'; } }
+function resetDaily(){
+  recOn=false; clearInterval(recAnim);
+  if(recStream){ recStream.getTracks().forEach(t=>t.stop()); recStream=null; }
+  const b=document.getElementById('micBtn'); if(b){ b.textContent='🎙️'; b.style.background='var(--warm)'; }
+  const lbl=document.getElementById('micLabel'); if(lbl) lbl.textContent='Нажмите и расскажите';
+  document.getElementById('dailyBanner').classList.remove('show');
+}
+async function toggleRec(){
+  const b=document.getElementById('micBtn'), lbl=document.getElementById('micLabel');
+  if(!recOn){
+    let gotMic=false;
+    try{
+      recStream=await navigator.mediaDevices.getUserMedia({audio:true});
+      mediaRec=new MediaRecorder(recStream); recChunks=[];
+      mediaRec.ondataavailable=e=>{ if(e.data&&e.data.size) recChunks.push(e.data); };
+      mediaRec.onstop=saveRecording;
+      mediaRec.start(1000); gotMic=true;
+    }catch(e){ mediaRec=null; }
+    startSpeechRec();
+    recOn=true; recSeconds=0;
+    b.textContent='⏸️'; b.style.background='var(--danger)';
+    clearInterval(recAnim);
+    recAnim=setInterval(()=>{ recSeconds++; lbl.textContent='● Записываю… '+recSeconds+' сек (нажмите, чтобы закончить)'; },1000);
+    lbl.textContent=(gotMic?'● Записываю… 0 сек':'● Запись (демо, нет микрофона)…')+' (нажмите, чтобы закончить)';
+  } else {
+    recOn=false; clearInterval(recAnim);
+    b.textContent='🎙️'; b.style.background='var(--warm)';
+    stopSpeechRec();
+    if(mediaRec && mediaRec.state!=='inactive'){ mediaRec.stop(); }
+    else { setTimeout(()=>saveRecording(true),400); }
+  }
+}
+function saveRecording(demo){
+  const finish=(dataUrl)=>{
+    const metrics=analyzeSpeech(speechText, recSeconds);
+    const sum=speechSummary(metrics);
+    let ms=1; try{ ms=Date.now(); }catch(e){}
+    const recs=getRecordings();
+    recs.unshift({date:nowLabel(), dur:fmtDur(recSeconds), dataUrl:dataUrl||null, metrics, summary:sum, ts:ms});
+    const cut=ms-3*24*3600*1000;
+    let recsP=recs.filter(x=>!x.ts || x.ts>=cut); if(recsP.length>20) recsP=recsP.slice(0,20);
+    Store.set('recordings', recsP);
+    if(sum) Store.set('lastSpeech', {summary:sum, date:nowLabel()});
+    if(account.cloud&&account.role==='elder'){
+      pushCloudLive();
+      if(cloudEnabled() && window.NearCloud.pushRecording){
+        const audio=(dataUrl && dataUrl.length<700000)? dataUrl : null;
+        let ms=1; try{ ms=Date.now(); }catch(e){}
+        try{ window.NearCloud.pushRecording({ audio, summary: sum||null, date: nowLabel(), ts: ms }); }catch(e){}
+      }
+    }
+    if(recStream){ recStream.getTracks().forEach(t=>t.stop()); recStream=null; }
+    const bn=document.getElementById('dailyBanner');
+    let analysis;
+    if(sum){ analysis='🧠 Анализ речи: '+sum+'.'; }
+    else if(!(window.SpeechRecognition||window.webkitSpeechRecognition)){ analysis='Распознавание речи не поддерживается этим браузером (лучше всего работает в Chrome на Android). Аудио сохранено — родные смогут послушать.'; }
+    else { analysis='Речь не распозналась — попробуйте в тихом месте и говорите чуть ближе к телефону. Аудио сохранено.'; }
+    bn.innerHTML='✔️ Рассказ сохранён'+(dataUrl?' (аудио записано)':'')+'.<br>'+analysis+'<br><span style="color:var(--muted); font-size:14px">Приложение не ставит диагноз, а бережно сравнивает рассказы со временем.</span>';
+    bn.classList.add('show');
+    document.getElementById('micLabel').textContent='Спасибо! Ваш рассказ сохранён.';
+    speak('Спасибо за рассказ! Всё сохранено.');
+  };
+  if(demo || !recChunks.length){ finish(null); return; }
+  try{
+    const blob=new Blob(recChunks,{type:(mediaRec&&mediaRec.mimeType)||'audio/webm'});
+    const reader=new FileReader();
+    reader.onload=()=>finish(reader.result);
+    reader.onerror=()=>finish(null);
+    reader.readAsDataURL(blob);
+  }catch(e){ finish(null); }
+}
+
+/* ---------- game: repeat the sequence ---------- */
+const SEQ_COLORS=['#2c5f8a','#2e8b57','#e8955b','#8a5fa8'];
+let seq=[], seqInput=[], seqLevel=1, seqBest=0, seqLock=true;
+function newSequence(){
+  seq=[]; seqInput=[]; seqLevel=1; seqLock=true;
+  document.getElementById('seqLevel').textContent=1;
+  document.getElementById('seqBanner').classList.remove('show');
+  document.getElementById('seqHint').textContent='Смотрите, какие кнопки загорятся, потом повторите.';
+  const g=document.getElementById('seqGrid'); g.innerHTML='';
+  SEQ_COLORS.forEach((c,i)=>{
+    const b=document.createElement('button'); b.className='seqpad'; b.style.background=c; b.dataset.i=i;
+    b.onclick=()=>seqTap(i);
+    g.appendChild(b);
+  });
+  setTimeout(seqNextRound,600);
+}
+function seqFlash(i){
+  return new Promise(res=>{
+    const pad=document.querySelector(`#seqGrid .seqpad[data-i="${i}"]`);
+    pad.classList.add('lit');
+    setTimeout(()=>{ pad.classList.remove('lit'); setTimeout(res,180); },420);
+  });
+}
+async function seqNextRound(){
+  seqInput=[]; seqLock=true;
+  seq.push(Math.floor(Math.random()*4));
+  document.getElementById('seqHint').textContent='Смотрите внимательно…';
+  for(const i of seq){ await seqFlash(i); }
+  document.getElementById('seqHint').textContent='Теперь повторите!';
+  seqLock=false;
+}
+function seqTap(i){
+  if(seqLock) return;
+  seqFlash(i);
+  seqInput.push(i);
+  const idx=seqInput.length-1;
+  if(seqInput[idx]!==seq[idx]){
+    seqLock=true;
+    const bn=document.getElementById('seqBanner');
+    bn.textContent=`Почти! Вы повторили ${idx} из ${seq.length}. Попробуйте снова.`; bn.classList.add('show');
+    return;
+  }
+  if(seqInput.length===seq.length){
+    seqLevel++;
+    if(seq.length>seqBest){ seqBest=seq.length; document.getElementById('seqBest').textContent=seqBest; }
+    document.getElementById('seqLevel').textContent=seqLevel;
+    seqLock=true;
+    setTimeout(seqNextRound,700);
+  }
+}
+
+/* ---------- settings ---------- */
+function renderSettings(){
+  const n=document.getElementById('setName'); n.value=settings.name;
+  n.oninput=()=>{ settings.name=n.value.trim()||'друг'; saveSettings(); applySettings(); };
+  const ph=document.getElementById('setPhone'); ph.value=settings.phone||'';
+  ph.oninput=()=>{ settings.phone=ph.value.trim(); saveSettings(); };
+  document.querySelectorAll('#fontRow button').forEach(b=>b.classList.toggle('on', b.dataset.f===settings.font));
+  const fl=document.getElementById('setFamList'); fl.innerHTML='';
+  if(!state.family.length) fl.innerHTML='<p style="color:var(--muted); margin:6px 2px">Список пуст.</p>';
+  state.family.forEach((p,i)=>{
+    const d=document.createElement('div'); d.className='person';
+    d.innerHTML=`<div class="avatar" style="background:${p.color}">${p.name[0]||'?'}</div>
+      <div><div class="pn">${p.name}</div><div class="pr">${p.rel}${p.phone?' · '+p.phone:''}</div></div>
+      <div class="callbtns"><button class="rbtn" style="background:var(--danger)" title="Удалить">✕</button></div>`;
+    d.querySelector('.rbtn').onclick=()=>{ state.family.splice(i,1); saveFamily(); renderFamily(); renderSettings(); toast('Удалено'); };
+    fl.appendChild(d);
+  });
+}
+function setFont(f){ settings.font=f; saveSettings(); applySettings(); renderSettings(); }
+const FAM_COLORS=['#e0788f','#4a86c5','#5aa87a','#c58b4a','#8a5fa8','#c0392b'];
+function addFamily(){
+  const name=document.getElementById('setFamName').value.trim();
+  const rel=document.getElementById('setFamRel').value.trim()||'близкий человек';
+  const phone=document.getElementById('setFamPhone').value.trim();
+  if(!name){ toast('Введите имя'); return; }
+  state.family.push({name, rel, phone, color:FAM_COLORS[state.family.length%FAM_COLORS.length]});
+  saveFamily();
+  document.getElementById('setFamName').value=''; document.getElementById('setFamRel').value=''; document.getElementById('setFamPhone').value='';
+  renderFamily(); renderSettings(); toast('Близкий добавлен ✓');
+}
+function resetAll(){
+  ['reminders','family','settings','consent'].forEach(k=>Store.del(k));
+  toast('Данные сброшены. Перезапустите приложение.');
+}
+
+/* ---------- accounts, connection by code, bracelet ---------- */
+const account = { role:null };
+const connection = {
+  code:'4827',
+  relatives:[],   // {name, primary, me}
+  pending:[],     // {name, stage:'elder'|'primary', me}
+};
+const DEMO_RELS=['Пётр (сын)','Ольга (внучка)','Иван (брат)'];
+let demoRelIdx=0;
+let braceletConnected=false;
+
+function newCode(){
+  connection.code=String(Math.floor(1000+Math.random()*9000));
+  document.getElementById('connCode').textContent=connection.code;
+  toast('Новый код: '+connection.code);
+}
+function hasPrimary(){ return connection.relatives.some(r=>r.primary); }
+
+function demoRelativeEntersCode(){
+  const name=DEMO_RELS[demoRelIdx % DEMO_RELS.length]; demoRelIdx++;
+  connection.pending.push({name, stage:'elder', me:false});
+  renderConnect();
+  toast(name+' ввёл(а) правильный код');
+}
+function relSubmitCode(){
+  const val=document.getElementById('codeInput').value.trim();
+  const bn=document.getElementById('relBanner');
+  if(account.cloud && cloudEnabled()){
+    if(!val){ bn.innerHTML='Введите код'; bn.classList.add('show'); return; }
+    window.NearCloud.linkByCode(val, settings.name, settings.phone).then(r=>{
+      if(r&&r.error){ bn.innerHTML='❌ '+r.error; }
+      else { bn.innerHTML='✔️ Заявка отправлена! Пожилой человек подтвердит её у себя, после чего вы увидите его данные.'; document.getElementById('codeInput').value=''; }
+      bn.classList.add('show');
+    }).catch(e=>{ bn.innerHTML='Ошибка: '+cloudErr(e); bn.classList.add('show'); });
+    return;
+  }
+  if(val!==connection.code){
+    bn.innerHTML='❌ Код неверный. Попросите пожилого человека продиктовать актуальный код из раздела «Подключение и устройства».';
+    bn.classList.add('show'); return;
+  }
+  if(connection.pending.some(p=>p.me)||connection.relatives.some(r=>r.me)){
+    bn.innerHTML='ℹ️ Вы уже отправили заявку.'; bn.classList.add('show'); return;
+  }
+  connection.pending.push({name:'Вы', stage:'elder', me:true});
+  const extra = hasPrimary() ? ' Затем заявку одобрит главный родственник.' : ' Вы станете главным родственником.';
+  bn.innerHTML='✔️ Заявка отправлена! Её должен подтвердить пожилой человек в своём приложении.'+extra;
+  bn.classList.add('show');
+  document.getElementById('codeInput').value='';
+  toast('Заявка отправлена');
+}
+function approveElder(i){
+  const p=connection.pending[i]; if(!p) return;
+  if(!hasPrimary()){
+    connection.pending.splice(i,1);
+    connection.relatives.push({name:p.name, primary:true, me:p.me});
+    toast(p.name+' подключён(а) как главный родственник');
+  } else {
+    p.stage='primary';
+    toast('Подтверждено. Теперь нужно одобрение главного родственника');
+  }
+  renderConnect();
+}
+function approvePrimary(i){
+  const p=connection.pending[i]; if(!p) return;
+  connection.pending.splice(i,1);
+  connection.relatives.push({name:p.name, primary:false, me:p.me});
+  renderConnect();
+  toast(p.name+' подключён(а)');
+}
+function rejectReq(i){ const p=connection.pending[i]; connection.pending.splice(i,1); renderConnect(); toast('Заявка отклонена: '+(p?p.name:'')); }
+
+function renderConnect(){
+  if(account.cloud && cloudEnabled()){ renderConnectCloud(); return; }
+  document.getElementById('connCode').textContent=connection.code;
+  // requests
+  const rl=document.getElementById('reqList'); rl.innerHTML='';
+  if(!connection.pending.length){ rl.innerHTML='<p style="color:var(--muted); margin:6px 2px">Пока нет новых заявок.</p>'; }
+  connection.pending.forEach((p,i)=>{
+    const d=document.createElement('div'); d.className='person';
+    const stageTxt = p.stage==='elder'
+      ? 'Ожидает вашего подтверждения'
+      : 'Ждёт одобрения главного родственника';
+    const btn = p.stage==='elder'
+      ? `<button class="rbtn call" title="Подтвердить" onclick="approveElder(${i})">✓</button>`
+      : `<button class="rbtn call" title="Одобрить как главный" onclick="approvePrimary(${i})">★</button>`;
+    d.innerHTML=`<div class="avatar" style="background:#8a8f96">${p.name[0]}</div>
+      <div><div class="pn">${p.name}${p.me?' (вы)':''}</div><div class="pr">${stageTxt}</div></div>
+      <div class="callbtns">${btn}<button class="rbtn" style="background:var(--danger)" title="Отклонить" onclick="rejectReq(${i})">✕</button></div>`;
+    rl.appendChild(d);
+  });
+  // connected
+  const fl=document.getElementById('famConnList'); fl.innerHTML='';
+  if(!connection.relatives.length){ fl.innerHTML='<p style="color:var(--muted); margin:6px 2px">Пока никто не подключён.</p>'; }
+  connection.relatives.forEach(r=>{
+    const d=document.createElement('div'); d.className='person';
+    d.innerHTML=`<div class="avatar" style="background:${r.primary?'#2e8b57':'#4a86c5'}">${r.name[0]}</div>
+      <div><div class="pn">${r.name}${r.me?' (вы)':''}</div><div class="pr">${r.primary?'★ главный родственник':'родственник'}</div></div>`;
+    fl.appendChild(d);
+  });
+  renderBraceletBox();
+}
+function renderBraceletBox(){
+  const bb=document.getElementById('braceletBox'); if(!bb) return; bb.innerHTML='';
+  if(braceletConnected){
+    bb.innerHTML=`<div class="metric"><div class="mi">⌚</div><div class="mv"><b>Fitness Band подключён</b><span>Сон и активность синхронизируются</span></div><div class="trend up">✅</div></div>`;
+    const btn=document.createElement('button'); btn.className='bigbtn ghost'; btn.style.marginTop='10px'; btn.textContent='Отключить браслет';
+    btn.onclick=()=>{ braceletConnected=false; renderBraceletBox(); toast('Браслет отключён'); };
+    bb.appendChild(btn);
+  } else {
+    const btn=document.createElement('button'); btn.className='bigbtn blue'; btn.textContent='🔍 Найти браслет';
+    btn.onclick=pairBracelet; bb.appendChild(btn);
+  }
+}
+function renderConnectCloud(){
+  document.getElementById('connCode').textContent=cloudCode;
+  const rl=document.getElementById('reqList'); rl.innerHTML='';
+  if(!cloudPending.length){ rl.innerHTML='<p style="color:var(--muted); margin:6px 2px">Пока нет новых заявок.</p>'; }
+  cloudPending.forEach(p=>{
+    const d=document.createElement('div'); d.className='person';
+    d.innerHTML=`<div class="avatar" style="background:#8a8f96">${(p.name||'Р')[0]}</div>
+      <div><div class="pn">${p.name||'Родственник'}</div><div class="pr">Ожидает вашего подтверждения</div></div>
+      <div class="callbtns"><button class="rbtn call" title="Подтвердить">✓</button></div>`;
+    d.querySelector('.call').onclick=()=>{ window.NearCloud.approve(p.uid).then(()=>toast('Подключён(а): '+(p.name||''))).catch(e=>toast('Ошибка: '+cloudErr(e))); };
+    rl.appendChild(d);
+  });
+  const fl=document.getElementById('famConnList'); fl.innerHTML='';
+  const appr=cloudRelatives.filter(r=>r.status==='approved');
+  if(!appr.length){ fl.innerHTML='<p style="color:var(--muted); margin:6px 2px">Пока никто не подключён.</p>'; }
+  appr.forEach(r=>{ const d=document.createElement('div'); d.className='person'; d.innerHTML=`<div class="avatar" style="background:#4a86c5">${(r.name||'Р')[0]}</div><div><div class="pn">${r.name||'Родственник'}</div><div class="pr">родственник</div></div>`; fl.appendChild(d); });
+  renderBraceletBox();
+}
+function pairBracelet(){
+  toast('🔍 Поиск устройств…');
+  const bb=document.getElementById('braceletBox');
+  bb.innerHTML='<p style="color:var(--muted); margin:6px 2px">Поиск… держите браслет рядом с телефоном.</p>';
+  setTimeout(()=>{ braceletConnected=true; renderConnect(); toast('✅ Fitness Band подключён'); speak('Браслет подключён. Данные о сне и активности будут собираться автоматически.'); },1300);
+}
+
+/* ---------- battery ---------- */
+const DEVICES=[{i:'⌚',n:'Фитнес-браслет',pct:72},{i:'📱',n:'Телефон',pct:38}];
+function battColor(p){ return p>50?'#2e8b57':(p>20?'#e8955b':'#c0392b'); }
+function renderBattery(id){
+  const el=document.getElementById(id); if(!el) return; el.innerHTML='';
+  DEVICES.forEach(d=>{
+    const row=document.createElement('div'); row.className='batt';
+    row.innerHTML=`<div class="bi">${d.i}</div>
+      <div class="bl"><b>${d.n}</b><div class="bar"><div class="fill" style="width:${d.pct}%; background:${battColor(d.pct)}"></div></div></div>
+      <div class="pct" style="color:${battColor(d.pct)}">${d.pct}%</div>`;
+    el.appendChild(row);
+  });
+}
+
+/* ---------- SVG charts (rings, bars, area) ---------- */
+function gaugeColor(p){ return p>=67?'#22c55e':(p>=40?'#ff9f5a':'#ff5c8a'); }
+function ringGauge(pct,color){
+  const r=40,c=2*Math.PI*r,off=c*(1-Math.max(0,Math.min(100,pct))/100);
+  return `<svg viewBox="0 0 100 100" style="width:100%;height:auto;max-width:86px">
+    <circle cx="50" cy="50" r="${r}" fill="none" stroke="#ece9fb" stroke-width="11"/>
+    <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="11" stroke-linecap="round"
+      stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 50 50)"/>
+    <text x="50" y="58" text-anchor="middle" font-size="27" font-weight="800" fill="#26224b">${Math.round(pct)}</text>
+  </svg>`;
+}
+function renderRings(id, items){
+  const el=document.getElementById(id); if(!el) return; el.innerHTML='';
+  items.forEach(it=>{
+    const col=it.color||gaugeColor(it.value);
+    const d=document.createElement('div'); d.className='ringcell';
+    d.innerHTML=ringGauge(it.value,col)+`<div class="rl">${it.label}</div>`;
+    el.appendChild(d);
+  });
+}
+function barsSVG(data){
+  const w=320,h=155,pad=20,base=h-26;
+  const n=data.length, slot=(w-2*pad)/n, bw=slot*0.5;
+  const max=Math.max.apply(null,data.map(d=>d.value))*1.2||1;
+  let s='';
+  data.forEach((d,i)=>{
+    const x=pad+slot*i+(slot-bw)/2;
+    const bh=Math.max(3,(d.value/max)*(base-18));
+    const y=base-bh;
+    s+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="6" fill="${d.color||'#6c5ce7'}"/>`;
+    s+=`<text x="${(x+bw/2).toFixed(1)}" y="${(y-6).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#7c7aa6">${d.value}</text>`;
+    s+=`<text x="${(x+bw/2).toFixed(1)}" y="${h-7}" text-anchor="middle" font-size="12" fill="#9a98bd">${d.label}</text>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}">${s}</svg>`;
+}
+function areaSVG(values, labels, color){
+  const w=320,h=155,pad=16,base=h-26;
+  const max=Math.max.apply(null,values)*1.2||1;
+  const step=(w-2*pad)/(values.length-1);
+  const pts=values.map((v,i)=>[pad+step*i, base-(v/max)*(base-18)]);
+  const line=pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const area=pad+','+base+' '+line+' '+(w-pad)+','+base;
+  let lab='';
+  if(labels) labels.forEach((l,i)=>{ lab+=`<text x="${pts[i][0].toFixed(1)}" y="${h-7}" text-anchor="middle" font-size="12" fill="#9a98bd">${l}</text>`; });
+  const dots=pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.6" fill="${color}"/>`).join('');
+  return `<svg viewBox="0 0 ${w} ${h}"><polygon points="${area}" fill="${color}" opacity="0.13"/><polyline points="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${dots}${lab}</svg>`;
+}
+
+/* ---------- real map (Leaflet / OpenStreetMap) + per-day route ---------- */
+const DAY_ROUTES = [
+  { name:'Сегодня', label:'В сети • сейчас дома', updated:'обновлено 2 минуты назад',
+    points:[[50.0875,14.4210],[50.0888,14.4225],[50.0899,14.4258],[50.0905,14.4288],[50.0890,14.4300],[50.0876,14.4212]],
+    places:[
+      {t:'🏠',n:'Дом',s:'ночь и утро',time:'до 09:40'},
+      {t:'🛒',n:'Магазин у дома',s:'покупки, 20 мин',time:'10:30'},
+      {t:'🌳',n:'Парк',s:'прогулка, 25 мин',time:'11:15'},
+      {t:'🏠',n:'Дом',s:'сейчас здесь',time:'13:10'},
+    ]},
+  { name:'Вчера', label:'Маршрут за вчера', updated:'',
+    points:[[50.0876,14.4212],[50.0862,14.4250],[50.0845,14.4290],[50.0858,14.4320],[50.0876,14.4212]],
+    places:[
+      {t:'🏠',n:'Дом',s:'утро',time:'09:10'},
+      {t:'🏥',n:'Поликлиника',s:'приём у врача',time:'11:00'},
+      {t:'💊',n:'Аптека',s:'лекарства',time:'12:20'},
+      {t:'🏠',n:'Дом',s:'вернулась',time:'13:30'},
+    ]},
+  { name:'2 дня назад', label:'Маршрут 2 дня назад', updated:'',
+    points:[[50.0876,14.4212],[50.0895,14.4180],[50.0910,14.4205],[50.0876,14.4212]],
+    places:[
+      {t:'⛪',n:'Церковь',s:'утренняя служба',time:'10:00'},
+      {t:'🏠',n:'Дом',s:'весь день',time:''},
+      {t:'⚠️',n:'Вечером не выходила',s:'меньше активности, чем обычно',time:''},
+    ]},
+  { name:'3 дня назад', label:'Маршрут 3 дня назад', updated:'',
+    points:[[50.0876,14.4212],[50.0850,14.4230],[50.0835,14.4270],[50.0860,14.4300],[50.0876,14.4212]],
+    places:[
+      {t:'🏠',n:'Дом',s:'утро',time:'08:40'},
+      {t:'🛒',n:'Рынок',s:'продукты',time:'10:15'},
+      {t:'☕',n:'Кафе с подругой',s:'встреча',time:'12:00'},
+      {t:'🏠',n:'Дом',s:'вернулась',time:'14:00'},
+    ]},
+];
+let selDay=0, leaf=null, leafLayer=null;
+function mapReady(){ return typeof L!=='undefined'; }
+function ensureMap(){
+  if(leaf || !mapReady()) return leaf;
+  try{
+    leaf=L.map('mapWrap',{zoomControl:true, attributionControl:false}).setView([50.0876,14.4212],14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(leaf);
+    L.control.attribution({prefix:false}).addAttribution('© OpenStreetMap').addTo(leaf);
+    leafLayer=L.layerGroup().addTo(leaf);
+  }catch(e){ leaf=null; }
+  return leaf;
+}
+function drawLatLngs(latlngs){
+  if(!ensureMap()||!latlngs.length) return;
+  leafLayer.clearLayers();
+  L.polyline(latlngs,{color:'#ff7a5c',weight:5,opacity:.9}).addTo(leafLayer);
+  L.circleMarker(latlngs[0],{radius:6,color:'#5566f6',weight:2,fillColor:'#5566f6',fillOpacity:1}).addTo(leafLayer);
+  const last=latlngs[latlngs.length-1];
+  L.circleMarker(last,{radius:9,color:'#fff',weight:3,fillColor:'#12b886',fillOpacity:1}).addTo(leafLayer);
+  try{ leaf.fitBounds(L.latLngBounds(latlngs).pad(0.35)); }catch(e){}
+}
+function buildDayChips(){
+  const row=document.getElementById('dayRow'); if(!row) return; row.innerHTML='';
+  DAY_ROUTES.forEach((d,i)=>{
+    const b=document.createElement('button'); b.className='daychip'+((i===selDay&&!geoOn)?' on':'');
+    b.textContent=d.name;
+    b.onclick=()=>{ geoOn=false; const gb=document.getElementById('geoBtn'); if(gb) gb.textContent='📍 Вести по GPS в реальном времени'; selDay=i; renderMap(); };
+    row.appendChild(b);
+  });
+}
+function renderPlaces(places){
+  const pl=document.getElementById('placeList'); pl.innerHTML='';
+  places.forEach(p=>{
+    const d=document.createElement('div'); d.className='place';
+    d.innerHTML=`<div class="pt">${p.t}</div><div class="pl"><b>${p.n}</b><span>${p.s}</span></div>${p.time?`<div class="ptime">${p.time}</div>`:''}`;
+    pl.appendChild(d);
+  });
+}
+function renderMap(){
+  document.querySelector('#rmap .title').textContent='🗺️ Где сейчас '+patientName();
+  renderMapBattery();
+  buildDayChips();
+  const _gb=document.getElementById('geoBtn'), _dr=document.getElementById('dayRow');
+  if(cloudRel()){ if(_gb) _gb.style.display='none'; if(_dr) _dr.style.display='none'; }
+  else { if(_gb) _gb.style.display=''; if(_dr) _dr.style.display=''; }
+  if(!mapReady()){
+    document.getElementById('mapWrap').innerHTML='<div style="padding:44px 16px; text-align:center; color:#6b7488">Карта загружается… для неё нужен интернет.</div>';
+  } else {
+    setTimeout(()=>{ try{ leaf&&leaf.invalidateSize(); }catch(e){} },80);
+  }
+  if(cloudRel() && !(cloudLive && cloudLive.lat!=null)){
+    if(mapReady()){ try{ ensureMap(); leafLayer&&leafLayer.clearLayers(); }catch(e){} }
+    document.getElementById('liveLabel').textContent='📍 Геолокация не подключена';
+    document.getElementById('mapUpdated').textContent='';
+    document.getElementById('placeList').innerHTML='<div style="color:var(--muted); padding:8px 2px; font-size:15px; line-height:1.5">Данных о геолокации нет. Попросите '+(patientName()||'близкого')+' включить геолокацию в приложении (Главная → «Поделиться местоположением») — это даёт согласие на обработку геоданных с телефона или браслета.</div>';
+    renderMyPlaces(null);
+    return;
+  }
+  if(account.cloud && cloudLive && cloudLive.lat!=null){
+    const croute=(cloudLive.route&&cloudLive.route.length)?cloudLive.route:[[cloudLive.lng,cloudLive.lat]];
+    drawLatLngs(croute.map(p=>[p[1],p[0]]));
+    drawPlaces(visitedSet(croute));
+    const nn=nearestPlace(cloudLive.lat, cloudLive.lng);
+    document.getElementById('liveLabel').textContent='🟢 '+(cloudLive.name||settings.name)+(nn?': рядом с «'+nn+'»':': сейчас здесь');
+    document.getElementById('mapUpdated').textContent='онлайн, только что';
+    document.getElementById('placeList').innerHTML=`<div class="place"><div class="pt">📍</div><div class="pl"><b>${escapeHtml(cloudLive.name||'Близкий')}</b><span>${cloudLive.lat.toFixed(5)}, ${cloudLive.lng.toFixed(5)}</span></div></div>`;
+    renderMyPlaces(croute);
+    return;
+  }
+  if(geoOn && realRoute.length){
+    drawLatLngs(realRoute.map(p=>[p[1],p[0]]));
+    drawPlaces(visitedSet(realRoute));
+    const last=realRoute[realRoute.length-1];
+    const nn=nearestPlace(last[1],last[0]);
+    document.getElementById('liveLabel').textContent = nn ? ('🟢 Сейчас рядом: '+nn) : '🟢 Реальное местоположение';
+    document.getElementById('mapUpdated').textContent='обновлено только что';
+    document.getElementById('placeList').innerHTML=`<div class="place"><div class="pt">📍</div><div class="pl"><b>Текущая точка</b><span>${last[1].toFixed(5)}, ${last[0].toFixed(5)}${nn?' · рядом с «'+nn+'»':''}</span></div><div class="ptime">${realRoute.length} точек</div></div>`;
+    renderMyPlaces(realRoute);
+    return;
+  }
+  const r=DAY_ROUTES[selDay];
+  drawLatLngs(r.points);
+  drawPlaces(visitedSet(realRoute));
+  document.getElementById('liveLabel').textContent=r.label;
+  document.getElementById('mapUpdated').textContent=r.updated||('маршрут: '+r.name);
+  renderPlaces(r.places);
+  renderMyPlaces(realRoute);
+}
+let placesData = Store.get('places', [{name:'Дом', lat:50.0876, lng:14.4212}]);
+function savePlaces(){ Store.set('places', placesData); }
+function haversine(la1,lo1,la2,lo2){ const R=6371000, r=x=>x*Math.PI/180; const dLa=r(la2-la1), dLo=r(lo2-lo1); const s=Math.sin(dLa/2)**2+Math.cos(r(la1))*Math.cos(r(la2))*Math.sin(dLo/2)**2; return 2*R*Math.asin(Math.sqrt(s)); }
+function addPlace(){
+  const name=(document.getElementById('placeName').value||'').trim();
+  if(!name){ toast('Впишите название места'); return; }
+  let c = (leaf && leaf.getCenter) ? leaf.getCenter() : {lat:50.0876,lng:14.4212};
+  placesData.push({name, lat:c.lat, lng:c.lng});
+  savePlaces();
+  document.getElementById('placeName').value='';
+  renderMap(); toast('📍 Место добавлено: '+name);
+}
+function visitedSet(route){
+  const s=new Set(); if(!route||!route.length) return s;
+  placesData.forEach(pl=>{ for(const p of route){ if(p&&p.length>=2 && haversine(pl.lat,pl.lng,p[1],p[0])<150){ s.add(pl.name); break; } } });
+  return s;
+}
+function drawPlaces(vset){
+  if(!leaf||!leafLayer||typeof L==='undefined') return;
+  vset=vset||new Set();
+  placesData.forEach(pl=>{
+    const on=vset.has(pl.name);
+    const m=L.circleMarker([pl.lat,pl.lng],{radius:7,color:'#fff',weight:2,fillColor:on?'#22c55e':'#6c5ce7',fillOpacity:1}).addTo(leafLayer);
+    m.bindTooltip(pl.name+(on?' ✓':''),{permanent:true,direction:'top',offset:[0,-6],className:'placelabel'});
+    m.openTooltip();
+  });
+}
+function nearestPlace(lat,lng){
+  let best=null,bd=1e12;
+  placesData.forEach(pl=>{ const d=haversine(pl.lat,pl.lng,lat,lng); if(d<bd){ bd=d; best=pl; } });
+  return (best&&bd<200)? best.name : null;
+}
+function visitedPlaces(route){
+  return placesData.map(pl=>{
+    let near=false;
+    for(const p of route){ if(haversine(pl.lat,pl.lng,p[1],p[0])<150){ near=true; break; } }
+    return {name:pl.name, visited:near};
+  });
+}
+function renderMyPlaces(route){
+  const el=document.getElementById('myPlaces'); if(!el) return; el.innerHTML='';
+  if(!placesData.length){ el.innerHTML='<p style="color:var(--muted); font-size:13px; margin:4px 2px">Пока нет мест. Добавьте первое.</p>'; return; }
+  const vis = route? visitedPlaces(route) : null;
+  placesData.forEach((pl,i)=>{
+    const v = vis? vis.find(x=>x.name===pl.name) : null;
+    const d=document.createElement('div'); d.className='myplace';
+    d.innerHTML=`<div style="font-size:18px">📍</div><div class="pn2">${pl.name}</div>${(v&&v.visited)?'<span class="visited">был(а) здесь ✓</span>':''}<button title="Удалить" style="border:none;background:#f4edfb;color:var(--danger);width:30px;height:30px;border-radius:50%;cursor:pointer">✕</button>`;
+    d.querySelector('button').onclick=()=>{ placesData.splice(i,1); savePlaces(); renderMap(); toast('Место удалено'); };
+    el.appendChild(d);
+  });
+}
+
+/* ---------- health: neuro, sleep, audio ---------- */
+const NEURO=[
+  {i:'🗣️',n:'Связность рассказа',before:'Раньше: высокая',after:'Сейчас: снижается',trend:'down',badge:'↓'},
+  {i:'📖',n:'Словарный запас',before:'Раньше: богатый',after:'Сейчас: уже',trend:'down',badge:'↓'},
+  {i:'⏳',n:'Паузы в речи',before:'Раньше: короткие',after:'Сейчас: длиннее',trend:'warn',badge:'↑'},
+  {i:'🔁',n:'Повторы слов',before:'Раньше: редко',after:'Сейчас: чаще',trend:'warn',badge:'↑'},
+  {i:'⚡',n:'Скорость реакции (игры)',before:'Раньше: быстрая',after:'Сейчас: медленнее на ~30%',trend:'down',badge:'↓'},
+];
+const SLEEP=[{d:'Пн',h:7.5},{d:'Вт',h:6.0},{d:'Ср',h:7.0},{d:'Чт',h:5.0},{d:'Пт',h:6.5},{d:'Сб',h:4.5},{d:'Вс',h:6.0}];
+const ACT=[1600,1800,1500,2100,1400,900,1500];
+const AUDIO=[
+  {date:'Сегодня, 21:00',dur:'1:12',note:'речь связная'},
+  {date:'Вчера, 20:50',dur:'0:48',note:'чуть больше пауз'},
+  {date:'2 дня назад, 21:10',dur:'1:05',note:'—'},
+];
+function renderHealthCloud(){
+  const nm=patientName()||'Пожилой человек';
+  document.querySelector('#health .title').textContent='💗 Здоровье: '+(patientName()||'близкий');
+  document.getElementById('healthRings').innerHTML='<div style="color:var(--muted); font-size:14px; padding:4px 2px; line-height:1.5">Неполные сведения о здоровье. Чтобы видеть сон, пульс и активность, подключите здоровье пожилого человека — фитнес-браслет или программу «Здоровье» (Apple Health / Health Connect) в его приложении.</div>';
+  const act=document.getElementById('activityChart');
+  act.innerHTML = (cloudLive && cloudLive.steps!=null)
+    ? '<div style="padding:6px 2px"><b style="font-size:22px">'+cloudLive.steps+'</b> шагов сегодня</div>'
+    : '<div style="color:var(--muted); padding:6px 2px">Данных об активности нет.</div>';
+  document.getElementById('sleepDays').innerHTML='<div style="color:var(--muted); padding:6px 2px">Данных о сне нет — нужен фитнес-браслет или программа «Здоровье».</div>';
+  document.getElementById('sleepSummary').innerHTML='';
+  const ex=cloudLive&&cloudLive.ex;
+  if(ex && ex.done>0){
+    let html='<div class="bio"><div class="mi">🧩</div><div class="bv"><b>Выполнено заданий</b><span class="now">'+ex.done+'</span></div><div class="trend up">✓</div></div>';
+    if(ex.numTime!=null) html+='<div class="bio"><div class="mi">⚡</div><div class="bv"><b>Скорость в игре «Числа»</b><span class="now">'+ex.numTime+' сек</span></div></div>';
+    if(ex.last) html+='<div class="bio"><div class="mi">🎯</div><div class="bv"><b>Последнее задание</b><span class="now">'+escapeHtml(ex.last)+'</span></div></div>';
+    document.getElementById('neuroList').innerHTML=html;
+  } else {
+    document.getElementById('neuroList').innerHTML='<div style="color:var(--muted); padding:6px 2px">'+escapeHtml(nm)+' ещё не выполнял(а) упражнения — показатели появятся после первых заданий.</div>';
+  }
+  const al=document.getElementById('audioList');
+  let rec=cloudRecording;
+  try{ if(rec && rec.ts && (Date.now()-rec.ts > 3*24*3600*1000)) rec=null; }catch(e){}
+  if(rec && (rec.audio || rec.summary)){
+    al.innerHTML='';
+    const d=document.createElement('div'); d.className='music';
+    d.innerHTML=`${rec.audio?'<button class="pbtn">▶</button>':''}<div style="flex:1"><b>${escapeHtml(rec.date||'Вопрос дня')}</b>${rec.summary?'<div style="color:var(--muted); font-size:13px; margin-top:2px">🧠 '+escapeHtml(rec.summary)+'</div>':''}${rec.audio?'':'<div style="color:var(--muted); font-size:13px">аудио не передано (запись слишком большая)</div>'}</div>`;
+    if(rec.audio){ const btn=d.querySelector('.pbtn'); btn.onclick=()=>{ try{ const au=new Audio(rec.audio); au.play(); toast('▶ Воспроизведение'); }catch(e){ toast('Не удалось воспроизвести'); } }; }
+    al.appendChild(d);
+  } else if(cloudLive && cloudLive.speech && cloudLive.speech.summary){
+    al.innerHTML='<div class="music"><div style="flex:1"><b>'+escapeHtml(cloudLive.speech.date||'Вопрос дня')+'</b><div style="color:var(--muted); font-size:13px; margin-top:2px">🧠 '+escapeHtml(cloudLive.speech.summary)+'</div></div></div>';
+  } else {
+    al.innerHTML='<div style="color:var(--muted); padding:6px 2px">'+escapeHtml(nm)+' ещё не записывал(а) аудио-ответы.</div>';
+  }
+}
+function renderHealth(){
+  if(cloudRel()){ renderHealthCloud(); return; }
+  document.querySelector('#health .title').textContent='💗 Здоровье: '+patientName();
+  renderRings('healthRings', [{label:'Сон',value:68},{label:'Актив.',value:52},{label:'Лекар.',value:80},{label:'Память',value:74}]);
+  document.getElementById('activityChart').innerHTML=areaSVG(ACT, ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'], '#5b8cf6');
+  const nl=document.getElementById('neuroList'); nl.innerHTML='';
+  NEURO.forEach(b=>{
+    const d=document.createElement('div'); d.className='bio';
+    d.innerHTML=`<div class="mi">${b.i}</div><div class="bv"><b>${b.n}</b><span class="was">${b.before}</span><span class="now">${b.after}</span></div><div class="trend ${b.trend}">${b.badge}</div>`;
+    nl.appendChild(d);
+  });
+  document.getElementById('sleepDays').innerHTML=barsSVG(SLEEP.map(s=>({label:s.d, value:s.h, color:s.h<5.5?'#ff9f5a':'#6c5ce7'})));
+  const avg=(SLEEP.reduce((a,s)=>a+s.h,0)/SLEEP.length).toFixed(1);
+  const short=SLEEP.filter(s=>s.h<5.5).length;
+  document.getElementById('sleepSummary').innerHTML=`В среднем <b>${avg} ч</b> в сутки. ${short?`<span style="color:#b9770f">Ночей с коротким/прерывистым сном: ${short} ⚠</span>`:'Сон стабильный.'}`;
+  const al=document.getElementById('audioList'); al.innerHTML='';
+  const recs=getRecordings();
+  if(recs.length){
+    recs.forEach(a=>{
+      const d=document.createElement('div'); d.className='music';
+      d.innerHTML=`<button class="pbtn">▶</button><div style="flex:1"><b>${a.date}</b><div style="color:var(--muted); font-size:14px">${a.dur||''}${a.dataUrl?' · запись голоса':' · заметка'}</div>${a.summary?`<div style="color:var(--muted); font-size:13px; margin-top:2px">🧠 ${escapeHtml(a.summary)}</div>`:''}</div>`;
+      d.querySelector('.pbtn').onclick=()=>{
+        if(a.dataUrl){ try{ const au=new Audio(a.dataUrl); au.play(); toast('▶ Воспроизведение: '+a.date); }catch(e){ toast('Не удалось воспроизвести'); } }
+        else { toast('Аудио этой записи не сохранено'); }
+      };
+      al.appendChild(d);
+    });
+  } else {
+    AUDIO.forEach(a=>{
+      const d=document.createElement('div'); d.className='music';
+      d.innerHTML=`<button class="pbtn">▶</button><div style="flex:1"><b>${a.date}</b><div style="color:var(--muted); font-size:14px">${a.dur}${a.note!=='—'?' · '+a.note:''} · пример</div></div>`;
+      d.querySelector('.pbtn').onclick=()=>{ toast('Это демо-запись. Реальные записи появятся после «Вопроса дня».'); speak('Демонстрационная запись.'); };
+      al.appendChild(d);
+    });
+  }
+}
+
+/* ---------- contact: call + chat ---------- */
+let chatMsgs=Store.get('relChat', [
+  {who:'them',text:'Доброе утро! Позавтракала, всё хорошо 🙂'},
+  {who:'me',text:'Отлично, мам! Не забудь таблетку в 8.'},
+  {who:'them',text:'Уже приняла 💊'},
+]);
+function renderContact(){
+  document.querySelector('#contact .title').textContent='💬 Связь: '+patientName();
+  const rp=document.getElementById('relPhone');
+  if(rp){ rp.value=settings.phone||''; rp.oninput=()=>{ settings.phone=rp.value.trim(); saveSettings(); if(account.cloud && cloudEnabled() && window.NearCloud.updateRelProfile) window.NearCloud.updateRelProfile({name:settings.name, phone:settings.phone}); }; }
+  const inp=document.getElementById('chatInput'); if(inp) inp.placeholder='Написать сообщение…';
+  if(account.cloud && cloudEnabled()){
+    ensureCloudChat(); renderChatBox('chatBox', cloudChatMsgs, patientName());
+    return;
+  }
+  const box=document.getElementById('chatBox'); box.innerHTML='';
+  chatMsgs.forEach(m=>{
+    const d=document.createElement('div'); d.className='bub '+(m.who==='me'?'me':'them');
+    d.innerHTML=`<span class="who">${m.who==='me'?'Вы':settings.name}</span>${escapeHtml(m.text)}`;
+    box.appendChild(d);
+  });
+  box.scrollTop=box.scrollHeight;
+}
+function sendChat(){
+  const inp=document.getElementById('chatInput'); const t=inp.value.trim(); if(!t) return;
+  if(account.cloud && cloudEnabled()){ cloudSend(t); inp.value=''; return; }
+  chatMsgs.push({who:'me',text:t}); inp.value=''; Store.set('relChat',chatMsgs); renderContact();
+  setTimeout(()=>{ chatMsgs.push({who:'them',text:'Хорошо, спасибо, что заботишься ❤️'}); Store.set('relChat',chatMsgs); renderContact(); },1200);
+}
+function callPensioner(){ const num=(account.cloud&&cloudLive&&cloudLive.phone)||settings.phone; dialNumber(num, patientName()); }
+function videoPensioner(){ const n=(settings.phone||'').replace(/[^\d+]/g,''); if(!n){ toast('Номер не указан'); return; } toast('📹 Видеозвонок…'); try{ window.location.href='facetime:'+n; }catch(e){} }
+
+/* ---------- REAL device sensors (steps, battery, GPS) ---------- */
+let liveSteps = (function(){ const s=Store.get('steps',null); const t=new Date().toDateString(); return (s&&s.date===t)? s.count : 0; })();
+let liveBattery = null, motionOn=false, lastStepT=0;
+let healthSource='none', healthSleep=null, healthHR=null;
+function saveSteps(){ Store.set('steps', {date:new Date().toDateString(), count:liveSteps}); }
+function renderLiveCard(){
+  const v=document.getElementById('liveStepsVal'); if(v) v.textContent=liveSteps||'—';
+  const b=document.getElementById('liveBattIco'); if(b) b.textContent = liveBattery!=null ? ('🔋 '+liveBattery+'%') : '';
+  const ex=document.getElementById('liveExtra');
+  if(ex){ const parts=[]; if(healthSleep!=null) parts.push('😴 сон '+healthSleep+' ч'); if(healthHR!=null) parts.push('❤️ пульс '+healthHR); ex.textContent=parts.join('   ·   '); }
+  const s=document.getElementById('liveSource');
+  if(s){
+    if(healthSource==='bracelet'){ s.textContent='✅ Источник: браслет / часы'; s.style.color='var(--green-d)'; }
+    else if(healthSource==='phone'){ s.textContent='📱 Источник: телефон (браслет не найден)'; s.style.color='var(--warm-d)'; }
+    else { s.textContent=''; }
+  }
+}
+function addStep(){ liveSteps++; if(liveSteps%5===0) saveSteps(); renderLiveCard(); }
+function onMotion(e){
+  const a=e.accelerationIncludingGravity||e.acceleration; if(!a) return;
+  const mag=Math.sqrt((a.x||0)*(a.x||0)+(a.y||0)*(a.y||0)+(a.z||0)*(a.z||0));
+  const dyn=Math.abs(mag-9.81), now=Date.now();
+  if(dyn>2.3 && now-lastStepT>300){ lastStepT=now; addStep(); }
+}
+async function enableSensors(){
+  try{
+    if(typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
+      const res=await DeviceMotionEvent.requestPermission();
+      if(res!=='granted') toast('Нет доступа к датчику движения');
+    }
+  }catch(e){}
+  if(!motionOn){ window.addEventListener('devicemotion', onMotion); motionOn=true; }
+  if(navigator.getBattery){ try{ const bt=await navigator.getBattery(); const upd=()=>{ liveBattery=Math.round(bt.level*100); renderLiveCard(); }; bt.addEventListener('levelchange',upd); upd(); }catch(e){} }
+  const hint=document.getElementById('liveHint'); if(hint) hint.textContent='Датчики включены. Носите телефон с собой — шаги считаются автоматически.';
+  const btn=document.getElementById('enableSensorsBtn'); if(btn) btn.style.display='none';
+  toast('✅ Датчики телефона включены'); saveSteps(); renderLiveCard();
+}
+
+let realRoute=Store.get('route',[]); let geoWatch=null; let geoOn=false; let geoNative=false;
+function realMapSVG(route){
+  const w=340,h=200,pad=24;
+  const lngs=route.map(p=>p[0]), lats=route.map(p=>p[1]);
+  let minx=Math.min.apply(null,lngs),maxx=Math.max.apply(null,lngs),miny=Math.min.apply(null,lats),maxy=Math.max.apply(null,lats);
+  if(maxx-minx<1e-6){minx-=0.0006;maxx+=0.0006;} if(maxy-miny<1e-6){miny-=0.0006;maxy+=0.0006;}
+  const sx=v=>pad+(v-minx)/(maxx-minx)*(w-2*pad);
+  const sy=v=>h-pad-(v-miny)/(maxy-miny)*(h-2*pad);
+  const pts=route.map(p=>[sx(p[0]).toFixed(1),sy(p[1]).toFixed(1)]);
+  const line=pts.map(p=>p.join(',')).join(' ');
+  const last=pts[pts.length-1];
+  return `<svg viewBox="0 0 ${w} ${h}" class="maproute" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${w}" height="${h}" fill="#e7ede7"/>
+    <polyline points="${line}" fill="none" stroke="#ff7a5c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="9" fill="#12b886" stroke="#fff" stroke-width="3"/>
+  </svg>`;
+}
+let geoSharing=false;
+function shareLocation(){
+  geoSharing=!geoSharing;
+  toggleGeo();
+  const hint=document.getElementById('geoShareHint'), btn=document.getElementById('geoShareBtn');
+  if(geoSharing){ if(hint) hint.textContent='Включаю… родные скоро увидят ваше местоположение'; if(btn) btn.textContent='Выключить'; if(account.cloud) setTimeout(pushCloudLive,1500); }
+  else { if(hint) hint.textContent='Выключено — родные не видят, где вы'; if(btn) btn.textContent='Включить'; }
+}
+function stopGeoWatch(){
+  const C=window.Capacitor;
+  try{
+    if(geoNative && C&&C.Plugins&&C.Plugins.Geolocation){ if(geoWatch!=null) C.Plugins.Geolocation.clearWatch({id:geoWatch}); }
+    else if(geoWatch!=null && navigator.geolocation){ navigator.geolocation.clearWatch(geoWatch); }
+  }catch(e){}
+  geoWatch=null;
+}
+async function toggleGeo(){
+  const btn=document.getElementById('geoBtn');
+  if(geoOn){ stopGeoWatch(); geoOn=false; if(btn) btn.textContent='📍 Показать реальное местоположение'; renderMap(); return; }
+  toast('Запрашиваю геопозицию…');
+  const onPos=(lat,lng)=>{
+    realRoute.push([lng,lat,Date.now()]);
+    if(realRoute.length>500) realRoute=realRoute.slice(-500);
+    Store.set('route',realRoute); geoOn=true;
+    if(btn) btn.textContent='⏹ Остановить отслеживание';
+    renderMap();
+    if(account.cloud) pushCloudLive();
+  };
+  const onErr=(m)=>{ toast('Геопозиция: '+m); };
+  const C=window.Capacitor;
+  // Нативно (на телефоне): точная геолокация через плагин Capacitor
+  if(C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.Geolocation){
+    const G=C.Plugins.Geolocation;
+    try{ await G.requestPermissions(); }catch(e){}
+    try{
+      geoNative=true;
+      geoWatch=await G.watchPosition({enableHighAccuracy:true, timeout:20000, maximumAge:3000}, (pos,err)=>{
+        if(err){ onErr(err.message||'ошибка'); return; }
+        if(pos&&pos.coords) onPos(pos.coords.latitude, pos.coords.longitude);
+      });
+    }catch(e){ onErr(String(e&&e.message||e)); }
+    return;
+  }
+  // Веб-версия: обычная геолокация браузера
+  geoNative=false;
+  if(!navigator.geolocation){ toast('Геолокация недоступна на этом устройстве'); return; }
+  geoWatch=navigator.geolocation.watchPosition(pos=>{
+    onPos(pos.coords.latitude, pos.coords.longitude);
+  }, err=>onErr(err.message),
+     {enableHighAccuracy:true, maximumAge:5000, timeout:20000});
+}
+
+/* ---------- Health: bracelet/watch via HealthKit / Health Connect, else phone ---------- */
+const Health = {
+  plugin:null, available:false,
+  async init(){
+    try{
+      const C=window.Capacitor;
+      if(C && C.isNativePlatform && C.isNativePlatform()){
+        const H=C.Plugins && C.Plugins.Health;
+        if(H){
+          let ok=true;
+          try{ const r=await H.isHealthAvailable(); ok=!(r&&r.available===false); }catch(e){}
+          if(ok){ this.plugin=H; this.available=true; }
+        }
+      }
+    }catch(e){}
+  },
+  async requestPermissions(){
+    if(!this.plugin) return false;
+    // Разрешения ровно по API плагина capacitor-health (Health Connect / HealthKit)
+    try{
+      await this.plugin.requestHealthPermissions({ permissions:['READ_STEPS','READ_WORKOUTS','READ_HEART_RATE','READ_CALORIES','READ_DISTANCE','READ_ROUTE'] });
+    }catch(e){}
+    return true; // диалог показан; данные подтянем при обновлении
+  },
+  async todaySteps(){
+    if(!this.plugin) return null;
+    try{
+      const end=new Date(), start=new Date(); start.setHours(0,0,0,0);
+      const r=await this.plugin.queryAggregated({ startDate:start.toISOString(), endDate:end.toISOString(), dataType:'steps', bucket:'day' });
+      const arr=r&&r.aggregatedData; if(!arr||!arr.length) return null;
+      let sum=0; for(const d of arr){ sum+=(d.value||0); }
+      return Math.round(sum);
+    }catch(e){ return null; }
+  },
+  async lastNightSleep(){ return null; }, // плагин Health Connect не отдаёт сон через этот метод
+  async latestHeartRate(){
+    if(!this.plugin) return null;
+    try{
+      const end=new Date(), start=new Date(); start.setHours(end.getHours()-24);
+      const r=await this.plugin.queryWorkouts({ startDate:start.toISOString(), endDate:end.toISOString(), includeHeartRate:true, includeRoute:false });
+      const w=r&&r.workouts; if(!w||!w.length) return null;
+      let last=null;
+      for(const wk of w){ const hr=wk.heartRate; if(hr&&hr.length){ const s=hr[hr.length-1]; if(s&&s.bpm!=null) last=Math.round(s.bpm); } }
+      return last;
+    }catch(e){ return null; }
+  },
+};
+
+async function connectHealth(){
+  const hint=document.getElementById('liveHint'); const btn=document.getElementById('enableSensorsBtn');
+  await Health.init();
+  if(Health.available && await Health.requestPermissions()){
+    healthSource='bracelet';
+    await refreshHealth();
+    if(hint) hint.textContent='Подключено к браслету / часам через Apple Health / Health Connect. Данные обновляются автоматически.';
+    if(btn){ btn.textContent='↻ Обновить данные'; btn.setAttribute('onclick','refreshHealth()'); }
+    toast('✅ Подключено к браслету / часам');
+    renderLiveCard(); return;
+  }
+  // fallback — phone
+  healthSource='phone';
+  await enableSensors();
+  if(hint) hint.textContent='Браслет не найден — считаем шаги, активность и заряд с телефона.';
+  renderLiveCard();
+}
+async function refreshHealth(){
+  if(healthSource!=='bracelet') return;
+  const s=await Health.todaySteps(); if(s!=null){ liveSteps=s; saveSteps(); }
+  healthSleep=await Health.lastNightSleep();
+  healthHR=await Health.latestHeartRate();
+  if(navigator.getBattery){ try{ const bt=await navigator.getBattery(); liveBattery=Math.round(bt.level*100); }catch(e){} }
+  renderLiveCard();
+}
+
+/* init */
+applySettings();
+renderLiveCard();
+setupToastSwipe();
+initBattery();
+initAuthUI(); attachCloudAuth();
+window.addEventListener('nearcloud-ready', ()=>{ initAuthUI(); attachCloudAuth(); });
+renderReminders(); updateRemCount(); renderFamily(); newGame(); show('login');
+
+/* ---------- PWA: service worker + install ---------- */
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}));
+}
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); deferredPrompt=e;
+  const b=document.getElementById('installBtn'); if(b) b.style.display='block';
+});
+function installApp(){
+  if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt.userChoice.finally(()=>{deferredPrompt=null;}); }
+  else { toast('В меню браузера выберите «Установить приложение» / «На экран Домой»'); }
+}
+window.addEventListener('appinstalled',()=>toast('✅ Near установлен на устройство'));
+</script>
+
+<!-- ===== Cloud layer: Firebase (accounts + sync). Optional; app works without it ===== -->
+<script type="module">
+  const DEFAULT_FB = {
+    apiKey: "AIzaSyCmjo4YJym8H_ZCQw0x8j3AKOBT-9tMp_4",
+    authDomain: "near-test-fdcbd.firebaseapp.com",
+    projectId: "near-test-fdcbd",
+    storageBucket: "near-test-fdcbd.firebasestorage.app",
+    messagingSenderId: "142964757911",
+    appId: "1:142964757911:web:0a218b6749b9ab28ce20d2",
+    measurementId: "G-SESWKBVD1G"
+  };
+  let cfg=null;
+  try{ const raw=localStorage.getItem('near_fbconfig'); cfg = raw? JSON.parse(raw) : DEFAULT_FB; }catch(e){ cfg=DEFAULT_FB; }
+  const NC = { enabled:false, error:null, _authCbs:[], _profile:null, _unsub:[] };
+  window.NearCloud = NC;
+  function ready(){ try{ window.dispatchEvent(new Event('nearcloud-ready')); }catch(e){} }
+  if(!cfg){ ready(); }
+  else {
+    (async()=>{
+      try{
+        const V='10.12.2';
+        const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+        const A = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
+        const F = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+        const app = initializeApp(cfg);
+        const auth = A.getAuth(app);
+        const db = F.getFirestore(app);
+        try{ await A.setPersistence(auth, A.browserLocalPersistence); }catch(e){}
+
+        const uref=(uid)=>F.doc(db,'users',uid);
+        NC.register = async ({email,pass,role,name})=>{
+          let cred;
+          try{ cred = await A.createUserWithEmailAndPassword(auth,email,pass); }
+          catch(e){
+            if(e && e.code==='auth/email-already-in-use'){
+              // возможно, прошлая попытка недоделалась — пробуем войти этой же почтой/паролем и достроить профиль
+              cred = await A.signInWithEmailAndPassword(auth,email,pass);
+            } else { throw e; }
+          }
+          const uid=cred.user.uid;
+          let data={};
+          try{ const ex=await F.getDoc(uref(uid)); if(ex.exists()) data=ex.data(); }catch(e){}
+          data.role = data.role || role;
+          data.name = name || data.name || '';
+          data.email = email;
+          if(data.role==='elder' && !data.code){ const code=String(Math.floor(1000+Math.random()*9000)); data.code=code; try{ await F.setDoc(F.doc(db,'codes',code),{pid:uid}); }catch(e){} }
+          await F.setDoc(uref(uid), data, {merge:true});
+          return {uid,...data};
+        };
+        NC.login = ({email,pass})=> A.signInWithEmailAndPassword(auth,email,pass);
+        NC.setProfile = async (role,name)=>{
+          const uid=auth.currentUser.uid; const data={role,name:name||''};
+          if(role==='elder'){ const code=String(Math.floor(1000+Math.random()*9000)); data.code=code; try{ await F.setDoc(F.doc(db,'codes',code),{pid:uid}); }catch(e){} }
+          await F.setDoc(uref(uid),data,{merge:true});
+          NC._profile={uid,...data}; NC._authCbs.forEach(cb=>cb(NC._profile));
+        };
+        NC.resetPassword = (email)=> A.sendPasswordResetEmail(auth,email);
+        NC.logout = ()=> A.signOut(auth);
+        NC.onAuth = (cb)=>{ NC._authCbs.push(cb); if(NC._profile!==undefined) cb(NC._profile); };
+        A.onAuthStateChanged(auth, async (user)=>{
+          if(!user){ NC._profile=null; NC._authCbs.forEach(cb=>cb(null)); return; }
+          let prof=null; try{ const s=await F.getDoc(uref(user.uid)); prof=s.exists()?{uid:user.uid,...s.data()}:{uid:user.uid}; }catch(e){ prof={uid:user.uid}; }
+          NC._profile=prof; NC._authCbs.forEach(cb=>cb(prof));
+        });
+        NC.ensureCode = async ()=>{
+          const uid=auth.currentUser.uid; const s=await F.getDoc(uref(uid));
+          let code=s.exists()&&s.data().code;
+          if(!code){ code=String(Math.floor(1000+Math.random()*9000)); await F.setDoc(uref(uid),{code},{merge:true}); await F.setDoc(F.doc(db,'codes',code),{pid:uid}); }
+          return code;
+        };
+        NC.pushLive = async (obj)=>{ const uid=auth.currentUser&&auth.currentUser.uid; if(!uid) return; try{ await F.setDoc(F.doc(db,'pensioners',uid,'live','state'), {...obj, ts:Date.now()}, {merge:true}); }catch(e){} };
+        NC.watchPending = (cb)=>{ const uid=auth.currentUser.uid; const q=F.query(F.collection(db,'pensioners',uid,'rel'), F.where('status','==','pending')); const u=F.onSnapshot(q,(snap)=>{ cb(snap.docs.map(d=>({uid:d.id,...d.data()}))); }); NC._unsub.push(u); };
+        NC.watchRelatives = (cb)=>{ const uid=auth.currentUser.uid; const u=F.onSnapshot(F.collection(db,'pensioners',uid,'rel'),(snap)=>{ cb(snap.docs.map(d=>({uid:d.id,...d.data()}))); }); NC._unsub.push(u); };
+        NC.approve = async (relUid)=>{ const uid=auth.currentUser.uid; await F.setDoc(F.doc(db,'pensioners',uid,'rel',relUid),{status:'approved'},{merge:true}); await F.setDoc(F.doc(db,'rels',relUid,'pens',uid),{status:'approved'},{merge:true}); };
+        NC.linkByCode = async (code,myName,myPhone)=>{
+          const uid=auth.currentUser.uid;
+          const cs=await F.getDoc(F.doc(db,'codes',String(code)));
+          if(!cs.exists()) return {error:'Код не найден'};
+          const pid=cs.data().pid;
+          await F.setDoc(F.doc(db,'pensioners',pid,'rel',uid),{status:'pending',name:myName||'',phone:myPhone||''});
+          await F.setDoc(F.doc(db,'rels',uid,'pens',pid),{status:'pending'});
+          return {ok:true,pid};
+        };
+        NC.updateRelProfile = async ({name,phone})=>{
+          const uid=auth.currentUser.uid;
+          await F.setDoc(uref(uid),{name:name||'',phone:phone||''},{merge:true});
+          try{ const snap=await F.getDocs(F.collection(db,'rels',uid,'pens')); for(const d of snap.docs){ await F.setDoc(F.doc(db,'pensioners',d.id,'rel',uid),{name:name||'',phone:phone||''},{merge:true}); } }catch(e){}
+        };
+        let liveUnsub=null, recUnsub=null;
+        NC.pushRecording = async (rec)=>{ const uid=auth.currentUser.uid; try{ await F.setDoc(F.doc(db,'pensioners',uid,'recordings','last'), rec); }catch(e){} };
+        NC.watchRecording = (cb)=>{
+          const uid=auth.currentUser.uid;
+          const u=F.onSnapshot(F.collection(db,'rels',uid,'pens'),(snap)=>{
+            const appr=snap.docs.find(d=>d.data().status==='approved');
+            if(recUnsub){ recUnsub(); recUnsub=null; }
+            if(!appr){ cb(null); return; }
+            recUnsub=F.onSnapshot(F.doc(db,'pensioners',appr.id,'recordings','last'),(s)=>cb(s.exists()?s.data():null));
+          });
+          NC._unsub.push(u);
+        };
+        NC.watchPensioner = (cb)=>{
+          const uid=auth.currentUser.uid;
+          const u=F.onSnapshot(F.collection(db,'rels',uid,'pens'),(snap)=>{
+            const appr=snap.docs.find(d=>d.data().status==='approved');
+            if(liveUnsub){ liveUnsub(); liveUnsub=null; }
+            if(!appr){ cb(null,null); return; }
+            liveUnsub=F.onSnapshot(F.doc(db,'pensioners',appr.id,'live','state'),(s)=>{ cb(s.exists()?s.data():null, appr.id); });
+          });
+          NC._unsub.push(u);
+        };
+        NC.uid = ()=> auth.currentUser && auth.currentUser.uid;
+        NC.sendMessage = async (chatId,text)=>{ const uid=auth.currentUser.uid; await F.addDoc(F.collection(db,'chats',chatId,'msgs'),{from:uid,text,ts:Date.now()}); };
+        NC.watchMessages = (chatId,cb)=>{ const q=F.query(F.collection(db,'chats',chatId,'msgs'), F.orderBy('ts')); const u=F.onSnapshot(q,(snap)=>cb(snap.docs.map(d=>d.data()))); NC._unsub.push(u); return u; };
+        NC.detach = ()=>{ NC._unsub.forEach(u=>{try{u();}catch(e){}}); NC._unsub=[]; if(liveUnsub){try{liveUnsub();}catch(e){} liveUnsub=null;} if(recUnsub){try{recUnsub();}catch(e){} recUnsub=null;} };
+        NC.enabled = true; ready();
+      }catch(e){ NC.error=String(e&&e.message||e); ready(); }
+    })();
+  }
+</script>
+</body>
+</html>
