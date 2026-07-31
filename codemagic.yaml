@@ -1,13 +1,6 @@
 # Codemagic — облачная сборка Near под Android (с фитнес-браслетом через Health Connect).
-#
-# Как пользоваться:
-#  1) Загрузите содержимое папки near-native в репозиторий на GitHub.
-#  2) На codemagic.io войдите через GitHub, добавьте репозиторий — он сам найдёт этот файл.
-#  3) Запустите workflow "Near Android (debug APK)".
-#  4) На почту придёт файл .apk — установите его на Android-телефон (разрешив установку из этого источника).
-#
-# Это debug-сборка для теста на своём телефоне — аккаунт разработчика и подпись НЕ нужны.
-# Скрипт сам дописывает в приложение разрешения Health Connect и минимум Android 8 (minSdk 26).
+# Правка: заставляем взять свежую библиотеку Health Connect (connect-client 1.2.0-alpha04),
+# на которую рассчитан код плагина. Плюс разрешения Health Connect и минимум Android 8.
 
 workflows:
   android-debug:
@@ -23,11 +16,11 @@ workflows:
       - name: Добавить платформу Android
         script: npx cap add android || true
 
-      - name: Прописать разрешения Health Connect и минимум Android 8
+      - name: Правки для Health Connect (разрешения, версии, библиотека)
         script: |
           python3 - <<'PY'
-          import re, io, os
-          # 1) AndroidManifest.xml — разрешения здоровья, запрос к Health Connect, активность-обоснование
+          import re, io
+          # 1) AndroidManifest.xml — разрешения здоровья и активность-обоснование
           mpath = "android/app/src/main/AndroidManifest.xml"
           m = io.open(mpath, encoding="utf-8").read()
           if "READ_STEPS" not in m:
@@ -65,10 +58,8 @@ workflows:
               m = m.replace("</manifest>", health + "</manifest>", 1)
               io.open(mpath, "w", encoding="utf-8").write(m)
               print("AndroidManifest.xml пропатчен")
-          else:
-              print("AndroidManifest.xml уже содержит разрешения — пропуск")
 
-          # 2) versions.gradle — minSdk 26, compileSdk 36, targetSdk 36 (нужно для Health Connect)
+          # 2) variables.gradle — minSdk 26, compileSdk 36, targetSdk 36
           vpath = "android/variables.gradle"
           v = io.open(vpath, encoding="utf-8").read()
           v = re.sub(r"minSdkVersion\s*=\s*\d+", "minSdkVersion = 26", v)
@@ -77,19 +68,32 @@ workflows:
           io.open(vpath, "w", encoding="utf-8").write(v)
           print("variables.gradle:", [l for l in v.splitlines() if "SdkVersion" in l])
 
-          # 3) build.gradle — Android Gradle Plugin 8.9.1 (требует Health Connect)
+          # 3) build.gradle — Android Gradle Plugin 8.9.1
           bpath = "android/build.gradle"
           b = io.open(bpath, encoding="utf-8").read()
           b = re.sub(r"com\.android\.tools\.build:gradle:[0-9.]+", "com.android.tools.build:gradle:8.9.1", b)
           io.open(bpath, "w", encoding="utf-8").write(b)
-          print("AGP:", [l for l in b.splitlines() if "tools.build:gradle" in l])
 
-          # 4) Gradle wrapper 8.11.1 (под AGP 8.9.1)
+          # 4) Gradle wrapper 8.11.1
           wpath = "android/gradle/wrapper/gradle-wrapper.properties"
           w = io.open(wpath, encoding="utf-8").read()
           w = re.sub(r"gradle-[0-9.]+-(all|bin)\.zip", "gradle-8.11.1-all.zip", w)
           io.open(wpath, "w", encoding="utf-8").write(w)
-          print("Gradle:", [l for l in w.splitlines() if "distributionUrl" in l])
+
+          # 5) Заставляем взять свежую библиотеку Health Connect (в ней есть нужный параметр)
+          apath = "android/app/build.gradle"
+          a = io.open(apath, encoding="utf-8").read()
+          if "connect-client:1.2.0-alpha04" not in a:
+              a += '''
+
+          configurations.all {
+              resolutionStrategy {
+                  force 'androidx.health.connect:connect-client:1.2.0-alpha04'
+              }
+          }
+          '''
+              io.open(apath, "w", encoding="utf-8").write(a)
+              print("force connect-client 1.2.0-alpha04 добавлен")
           PY
 
       - name: Синхронизировать веб-код в приложение
