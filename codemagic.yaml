@@ -68,12 +68,28 @@ workflows:
           else:
               print("AndroidManifest.xml уже содержит разрешения — пропуск")
 
-          # 2) minSdkVersion = 26 (нужно для Health Connect)
+          # 2) versions.gradle — minSdk 26, compileSdk 36, targetSdk 36 (нужно для Health Connect)
           vpath = "android/variables.gradle"
           v = io.open(vpath, encoding="utf-8").read()
           v = re.sub(r"minSdkVersion\s*=\s*\d+", "minSdkVersion = 26", v)
+          v = re.sub(r"compileSdkVersion\s*=\s*\d+", "compileSdkVersion = 36", v)
+          v = re.sub(r"targetSdkVersion\s*=\s*\d+", "targetSdkVersion = 36", v)
           io.open(vpath, "w", encoding="utf-8").write(v)
-          print("minSdkVersion =", [l for l in v.splitlines() if "minSdkVersion" in l])
+          print("variables.gradle:", [l for l in v.splitlines() if "SdkVersion" in l])
+
+          # 3) build.gradle — Android Gradle Plugin 8.9.1 (требует Health Connect)
+          bpath = "android/build.gradle"
+          b = io.open(bpath, encoding="utf-8").read()
+          b = re.sub(r"com\.android\.tools\.build:gradle:[0-9.]+", "com.android.tools.build:gradle:8.9.1", b)
+          io.open(bpath, "w", encoding="utf-8").write(b)
+          print("AGP:", [l for l in b.splitlines() if "tools.build:gradle" in l])
+
+          # 4) Gradle wrapper 8.11.1 (под AGP 8.9.1)
+          wpath = "android/gradle/wrapper/gradle-wrapper.properties"
+          w = io.open(wpath, encoding="utf-8").read()
+          w = re.sub(r"gradle-[0-9.]+-(all|bin)\.zip", "gradle-8.11.1-all.zip", w)
+          io.open(wpath, "w", encoding="utf-8").write(w)
+          print("Gradle:", [l for l in w.splitlines() if "distributionUrl" in l])
           PY
 
       - name: Синхронизировать веб-код в приложение
