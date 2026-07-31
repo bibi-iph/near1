@@ -54,6 +54,10 @@ workflows:
               <uses-permission android:name="android.permission.health.READ_EXERCISE" />
               <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTE" />
               <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
           '''
               m = m.replace("</manifest>", health + "</manifest>", 1)
               io.open(mpath, "w", encoding="utf-8").write(m)

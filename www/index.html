@@ -341,6 +341,7 @@
   <button class="back" id="acctBtn" onclick="show('login')" title="Сменить роль" style="display:flex; margin-left:10px">👤</button>
 </header>
 
+<div id="pensSwitcher" style="display:none; gap:8px; overflow-x:auto; padding:8px 14px 0; -webkit-overflow-scrolling:touch"></div>
 <main>
   <!-- LOGIN / ROLE -->
   <section class="screen active" id="login">
@@ -357,16 +358,7 @@
       <div id="onlineBody"></div>
     </div>
 
-    <p style="text-align:center; font-size:15px; font-weight:700; margin:18px 2px 12px; color:var(--muted)">— или демо без регистрации —</p>
-    <button class="tile" onclick="loginAs('elder')" style="margin-bottom:12px">
-      <div class="ico ico-blue">👵</div>
-      <div class="txt"><b>Я — пожилой человек</b><span>Демо-режим</span></div>
-    </button>
-    <button class="tile" onclick="loginAs('relative')">
-      <div class="ico ico-green">👨‍👧</div>
-      <div class="txt"><b>Я — родственник</b><span>Демо-режим</span></div>
-    </button>
-    <p class="note">Демо работает на одном телефоне. Для теста вдвоём (на двух телефонах) используйте онлайн-режим.</p>
+    <p class="note">Пожилой человек и родственник входят каждый со своего устройства и видят данные друг друга.</p>
   </section>
 
   <!-- AUTH: login / register -->
@@ -380,6 +372,7 @@
           <button id="ar_rel" onclick="authSetRole('relative')">Родственник</button>
         </div>
         <input id="authName" placeholder="Ваше имя" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px; margin-bottom:10px">
+        <input id="authPhone" type="tel" autocomplete="tel" placeholder="Телефон (+420 …) — по нему будут звонить" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px; margin-bottom:10px">
       </div>
       <input id="authEmail" type="email" autocomplete="email" placeholder="Почта" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px; margin-bottom:10px">
       <input id="authPass" type="password" autocomplete="current-password" placeholder="Пароль (минимум 6 знаков)" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px">
@@ -447,10 +440,6 @@
       <button class="tile family" onclick="show('family')">
         <div class="ico ico-pink">❤️</div>
         <div class="txt"><b>Позвонить близким</b><span>Родные всегда рядом</span></div>
-      </button>
-      <button class="tile" onclick="show('memories')">
-        <div class="ico ico-green">📷</div>
-        <div class="txt"><b>Воспоминания</b><span>Фотографии и любимая музыка</span></div>
       </button>
       <button class="tile" onclick="show('connect')">
         <div class="ico ico-teal">🔗</div>
@@ -749,8 +738,8 @@
     <h2 class="title">👨‍👧 Добавить пожилого человека</h2>
     <div class="card">
       <p style="margin-top:0">Попросите пожилого человека открыть в его приложении «Подключение и устройства» и продиктовать вам код. Введите код ниже.</p>
-      <input id="codeInput" inputmode="numeric" maxlength="4" placeholder="код"
-        style="width:100%; font-size:34px; text-align:center; letter-spacing:10px; padding:16px; border:2px solid var(--line); border-radius:16px; margin:8px 0; box-sizing:border-box">
+      <input id="codeInput" inputmode="numeric" maxlength="6" placeholder="код"
+        style="width:100%; font-size:32px; text-align:center; letter-spacing:8px; padding:16px; border:2px solid var(--line); border-radius:16px; margin:8px 0; box-sizing:border-box">
       <button class="bigbtn green" onclick="relSubmitCode()">Добавить по коду</button>
       <div class="banner" id="relBanner" style="text-align:left"></div>
     </div>
@@ -929,6 +918,7 @@ function show(id){
   if(id==='login') initAuthUI();
   if(id==='rel_enter') renderRelEnterFoot();
   if(id==='album_view') renderAlbumView();
+  try{ renderPensSwitcher(); }catch(e){}
 }
 const NAVS={
   elder:[{scr:'home',i:'🏠',t:'Главная'},{scr:'reminders',i:'⏰',t:'Дела'},{scr:'family',i:'❤️',t:'Близкие'},{scr:'memories',i:'📷',t:'Фото'}],
@@ -1028,7 +1018,7 @@ async function authSubmit(){
   msg.classList.remove('show');
   const btn=document.getElementById('authSubmit'); const old=btn.textContent; btn.disabled=true; btn.textContent='Подождите…';
   try{
-    if(authMode==='register'){ await window.NearCloud.register({email,pass,role:authRole,name:document.getElementById('authName').value.trim()}); }
+    if(authMode==='register'){ const ph=(document.getElementById('authPhone')||{}).value; await window.NearCloud.register({email,pass,role:authRole,name:document.getElementById('authName').value.trim(),phone:(ph||'').trim()}); }
     else { await window.NearCloud.login({email,pass}); }
   }catch(e){
     const code=String((e&&e.code)||(e&&e.message)||'');
@@ -1047,7 +1037,9 @@ function attachCloudAuth(){
   window.NearCloud.onAuth((profile)=>{
     if(profile && profile.role){
       account.role=profile.role; account.cloud=true; cloudLinked=false;
-      if(profile.name){ settings.name=profile.name; saveSettings(); }
+      if(profile.name){ settings.name=profile.name; }
+      if(profile.phone){ settings.phone=profile.phone; }
+      if(profile.name||profile.phone){ saveSettings(); }
       buildNav(profile.role); applySettings(); startCloudSync(profile.role);
       show(profile.role==='elder'?'home':'rel_enter');
       toast('Вход выполнен ✓');
@@ -1074,6 +1066,35 @@ function saveFbConfig(){
   }catch(e){ msg.innerHTML='Не удалось прочитать конфиг: '+String(e.message||e); msg.classList.add('show'); }
 }
 let cloudPid=null, cloudRelUid=null, cloudChatUnsub=null, cloudChatMsgs=[], cloudChatId=null;
+let cloudPensList=[], activePid=null;
+function renderPensSwitcher(){
+  const el=document.getElementById('pensSwitcher'); if(!el) return;
+  const rel = account.cloud && account.role==='relative' && cloudEnabled();
+  const list = cloudPensList||[];
+  const onRelScreen = ['care','rmap','health','contact'].includes(currentScreen);
+  if(!rel || list.length<1 || !onRelScreen){ el.style.display='none'; el.innerHTML=''; return; }
+  el.style.display='flex'; el.innerHTML='';
+  const curPid = activePid || cloudPid || (list[0]&&list[0].pid);
+  list.forEach(p=>{
+    const b=document.createElement('button');
+    const on = p.pid===curPid;
+    b.textContent = p.name || 'Пожилой человек';
+    b.style.cssText='flex:0 0 auto; padding:8px 14px; border-radius:20px; font-size:15px; font-weight:700; border:2px solid '+(on?'var(--blue)':'var(--line)')+'; background:'+(on?'var(--blue)':'#fff')+'; color:'+(on?'#fff':'var(--text)')+'; cursor:pointer';
+    b.onclick=()=>switchPensioner(p.pid);
+    el.appendChild(b);
+  });
+  const add=document.createElement('button');
+  add.textContent='＋ ещё';
+  add.style.cssText='flex:0 0 auto; padding:8px 14px; border-radius:20px; font-size:15px; font-weight:700; border:2px dashed var(--line); background:#fff; color:var(--muted); cursor:pointer';
+  add.onclick=()=>show('rel_enter');
+  el.appendChild(add);
+}
+function switchPensioner(pid){
+  activePid=pid;
+  if(window.NearCloud && window.NearCloud.setActivePid) window.NearCloud.setActivePid(pid);
+  renderPensSwitcher();
+  toast('Переключено');
+}
 function startCloudSync(role){
   stopCloudSync(); if(!cloudEnabled()) return;
   if(role==='elder'){
@@ -1085,6 +1106,7 @@ function startCloudSync(role){
   } else {
     cloudLinked=false;
     try{ if('Notification'in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){}
+    if(window.NearCloud.watchPensList) window.NearCloud.watchPensList(list=>{ cloudPensList=list||[]; renderPensSwitcher(); });
     window.NearCloud.watchRecording((r)=>{ cloudRecording=r; if(currentScreen==='health') renderHealth(); });
     window.NearCloud.watchPensioner((live,pid)=>{
       cloudLive=live; cloudPid=pid; subscribeChat();
@@ -1234,13 +1256,27 @@ function setupToastSwipe(){
   t.addEventListener('touchend',()=>{ t.style.transition=''; if(dx<-55){ t.classList.remove('show'); } t.style.transform=''; t.style.opacity=''; sx=null; },{passive:true});
   t.addEventListener('click',()=>t.classList.remove('show'));
 }
+function _speakNow(text){
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text); u.lang='ru-RU'; u.rate=.95;
+    const vs=speechSynthesis.getVoices()||[];
+    const ru=vs.find(v=>/ru/i.test(v.lang));
+    if(ru) u.voice=ru;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
 function speak(text){
   try{
-    if('speechSynthesis' in window){
-      speechSynthesis.cancel();
-      const u=new SpeechSynthesisUtterance(text); u.lang='ru-RU'; u.rate=.95;
-      speechSynthesis.speak(u);
+    if(!('speechSynthesis' in window)){ toast('Озвучка не поддерживается на этом устройстве'); return; }
+    const vs=speechSynthesis.getVoices();
+    if(!vs || !vs.length){
+      // голоса ещё не загрузились — ждём события и говорим после
+      speechSynthesis.onvoiceschanged=()=>{ _speakNow(text); speechSynthesis.onvoiceschanged=null; };
+      setTimeout(()=>_speakNow(text), 250);
+      return;
     }
+    _speakNow(text);
   }catch(e){}
 }
 
@@ -1323,19 +1359,8 @@ function renderFamily(){
     });
     return;
   }
-  state.family.forEach(p=>{
-    const d=document.createElement('div'); d.className='person';
-    d.innerHTML=`
-      <div class="avatar" style="background:${p.color}">${p.name[0]}</div>
-      <div><div class="pn">${p.name}</div><div class="pr">${p.rel}</div></div>
-      <div class="callbtns">
-        <button class="rbtn call" title="Позвонить">📞</button>
-        <button class="rbtn msg" title="Сообщение">💬</button>
-      </div>`;
-    d.querySelector('.call').onclick=()=>dialNumber(p.phone, p.name);
-    d.querySelector('.msg').onclick=()=>openElderChat(p.name);
-    el.appendChild(d);
-  });
+  // Вне онлайн-режима близких нет — показываем подсказку, без выдуманных людей
+  el.innerHTML='<p style="color:var(--muted); margin:6px 2px">Пока никто из родных не подключён. Откройте «Подключение и устройства» и продиктуйте родным ваш код — как только они подключатся, они появятся здесь.</p>';
 }
 function imOk(){
   let t='',dl=''; try{ const n=new Date(); t=n.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); dl=n.toLocaleDateString('ru-RU',{day:'numeric',month:'long'}); }catch(e){}
@@ -1705,7 +1730,7 @@ function renderMemories(){
   const g=document.getElementById('albumGrid'); g.innerHTML='';
   if(!albums.length) g.innerHTML='<div style="color:var(--muted); padding:8px 2px">Пока нет альбомов. Создайте первый ниже.</div>';
   albums.forEach(a=>{
-    const cover = (a.photos&&a.photos.length) ? `<img src="${a.photos[0]}" style="width:100%;height:96px;object-fit:cover;display:block">` : `<span class="pic" style="font-size:44px; padding:22px 0 6px">${a.emoji||'📸'}</span>`;
+    const cover = `<span class="pic" style="font-size:44px; padding:22px 0 6px">${a.emoji||'📸'}</span>`;
     const d=document.createElement('div'); d.className='photo'; d.style.cursor='pointer';
     d.innerHTML=`${cover}<span class="cap"><b>${escapeHtml(a.name)}</b> · ${(a.photos||[]).length} фото</span>`;
     d.onclick=()=>openAlbum(a.id);
@@ -2091,7 +2116,7 @@ function renderConnectCloud(){
     d.innerHTML=`<div class="avatar" style="background:#8a8f96">${(p.name||'Р')[0]}</div>
       <div><div class="pn">${p.name||'Родственник'}</div><div class="pr">Ожидает вашего подтверждения</div></div>
       <div class="callbtns"><button class="rbtn call" title="Подтвердить">✓</button></div>`;
-    d.querySelector('.call').onclick=()=>{ window.NearCloud.approve(p.uid).then(()=>toast('Подключён(а): '+(p.name||''))).catch(e=>toast('Ошибка: '+cloudErr(e))); };
+    d.querySelector('.call').onclick=()=>{ window.NearCloud.approve(p.uid).then(()=>{ toast('Подключён(а): '+(p.name||'')); window.NearCloud.ensureCode().then(c=>{ cloudCode=c; if(currentScreen==='connect') renderConnect(); }).catch(()=>{}); }).catch(e=>toast('Ошибка: '+cloudErr(e))); };
     rl.appendChild(d);
   });
   const fl=document.getElementById('famConnList'); fl.innerHTML='';
@@ -2697,7 +2722,14 @@ window.addEventListener('appinstalled',()=>toast('✅ Near установлен 
         try{ await A.setPersistence(auth, A.browserLocalPersistence); }catch(e){}
 
         const uref=(uid)=>F.doc(db,'users',uid);
-        NC.register = async ({email,pass,role,name})=>{
+        NC.genUniqueCode = async ()=>{
+          for(let i=0;i<15;i++){
+            const code=String(Math.floor(100000+Math.random()*900000)); // ровно 6 цифр
+            try{ const cs=await F.getDoc(F.doc(db,'codes',code)); if(!cs.exists()) return code; }catch(e){ return code; }
+          }
+          return String((Math.floor(Math.random()*900000)+100000));
+        };
+        NC.register = async ({email,pass,role,name,phone})=>{
           let cred;
           try{ cred = await A.createUserWithEmailAndPassword(auth,email,pass); }
           catch(e){
@@ -2712,14 +2744,17 @@ window.addEventListener('appinstalled',()=>toast('✅ Near установлен 
           data.role = data.role || role;
           data.name = name || data.name || '';
           data.email = email;
-          if(data.role==='elder' && !data.code){ const code=String(Math.floor(1000+Math.random()*9000)); data.code=code; try{ await F.setDoc(F.doc(db,'codes',code),{pid:uid}); }catch(e){} }
+          if(phone) data.phone = phone;
+          if(data.role==='elder' && !data.code){ const code=await NC.genUniqueCode(); data.code=code; try{ await F.setDoc(F.doc(db,'codes',code),{pid:uid}); }catch(e){} }
           await F.setDoc(uref(uid), data, {merge:true});
+          try{ if(cred.user && !cred.user.emailVerified) await A.sendEmailVerification(cred.user); }catch(e){}
           return {uid,...data};
         };
         NC.login = ({email,pass})=> A.signInWithEmailAndPassword(auth,email,pass);
-        NC.setProfile = async (role,name)=>{
+        NC.setProfile = async (role,name,phone)=>{
           const uid=auth.currentUser.uid; const data={role,name:name||''};
-          if(role==='elder'){ const code=String(Math.floor(1000+Math.random()*9000)); data.code=code; try{ await F.setDoc(F.doc(db,'codes',code),{pid:uid}); }catch(e){} }
+          if(phone) data.phone=phone;
+          if(role==='elder'){ const code=await NC.genUniqueCode(); data.code=code; try{ await F.setDoc(F.doc(db,'codes',code),{pid:uid}); }catch(e){} }
           await F.setDoc(uref(uid),data,{merge:true});
           NC._profile={uid,...data}; NC._authCbs.forEach(cb=>cb(NC._profile));
         };
@@ -2734,13 +2769,26 @@ window.addEventListener('appinstalled',()=>toast('✅ Near установлен 
         NC.ensureCode = async ()=>{
           const uid=auth.currentUser.uid; const s=await F.getDoc(uref(uid));
           let code=s.exists()&&s.data().code;
-          if(!code){ code=String(Math.floor(1000+Math.random()*9000)); await F.setDoc(uref(uid),{code},{merge:true}); await F.setDoc(F.doc(db,'codes',code),{pid:uid}); }
+          if(!code || String(code).length!==6){ code=await NC.genUniqueCode(); await F.setDoc(uref(uid),{code},{merge:true}); await F.setDoc(F.doc(db,'codes',code),{pid:uid}); }
           return code;
         };
         NC.pushLive = async (obj)=>{ const uid=auth.currentUser&&auth.currentUser.uid; if(!uid) return; try{ await F.setDoc(F.doc(db,'pensioners',uid,'live','state'), {...obj, ts:Date.now()}, {merge:true}); }catch(e){} };
         NC.watchPending = (cb)=>{ const uid=auth.currentUser.uid; const q=F.query(F.collection(db,'pensioners',uid,'rel'), F.where('status','==','pending')); const u=F.onSnapshot(q,(snap)=>{ cb(snap.docs.map(d=>({uid:d.id,...d.data()}))); }); NC._unsub.push(u); };
         NC.watchRelatives = (cb)=>{ const uid=auth.currentUser.uid; const u=F.onSnapshot(F.collection(db,'pensioners',uid,'rel'),(snap)=>{ cb(snap.docs.map(d=>({uid:d.id,...d.data()}))); }); NC._unsub.push(u); };
-        NC.approve = async (relUid)=>{ const uid=auth.currentUser.uid; await F.setDoc(F.doc(db,'pensioners',uid,'rel',relUid),{status:'approved'},{merge:true}); await F.setDoc(F.doc(db,'rels',relUid,'pens',uid),{status:'approved'},{merge:true}); };
+        NC.approve = async (relUid)=>{
+          const uid=auth.currentUser.uid;
+          let myName=''; try{ const ps=await F.getDoc(uref(uid)); myName=(ps.exists()&&ps.data().name)||''; }catch(e){}
+          await F.setDoc(F.doc(db,'pensioners',uid,'rel',relUid),{status:'approved'},{merge:true});
+          await F.setDoc(F.doc(db,'rels',relUid,'pens',uid),{status:'approved', name:myName},{merge:true});
+          // одноразовость: гасим использованный код и выдаём новый
+          try{
+            const s=await F.getDoc(uref(uid)); const old=s.exists()&&s.data().code;
+            const nc=await NC.genUniqueCode();
+            await F.setDoc(uref(uid),{code:nc},{merge:true});
+            await F.setDoc(F.doc(db,'codes',nc),{pid:uid});
+            if(old && String(old)!==nc){ try{ await F.deleteDoc(F.doc(db,'codes',String(old))); }catch(e){} }
+          }catch(e){}
+        };
         NC.linkByCode = async (code,myName,myPhone)=>{
           const uid=auth.currentUser.uid;
           const cs=await F.getDoc(F.doc(db,'codes',String(code)));
@@ -2757,30 +2805,39 @@ window.addEventListener('appinstalled',()=>toast('✅ Near установлен 
         };
         let liveUnsub=null, recUnsub=null;
         NC.pushRecording = async (rec)=>{ const uid=auth.currentUser.uid; try{ await F.setDoc(F.doc(db,'pensioners',uid,'recordings','last'), rec); }catch(e){} };
-        NC.watchRecording = (cb)=>{
+        // --- поддержка нескольких пожилых людей у родственника ---
+        let _pensDocs=[], _activePid=null, _liveCb=null, _recCb=null, _pensCb=null, _pensStarted=false;
+        function _pickPid(){
+          const appr=_pensDocs.filter(d=>d.status==='approved');
+          if(_activePid && appr.some(d=>d.pid===_activePid)) return _activePid;
+          return appr.length? appr[0].pid : null;
+        }
+        function _rewire(){
+          const pid=_pickPid();
+          if(liveUnsub){ liveUnsub(); liveUnsub=null; }
+          if(recUnsub){ recUnsub(); recUnsub=null; }
+          if(!pid){ if(_liveCb) _liveCb(null,null); if(_recCb) _recCb(null); return; }
+          if(_liveCb) liveUnsub=F.onSnapshot(F.doc(db,'pensioners',pid,'live','state'),(s)=>{ _liveCb(s.exists()?s.data():null, pid); });
+          if(_recCb) recUnsub=F.onSnapshot(F.doc(db,'pensioners',pid,'recordings','last'),(s)=>_recCb(s.exists()?s.data():null));
+        }
+        function _ensurePensWatch(){
+          if(_pensStarted) return; _pensStarted=true;
           const uid=auth.currentUser.uid;
           const u=F.onSnapshot(F.collection(db,'rels',uid,'pens'),(snap)=>{
-            const appr=snap.docs.find(d=>d.data().status==='approved');
-            if(recUnsub){ recUnsub(); recUnsub=null; }
-            if(!appr){ cb(null); return; }
-            recUnsub=F.onSnapshot(F.doc(db,'pensioners',appr.id,'recordings','last'),(s)=>cb(s.exists()?s.data():null));
+            _pensDocs=snap.docs.map(d=>({pid:d.id, ...d.data()}));
+            if(_pensCb) _pensCb(_pensDocs.filter(d=>d.status==='approved'));
+            _rewire();
           });
           NC._unsub.push(u);
-        };
-        NC.watchPensioner = (cb)=>{
-          const uid=auth.currentUser.uid;
-          const u=F.onSnapshot(F.collection(db,'rels',uid,'pens'),(snap)=>{
-            const appr=snap.docs.find(d=>d.data().status==='approved');
-            if(liveUnsub){ liveUnsub(); liveUnsub=null; }
-            if(!appr){ cb(null,null); return; }
-            liveUnsub=F.onSnapshot(F.doc(db,'pensioners',appr.id,'live','state'),(s)=>{ cb(s.exists()?s.data():null, appr.id); });
-          });
-          NC._unsub.push(u);
-        };
+        }
+        NC.watchRecording = (cb)=>{ _recCb=cb; _ensurePensWatch(); };
+        NC.watchPensioner = (cb)=>{ _liveCb=cb; _ensurePensWatch(); };
+        NC.watchPensList = (cb)=>{ _pensCb=cb; _ensurePensWatch(); };
+        NC.setActivePid = (pid)=>{ _activePid=pid; _rewire(); };
         NC.uid = ()=> auth.currentUser && auth.currentUser.uid;
         NC.sendMessage = async (chatId,text)=>{ const uid=auth.currentUser.uid; await F.addDoc(F.collection(db,'chats',chatId,'msgs'),{from:uid,text,ts:Date.now()}); };
         NC.watchMessages = (chatId,cb)=>{ const q=F.query(F.collection(db,'chats',chatId,'msgs'), F.orderBy('ts')); const u=F.onSnapshot(q,(snap)=>cb(snap.docs.map(d=>d.data()))); NC._unsub.push(u); return u; };
-        NC.detach = ()=>{ NC._unsub.forEach(u=>{try{u();}catch(e){}}); NC._unsub=[]; if(liveUnsub){try{liveUnsub();}catch(e){} liveUnsub=null;} if(recUnsub){try{recUnsub();}catch(e){} recUnsub=null;} };
+        NC.detach = ()=>{ NC._unsub.forEach(u=>{try{u();}catch(e){}}); NC._unsub=[]; if(liveUnsub){try{liveUnsub();}catch(e){} liveUnsub=null;} if(recUnsub){try{recUnsub();}catch(e){} recUnsub=null;} _pensDocs=[]; _activePid=null; _liveCb=null; _recCb=null; _pensCb=null; _pensStarted=false; };
         NC.enabled = true; ready();
       }catch(e){ NC.error=String(e&&e.message||e); ready(); }
     })();
