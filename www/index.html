@@ -293,6 +293,113 @@
   .authinput{ width:100%; font-size:18px; padding:14px 15px; border:2px solid var(--line); border-radius:15px; box-sizing:border-box; transition:border-color .15s; }
   .authinput:focus{ outline:none; border-color:var(--blue); }
   .chip{ display:inline-block; background:#eef1fb; color:var(--blue-d); font-size:12px; font-weight:800; padding:4px 10px; border-radius:20px; letter-spacing:.3px; }
+
+  /* ===================== PREMIUM REFINEMENT ===================== */
+  :root{
+    --r-lg:22px; --r-md:16px; --r-sm:12px;
+    --sh-1:0 1px 2px rgba(38,34,75,.04), 0 4px 14px rgba(108,92,231,.07);
+    --sh-2:0 2px 6px rgba(38,34,75,.05), 0 12px 30px rgba(108,92,231,.11);
+    --gap:14px;
+  }
+  body{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+
+  /* единая сетка отступов */
+  main{ padding-left:16px; padding-right:16px; }
+  .screen > * + *{ margin-top:var(--gap); }
+  .card{ border-radius:var(--r-lg); box-shadow:var(--sh-1); border:1px solid rgba(234,232,251,.9); padding:18px; }
+  .card:has(.title){ padding-top:16px; }
+
+  /* заголовки — ровный ритм */
+  h2.title{ font-size:26px; line-height:1.25; margin:6px 2px 14px; font-weight:800; letter-spacing:-.2px; }
+  .hello{ letter-spacing:-.4px; line-height:1.2; }
+  .today{ margin-top:2px; }
+
+  /* кнопки — одна высота, один радиус, мягкий отклик */
+  .bigbtn{
+    min-height:56px; border-radius:var(--r-md); font-weight:800; font-size:18px;
+    box-shadow:var(--sh-1); border:none; letter-spacing:.1px;
+    transition:transform .12s cubic-bezier(.2,.8,.3,1), box-shadow .18s ease, filter .18s ease;
+  }
+  .bigbtn:active{ transform:translateY(1px) scale(.985); box-shadow:var(--sh-1); }
+  .bigbtn.ghost{ background:#fff; border:1.5px solid var(--line); box-shadow:none; color:var(--blue-d); }
+  .bigbtn.ghost:active{ background:#faf9ff; }
+
+  /* плитки — ровная высота и выравнивание */
+  .tile{
+    border-radius:var(--r-lg); box-shadow:var(--sh-1); border:1px solid rgba(234,232,251,.9);
+    padding:16px; gap:14px; align-items:center;
+    transition:transform .12s cubic-bezier(.2,.8,.3,1), box-shadow .18s ease;
+  }
+  .tile:active{ transform:translateY(1px) scale(.99); box-shadow:var(--sh-2); }
+  .tile .ico{ width:56px; height:56px; border-radius:var(--r-md); flex:0 0 56px; display:flex; align-items:center; justify-content:center; }
+  .tile .txt b{ font-size:19px; line-height:1.3; letter-spacing:-.1px; }
+  .tile .txt span{ font-size:15px; line-height:1.4; display:block; margin-top:2px; }
+  .tiles{ gap:12px; }
+
+  /* нижняя навигация — премиальная, со стеклом */
+  nav.tabs{
+    background:rgba(255,255,255,.92); backdrop-filter:saturate(180%) blur(14px);
+    -webkit-backdrop-filter:saturate(180%) blur(14px);
+    border-top:1px solid rgba(234,232,251,.9); box-shadow:0 -4px 20px rgba(108,92,231,.06);
+    padding-bottom:max(6px, env(safe-area-inset-bottom));
+  }
+  nav.tabs button{ font-size:12px; font-weight:700; letter-spacing:.1px; transition:color .15s ease; }
+  nav.tabs button .ni{ font-size:22px; line-height:1; margin-bottom:3px; display:block; }
+
+  /* верхняя панель */
+  header.appbar{
+    box-shadow:0 2px 16px rgba(108,92,231,.16);
+    padding-top:max(10px, env(safe-area-inset-top));
+  }
+  header.appbar .logo{ letter-spacing:.4px; font-weight:800; }
+
+  /* списки людей и метрики — ровные строки */
+  .person, .metric, .bio, .batt, .rem, .place, .music{
+    border-radius:var(--r-md); align-items:center;
+  }
+  .person{ padding:12px 4px; }
+  .person + .person{ border-top:1px solid var(--line); }
+  .avatar{ box-shadow:var(--sh-1); flex:0 0 auto; }
+  .pn{ font-size:17px; font-weight:800; letter-spacing:-.1px; }
+  .pr{ font-size:14px; color:var(--muted); margin-top:1px; }
+
+  /* поля ввода — единый стиль */
+  input, textarea, .authinput{
+    border-radius:var(--r-md); border:1.5px solid var(--line); font-size:17px;
+    transition:border-color .15s ease, box-shadow .15s ease; background:#fff;
+  }
+  input:focus, textarea:focus, .authinput:focus{
+    outline:none; border-color:var(--blue); box-shadow:0 0 0 4px rgba(108,92,231,.10);
+  }
+
+  /* мелочи */
+  .note{ font-size:14px; line-height:1.5; color:var(--muted); margin:12px 2px 0; }
+  .banner{ border-radius:var(--r-md); line-height:1.5; }
+  .brandbadge{ box-shadow:0 14px 34px rgba(108,92,231,.30); }
+  .grid{ gap:10px; }
+  .mcard{ border-radius:var(--r-md); box-shadow:var(--sh-1); transition:transform .1s ease; }
+  .mcard:active{ transform:scale(.97); }
+
+  /* карточка шагов — одна ровная строка */
+  #liveCard > div:first-child{ gap:12px; }
+  #liveCard #liveStepsVal{ font-size:30px; font-weight:800; letter-spacing:-.5px; }
+  #liveCard > div:first-child > div:nth-child(2){ font-size:15px; line-height:1.25; }
+  #liveCard #liveBattIco{ font-size:16px; white-space:nowrap; }
+  #liveHint{ font-size:14px; line-height:1.45; }
+
+  /* карточка геолокации — заголовок в одну строку */
+  #geoShareCard b{ font-size:17px; letter-spacing:-.1px; }
+  #geoShareHint{ font-size:13.5px; line-height:1.4; margin-top:2px; }
+  #sosCard .note, #sosBody p{ font-size:14px; line-height:1.45; }
+
+  /* заголовок приветствия — компактнее */
+  .hello{ font-size:27px; }
+  .today{ font-size:15px; }
+
+  /* плавное появление экрана */
+  .screen.active{ animation:fadeUp .26s cubic-bezier(.2,.8,.3,1); }
+  @keyframes fadeUp{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:none;} }
+  @media (prefers-reduced-motion: reduce){ .screen.active{ animation:none; } }
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(18,184,134,.5);}70%{box-shadow:0 0 0 8px rgba(18,184,134,0);}100%{box-shadow:0 0 0 0 rgba(18,184,134,0);}}
   /* modern hairline on cards/tiles */
   .card, .tile{ border:1px solid rgba(230,233,242,.9); }
@@ -334,11 +441,117 @@
 </style>
 </head>
 <body>
+<script>
+/* ===================== ЯЗЫКИ ===================== */
+const I18N={"en":{"Главная":"Home","Дела":"Tasks","Близкие":"Family","Фото":"Photos","Обзор":"Overview","Карта":"Map","Здоровье":"Health","Связь":"Contact","Настройки":"Settings","Личный кабинет":"My account","Отмена":"Cancel","Сохранить":"Save","Удалить":"Delete","Подтвердить":"Confirm","Отправить":"Send","Обновить":"Refresh","Проверить":"Check","Подождите…":"Please wait…","Ошибка:":"Error:","Сегодня":"Today","Вчера":"Yesterday","Сейчас":"Now","Раньше":"Before","Имя":"Name","Почта":"Email","Телефон":"Phone","Сообщение":"Message","Чат":"Chat","Переписка":"Messages","из":"of","из 100":"of 100","выполнено":"done","выполнено ✓":"done ✓","Пн":"Mon","Вт":"Tue","Ср":"Wed","Чт":"Thu","Пт":"Fri","Сб":"Sat","Вс":"Sun","Вход":"Sign in","Войти":"Sign in","Регистрация":"Sign up","Зарегистрироваться":"Create account","Выйти из аккаунта":"Sign out","Вы вышли из аккаунта":"You have signed out","Вход выполнен ✓":"Signed in ✓","Кто вы?":"Who are you?","Пользователь":"User","Близкий":"Family member","Ваше имя":"Your name","Ваш пароль":"Your password","Ваш номер телефона":"Your phone number","Забыли пароль?":"Forgot password?","Нет аккаунта? Зарегистрироваться →":"No account? Sign up →","Уже есть аккаунт? Войти →":"Already have an account? Sign in →","Введите почту и пароль":"Enter your email and password","Введите пароль":"Enter your password","Введите имя":"Enter your name","Введите ваше имя":"Enter your name","Пароль минимум 6 знаков":"Password must be at least 6 characters","Введите номер телефона — по нему с вами будут связываться близкие":"Enter a phone number — your family will use it to reach you","Завершение регистрации":"Finish signing up","Завершить":"Finish","Почти готово — выберите, кто вы, укажите имя и нажмите «Завершить».":"Almost done — choose who you are, enter your name and tap Finish.","Пользователь и близкий входят каждый со своего устройства и видят данные друг друга.":"The older person and the relative each sign in on their own device and see each other's information.","Зарегистрируйтесь или войдите — вы с близким увидите данные друг друга на разных телефонах.":"Sign up or sign in — you and your loved one will see each other's data on separate phones.","Вы вошли:":"Signed in as:","Открыть приложение":"Open the app","аккаунт не найден":"account not found","Неверный пароль. Попробуйте ещё раз.":"Wrong password. Please try again.","Нет связи с сервером. Проверьте интернет и обновите приложение.":"No connection to the server. Check your internet and refresh.","Письмо для сброса пароля отправлено на":"Password reset email sent to","Впишите почту, затем нажмите «Забыли пароль?»":"Enter your email, then tap Forgot password.",". Проверьте почту.":". Check your inbox.","Здравствуйте,":"Hello,","шагов сегодня":"steps today","Подключите фитнес-браслет или часы. Если их нет — данные возьмём с телефона.":"Connect a fitness tracker or watch. If you don't have one, we'll use the phone.","Подключить браслет или часы":"Connect tracker or watch","Мне нужна помощь":"I need help","Нажмите — родным придёт срочный сигнал, и телефон позвонит близкому.":"Tap it — your family gets an urgent alert and the phone calls them.","Поделиться местоположением":"Share my location","Выключено — родные не видят, где вы":"Off — your family cannot see where you are","Включаю… родные скоро увидят ваше местоположение":"Turning on… your family will see your location shortly","Включить":"Turn on","Выключить":"Turn off","Со мной всё хорошо":"I'm OK","Нажмите зелёную кнопку — родные получат весточку, что у вас всё в порядке.":"Tap the green button — your family will know you're fine.","Спасибо! Родные получили сообщение, что у вас всё хорошо.":"Thank you! Your family has been told you're fine.","Ежедневная тренировка":"Daily training","Четыре задания подряд, 3–5 минут":"Four exercises in a row, 3–5 minutes","Четыре задания подряд, последнее — рассказ о дне. Можно пройти и по отдельности.":"Four exercises in a row, ending with a story about your day. You can also do them one at a time.","Напоминания":"Reminders","Задачи на день":"Today's tasks","Позвонить близким":"Call family","Родные всегда рядом":"Family is always close","Подключение и устройства":"Connection & devices","Код для родных и фитнес-браслет":"Family code and fitness tracker","Имя, размер шрифта, близкие":"Name, text size, family","Вопрос дня":"Question of the day","Расскажите, как прошёл ваш день":"Tell us about your day","Расскажите, как прошёл ваш день?":"How was your day?","Нажмите и расскажите":"Tap and start talking","Говорите свободно, одну-две минуты. Можно про погоду, еду, звонки, настроение.":"Speak freely for a minute or two — about the weather, meals, calls, your mood.","Спасибо! Ваш рассказ сохранён.":"Thank you! Your story has been saved.","Спасибо за рассказ! Всё сохранено.":"Thank you for sharing! Everything is saved.","Найди пары":"Find the pairs","Откройте одинаковые карточки":"Turn over matching cards","Найдите одинаковые пары. Нажимайте на карточки.":"Find the matching pairs. Tap the cards.","Ходы:":"Moves:","Пары:":"Pairs:","Отлично! Вы нашли все пары. Прекрасная работа!":"Excellent! You found every pair. Great work!","Числа по порядку":"Numbers in order","Нажимайте 1, 2, 3… на скорость":"Tap 1, 2, 3… as fast as you can","Нажимайте числа по порядку: сначала 1, потом 2, и так далее. Как можно быстрее!":"Tap the numbers in order: first 1, then 2, and so on. As fast as you can!","Время:":"Time:","Найдено:":"Found:","Что было на картинке":"What was in the picture","Запомните предметы, потом выберите их":"Memorise the objects, then pick them out","Запомните предметы. Через несколько секунд они исчезнут — выберите те, что были.":"Memorise the objects. In a few seconds they disappear — then choose the ones you saw.","Запомните эти предметы…":"Memorise these objects…","Предметы спрятаны. Какие из них были на картинке? Можно выбрать несколько.":"The objects are hidden. Which ones were in the picture? You can choose several.","Какие предметы были на картинке?":"Which objects were in the picture?","Всё верно! Прекрасная память.":"All correct! Wonderful memory.","Начинаем тренировку. Первое упражнение.":"Let's begin. First exercise.","Упражнение":"Exercise","Тренировка завершена. Спасибо!":"Training complete. Thank you!","Итог тренировки":"Training result","Память":"Memory","Внимание":"Attention","Зрительная память":"Visual memory","Речь":"Speech","Добавить напоминание":"Add a reminder","Например: выпить воду":"For example: drink water","Введите текст напоминания":"Enter the reminder text","Напоминание добавлено ✓":"Reminder added ✓","Напоминание удалено":"Reminder deleted","Напоминание:":"Reminder:","Отмечено ✓":"Done ✓","Все дела выполнены 🎉":"All tasks done 🎉","Пока нет напоминаний. Добавьте первое ниже.":"No reminders yet. Add your first one below.","Кнопка 🔊 проговорит напоминание вслух. Отметьте ✓, когда выполнили. Крестик — удалить.":"The 🔊 button reads the reminder aloud. Tap ✓ when done, ✕ to delete.","Прочитать вслух":"Read aloud","Мои близкие":"My family","Позвонить":"Call","Видео":"Video","Написать сообщение…":"Write a message…","Написать:":"Write to:","Начните переписку — напишите первое сообщение.":"Start the conversation — write the first message.","Сообщений пока нет. Напишите первое.":"No messages yet. Write the first one.","Пока нет входящих сообщений":"No incoming messages yet","Напишите родному человеку. Кнопка 🔊 прочитает последнее сообщение вслух.":"Write to your loved one. The 🔊 button reads the last message aloud.","Зелёная кнопка — позвонить, синяя — открыть переписку.":"Green button calls, blue opens the chat.","Пока никто из родных не подключён. Откройте «Подключение и устройства» и продиктуйте родным ваш код — как только они подключатся, они появятся здесь.":"No family members are connected yet. Open Connection & devices and read your code to them — once they connect, they will appear here.","Пока никто из родных не подключён. Продиктуйте им ваш код из раздела «Подключение и устройства».":"No family members are connected yet. Give them your code from Connection & devices.","Номер не указан — добавьте его в настройках":"No phone number — add it in your account","Сначала подключитесь к близкому":"Connect with your loved one first","Код для подключения родных":"Code for connecting family","Продиктуйте этот код близкому. Действует один раз.":"Read this code to your relative. It works once.","Заявки на подключение":"Connection requests","Пока нет новых заявок.":"No new requests.","Подключённые близкие":"Connected relatives","Пока никто не подключён.":"Nobody is connected yet.","Ожидает вашего подтверждения":"Waiting for your approval","Добавить по коду":"Add by code","Введите код":"Enter the code","Код не найден":"Code not found","Заявка отправлена":"Request sent","Попросите пользователя открыть в его приложении «Подключение и устройства» и продиктовать вам код. Введите код ниже.":"Ask the older person to open Connection & devices in their app and read you the code. Enter it below.","После ввода кода заявку подтверждает сам пользователь. Как только он подтвердит — здесь появятся его данные.":"After you enter the code, the older person approves the request. Once approved, their information appears here.","Пользователь подключён ✓":"Connected to the older person ✓","Переключено":"Switched","Браслет отключён":"Tracker disconnected","Браслет не найден — считаем шаги, активность и заряд с телефона.":"No tracker found — steps, activity and battery come from the phone.","Подключено к браслету / часам через Apple Health / Health Connect. Данные обновляются автоматически.":"Connected to your tracker or watch via Apple Health / Health Connect. Data updates automatically.","Источник данных":"Data source","Датчики включены. Носите телефон с собой — шаги считаются автоматически.":"Sensors are on. Carry the phone with you — steps are counted automatically.","Нет доступа к датчику движения":"No access to the motion sensor","Запрашиваю геопозицию…":"Requesting your location…","Геопозиция:":"Location:","Геолокация недоступна на этом устройстве":"Location is not available on this device","Карта загружается… для неё нужен интернет.":"Loading the map… it needs an internet connection.","Текущая точка":"Current position","Привычные маршруты":"Usual routes","Пока нет мест. Добавьте первое.":"No places yet. Add the first one.","Место удалено":"Place deleted","Впишите название места":"Enter a name for the place","Дом, Рынок, Аптека…":"Home, Market, Pharmacy…","Подвиньте карту так, чтобы нужное место было под прицелом ⊕, впишите название и нажмите «На карту».":"Move the map so the place sits under the ⊕ marker, type a name and tap Add to map.","Сигнал о помощи отправлен родным.":"Your help signal has been sent to your family.","Отменить тревогу":"Cancel the alert","Тревога отменена":"Alert cancelled","Мои альбомы":"My albums","Мои фото":"My photos","Новый альбом":"New album","Альбом":"Album","Альбом удалён":"Album deleted","Удалить альбом":"Delete album","Название альбома":"Album name","Настройки альбома":"Album settings","Сохранить название и значок":"Save name and icon","Впишите название альбома":"Enter an album name","Фото добавлено ✓":"Photo added ✓","Фото удалено":"Photo deleted","В альбоме пока нет фото. Добавьте первое.":"This album has no photos yet. Add the first one.","Пока нет альбомов. Создайте первый ниже.":"No albums yet. Create the first one below.","Знакомые фотографии помогают памяти и настроению. Создавайте альбомы и добавляйте в них снимки.":"Familiar photographs help memory and mood. Create albums and add pictures to them.","По этому номеру вам будут звонить близкие.":"Your family will call you on this number.","Сохранено ✓":"Saved ✓","Укажите, пожалуйста, номер телефона":"Please add your phone number","Имя и телефон меняются в личном кабинете — нажмите значок 👤 вверху справа.":"Name and phone are changed in My account — tap the 👤 icon at the top right.","Открыть личный кабинет":"Open my account","Удаление аккаунта":"Delete account","Удалить мой аккаунт и данные":"Delete my account and data","Да, удалить навсегда":"Yes, delete permanently","Введите пароль, чтобы подтвердить":"Enter your password to confirm","Удаляю данные…":"Deleting your data…","Аккаунт и данные удалены":"Account and data deleted","Не удалось удалить:":"Could not delete:","Будут навсегда удалены: ваш профиль, связи с близкими, переписка, записи голоса и данные о местоположении и здоровье. Это действие нельзя отменить.":"This permanently deletes your profile, family connections, messages, voice recordings, location and health data. It cannot be undone.","Удаление доступно для аккаунта онлайн-режима. Локальные данные можно стереть в Настройках → «Сбросить все данные».":"Deletion applies to your online account. Local data can be cleared in Settings → Reset all data.","Размер шрифта":"Text size","Сбросить все данные":"Reset all data","Данные сброшены. Перезапустите приложение.":"Data has been reset. Please restart the app.","Настройки и данные сохраняются на этом устройстве и остаются после закрытия приложения.":"Settings and data are stored on this device and stay after you close the app.","Активность в сравнении с собой раньше":"Activity compared with before","100 — обычная норма человека. Меньше — реже, чем раньше.":"100 is this person's usual level. Lower means less often than before.","Актив.":"Activity","Сон":"Sleep","Общение":"Contact","Эта неделя":"This week","Показатели за неделю":"This week's figures","Показатель":"Measure","Шаги по дням":"Steps by day","Активность сегодня":"Activity today","Активность и связь":"Activity and contact","Выполнено заданий":"Exercises completed","Последнее задание":"Last exercise","Скорость в игре «Числа»":"Speed in the Numbers game","Записи «Вопроса дня».":"Question of the day recordings.","Нажмите ▶, чтобы послушать":"Tap ▶ to listen","аудио ещё загружается…":"audio is still uploading…","Не удалось воспроизвести":"Could not play the recording","Данных о сне нет — нужен фитнес-браслет или программа «Здоровье».":"No sleep data — a fitness tracker or the Health app is needed.","Данных об активности нет.":"No activity data.","Сравнение с личной нормой появится, когда накопятся данные.":"A comparison with their usual level will appear once there is enough data.","Пока нет данных от":"No data yet from","Средняя продолжительность сна за неделю:":"Average sleep this week:","Сон стабильный.":"Sleep is stable.","Год назад → сейчас":"A year ago → now","Наши принципы":"Our principles","Что собирает приложение":"What the app collects","👀 Панель для семьи и врача":"👀 Family & doctor dashboard","🗺️ Где сейчас":"🗺️ Where they are now","💗 Здоровье:":"💗 Health:","💬 Связь:":"💬 Contact:","👨‍👧 Добавить близкого":"👨‍👧 Add an older person","🔒 Данные и согласие":"🔒 Data and consent","🧠 Нейро-статистика":"🧠 Cognitive summary","🔋 Заряд устройств":"🔋 Device battery","📌 Мои места":"📌 My places","⏰ Напоминания на сегодня":"⏰ Today's reminders","⌚ Фитнес-браслет и часы":"⌚ Fitness tracker and watch","🎙️ Аудио-ответы на «Вопрос дня»":"🎙️ Question of the day recordings","😴 Сон и бодрствование":"😴 Sleep and wakefulness","🚶 Активность за неделю":"🚶 Activity this week","📷 Воспоминания":"📷 Memories","▶ Играть":"▶ Play","▶ Пройти всю тренировку":"▶ Do the whole training","↻ Начать заново":"↻ Start again","↻ Обновить код":"↻ New code","📍 Вести по GPS в реальном времени":"📍 Track by GPS in real time","🔊 Прочитать последнее вслух":"🔊 Read the last one aloud","🔍 Найти браслет":"🔍 Find a tracker","📄 Сформировать отчёт для врача":"📄 Create a report for the doctor","⬇️ Установить приложение на телефон":"⬇️ Install the app on your phone","＋ Добавить":"＋ Add","＋ Создать":"＋ Create","＋ На карту":"＋ Add to map","＋ Добавить фото":"＋ Add photo","＋ Подключиться к другому близкому по коду":"＋ Connect to another loved one by code","🎉 Тренировка завершена!":"🎉 Training complete!","🎉 Отлично! Вы нашли все пары!":"🎉 Excellent! You found every pair!","Активность (шаги)":"Activity (steps)","Активность и шаги":"Activity and steps","Геопозиция и маршруты":"Location and routes","Заряд браслета и телефона":"Tracker and phone battery","Звонки близким":"Calls to family","Использование приложений":"App usage","Набор текста в телефоне":"Typing on the phone","Паузы в речи":"Pauses in speech","Повторы слов":"Repeated words","Приём лекарств":"Taking medication","Прогулки на улице":"Walks outdoors","Результаты мини-игр":"Mini-game results","Скорость реакции (игры)":"Reaction speed (games)","Скорость набора и исправления":"Typing speed and corrections","Словарный запас":"Vocabulary","Связность рассказа":"Coherence of the story","Сон и режим дня":"Sleep and daily rhythm","Речь («Вопрос дня»)":"Speech (Question of the day)","Речь в «Вопросе дня»":"Speech in the Question of the day","Часы сна за неделю (с фитнес-браслета)":"Hours of sleep this week (from the tracker)","Фитнес-браслет":"Fitness tracker","Семья":"Family","Лекар.":"Meds","В среднем":"On average","Раньше:":"Before:","Сейчас:":"Now:","Осталось дел:":"Tasks left:","Срок — сегодня":"Due today","сек":"sec","из 6":"of 6","отключить":"turn off","сейчас здесь":"here right now","обновлено 2 минуты назад":"updated 2 minutes ago","Браслет не подключён — данные приблизительные":"No tracker connected — figures are approximate","Ночей с коротким/прерывистым сном: 2 ⚠":"Nights with short or broken sleep: 2 ⚠","Пользователь сможет вам позвонить. Можно менять в любой момент.":"The older person will be able to call you. You can change it at any time.","Приложение подключается к Apple Health (iPhone) и Health Connect (Android) и читает данные с":"The app connects to Apple Health (iPhone) and Health Connect (Android) and reads data from","и большинства браслетов (Fitbit, Garmin, Samsung, Xiaomi и др.): шаги, сон, пульс, активность. Если браслета нет — данные берутся с телефона.":"and most trackers (Fitbit, Garmin, Samsung, Xiaomi and others): steps, sleep, heart rate, activity. Without a tracker, data comes from the phone.","Так работает защита от мошенников: чужой человек не подключится без кода пенсионера и подтверждения, а новых близких одобряет ещё и первый (главный) близкий.":"This is how fraud protection works: a stranger cannot connect without the older person's code and approval, and new relatives are also approved by the first (main) relative.","Это не проверка. Приложение не ставит диагноз. Оно бережно сравнивает ваш рассказ с прошлыми — как меняется речь со временем — и делится этим только с теми, кому вы разрешили.":"This is not a test. The app gives no diagnosis. It gently compares your story with earlier ones — how speech changes over time — and shares that only with people you have allowed.","Это демонстрация экрана согласия. В реальном приложении каждый пункт — отдельный переключатель, а согласие можно отозвать.":"This is a demonstration of the consent screen. In the real app each item is a separate switch and consent can be withdrawn.","✔️ Данные хранятся защищённо, в ЕС (GDPR).":"✔️ Data is stored securely, within the EU (GDPR).","не ставим диагноз":"do not give a diagnosis","и не заменяем врача.":"and do not replace a doctor.",", а не с другими.":", not with other people.","только с ним самим":"only with themselves","только по вашему согласию":"only with your consent","любой источник данных в любой момент.":"any data source at any time.","в сутки.":"per day.","ночь и утро":"night and morning","Язык · Language":"Language","🧩 Тренировка недели":"🧩 Weekly training","Тренировка недели":"Weekly training","Шесть коротких заданий раз в неделю. Между заданиями — небольшой отдых.":"Six short exercises once a week, with a short rest in between.","▶ Пройти тренировку недели":"▶ Start the weekly training","▶ Пройти ещё раз":"▶ Do it again","✅ Тренировка на этой неделе выполнена":"✅ This week's training is done","Задания ниже можно повторить в любой момент — на результат недели это не влияет.":"You can repeat the exercises below at any time — it does not affect the weekly result.","Готовимся начать":"Getting ready","Небольшой отдых":"A short rest","Задание":"Exercise","💭 Запомните слова":"💭 Remember the words","Запомните слова":"Remember the words","Запомните слова. Через несколько секунд они исчезнут.":"Memorise the words. They will disappear in a few seconds.","Слова спрятаны. Выберите те, которые вы видели.":"The words are hidden. Choose the ones you saw.","Какие слова вы видели?":"Which words did you see?","🎯 Выполните по порядку":"🎯 Do it in order","Выполните по порядку":"Do it in order","Планирование":"Planning","Выполнено:":"Completed:","🎉 Всё верно, по порядку!":"🎉 All correct, in the right order!","📅 Месяц и время":"📅 Month and time","Месяц и время":"Month and time","Ориентация":"Orientation","Какой сейчас месяц?":"Which month is it now?","🎉 Всё верно!":"🎉 All correct!","🙂 Найдите лицо":"🙂 Find the face","Найдите лицо":"Find the face","Эмоции":"Emotions","Распознавание эмоций":"Emotion recognition","Вопрос":"Question","радость":"joy","грусть":"sadness","злость":"anger","удивление":"surprise","испуг":"fear","спокойствие":"calm","Тревога отправлена близким":"Alert sent to your family","просит помощи":"needs help","Сигнал отправлен родным":"Alert sent to your family","Заряд устройств пока неизвестен":"Battery level not known yet","Заряд устройства пока неизвестен":"Battery level not known yet","шагов":"steps","💗 Здоровье":"💗 Health","💬 Связь":"💬 Contact","📍 Геолокация не подключена":"📍 Location not connected","Данных о геолокации нет.":"No location data yet.","Попросите":"Ask","включить геолокацию в приложении (Главная → «Поделиться местоположением»).":"to turn on location sharing in the app (Home → Share my location).","Чтобы видеть сон, пульс и активность, подключите фитнес-браслет или программу «Здоровье» (Apple Health / Health Connect).":"To see sleep, heart rate and activity, connect a fitness tracker or the Health app (Apple Health / Health Connect).","ещё не выполнял(а) упражнения.":"has not done any exercises yet.","ещё не записывал(а) аудио-ответы.":"has not recorded any voice answers yet.","Написать":"Write to","близкий":"family member","близкого":"your family member","Тренировки ещё не выполнялись — данных нет.":"No training sessions yet — no data.","2 дня назад":"2 days ago","3 дня назад":"3 days ago","Дом":"Home","Парк":"Park","Магазин у дома":"Local shop","Маршрут за вчера":"Yesterday's route"},"cs":{"Главная":"Domů","Дела":"Úkoly","Близкие":"Blízcí","Фото":"Fotky","Обзор":"Přehled","Карта":"Mapa","Здоровье":"Zdraví","Связь":"Kontakt","Настройки":"Nastavení","Личный кабинет":"Můj účet","Отмена":"Zrušit","Сохранить":"Uložit","Удалить":"Smazat","Подтвердить":"Potvrdit","Отправить":"Odeslat","Обновить":"Obnovit","Проверить":"Zkontrolovat","Подождите…":"Čekejte prosím…","Ошибка:":"Chyba:","Сегодня":"Dnes","Вчера":"Včera","Сейчас":"Nyní","Раньше":"Dříve","Имя":"Jméno","Почта":"E-mail","Телефон":"Telefon","Сообщение":"Zpráva","Чат":"Chat","Переписка":"Zprávy","из":"z","из 100":"ze 100","выполнено":"hotovo","выполнено ✓":"hotovo ✓","Пн":"Po","Вт":"Út","Ср":"St","Чт":"Čt","Пт":"Pá","Сб":"So","Вс":"Ne","Вход":"Přihlášení","Войти":"Přihlásit se","Регистрация":"Registrace","Зарегистрироваться":"Vytvořit účet","Выйти из аккаунта":"Odhlásit se","Вы вышли из аккаунта":"Byli jste odhlášeni","Вход выполнен ✓":"Přihlášeno ✓","Кто вы?":"Kdo jste?","Пользователь":"Uživatel","Близкий":"Blízký","Ваше имя":"Vaše jméno","Ваш пароль":"Vaše heslo","Ваш номер телефона":"Vaše telefonní číslo","Забыли пароль?":"Zapomněli jste heslo?","Нет аккаунта? Зарегистрироваться →":"Nemáte účet? Zaregistrovat se →","Уже есть аккаунт? Войти →":"Máte už účet? Přihlásit se →","Введите почту и пароль":"Zadejte e-mail a heslo","Введите пароль":"Zadejte heslo","Введите имя":"Zadejte jméno","Введите ваше имя":"Zadejte své jméno","Пароль минимум 6 знаков":"Heslo musí mít alespoň 6 znaků","Введите номер телефона — по нему с вами будут связываться близкие":"Zadejte telefonní číslo — blízcí vás na něm budou kontaktovat","Завершение регистрации":"Dokončení registrace","Завершить":"Dokončit","Почти готово — выберите, кто вы, укажите имя и нажмите «Завершить».":"Téměř hotovo — vyberte, kdo jste, zadejte jméno a klepněte na Dokončit.","Пользователь и близкий входят каждый со своего устройства и видят данные друг друга.":"Starší člověk i příbuzný se přihlásí každý na svém zařízení a vidí navzájem své údaje.","Зарегистрируйтесь или войдите — вы с близким увидите данные друг друга на разных телефонах.":"Zaregistrujte se nebo přihlaste — vy i váš blízký uvidíte data toho druhého na různých telefonech.","Вы вошли:":"Přihlášen(a):","Открыть приложение":"Otevřít aplikaci","аккаунт не найден":"účet nenalezen","Неверный пароль. Попробуйте ещё раз.":"Nesprávné heslo. Zkuste to znovu.","Нет связи с сервером. Проверьте интернет и обновите приложение.":"Bez připojení k serveru. Zkontrolujte internet a obnovte.","Письмо для сброса пароля отправлено на":"E-mail pro obnovení hesla odeslán na","Впишите почту, затем нажмите «Забыли пароль?»":"Zadejte e-mail a klepněte na Zapomněli jste heslo.",". Проверьте почту.":". Zkontrolujte poštu.","Здравствуйте,":"Dobrý den,","шагов сегодня":"kroků dnes","Подключите фитнес-браслет или часы. Если их нет — данные возьмём с телефона.":"Připojte fitness náramek nebo hodinky. Pokud je nemáte, použijeme telefon.","Подключить браслет или часы":"Připojit náramek nebo hodinky","Мне нужна помощь":"Potřebuji pomoc","Нажмите — родным придёт срочный сигнал, и телефон позвонит близкому.":"Klepněte — blízcí dostanou naléhavý signál a telefon jim zavolá.","Поделиться местоположением":"Sdílet polohu","Выключено — родные не видят, где вы":"Vypnuto — blízcí nevidí, kde jste","Включаю… родные скоро увидят ваше местоположение":"Zapínám… blízcí brzy uvidí vaši polohu","Включить":"Zapnout","Выключить":"Vypnout","Со мной всё хорошо":"Jsem v pořádku","Нажмите зелёную кнопку — родные получат весточку, что у вас всё в порядке.":"Klepněte na zelené tlačítko — blízcí se dozvědí, že jste v pořádku.","Спасибо! Родные получили сообщение, что у вас всё хорошо.":"Děkujeme! Blízcí dostali zprávu, že jste v pořádku.","Ежедневная тренировка":"Denní trénink","Четыре задания подряд, 3–5 минут":"Čtyři cvičení za sebou, 3–5 minut","Четыре задания подряд, последнее — рассказ о дне. Можно пройти и по отдельности.":"Čtyři cvičení za sebou, poslední je vyprávění o dni. Můžete je projít i jednotlivě.","Напоминания":"Připomínky","Задачи на день":"Úkoly na dnes","Позвонить близким":"Zavolat blízkým","Родные всегда рядом":"Blízcí jsou vždy nablízku","Подключение и устройства":"Připojení a zařízení","Код для родных и фитнес-браслет":"Kód pro blízké a fitness náramek","Имя, размер шрифта, близкие":"Jméno, velikost písma, blízcí","Вопрос дня":"Otázka dne","Расскажите, как прошёл ваш день":"Povězte, jaký byl váš den","Расскажите, как прошёл ваш день?":"Jaký byl váš den?","Нажмите и расскажите":"Klepněte a mluvte","Говорите свободно, одну-две минуты. Можно про погоду, еду, звонки, настроение.":"Mluvte volně minutu až dvě — o počasí, jídle, hovorech, náladě.","Спасибо! Ваш рассказ сохранён.":"Děkujeme! Vaše vyprávění bylo uloženo.","Спасибо за рассказ! Всё сохранено.":"Děkujeme za vyprávění! Vše je uloženo.","Найди пары":"Najdi dvojice","Откройте одинаковые карточки":"Otočte stejné karty","Найдите одинаковые пары. Нажимайте на карточки.":"Najděte stejné dvojice. Klepejte na karty.","Ходы:":"Tahy:","Пары:":"Dvojice:","Отлично! Вы нашли все пары. Прекрасная работа!":"Výborně! Našli jste všechny dvojice. Skvělá práce!","Числа по порядку":"Čísla po pořádku","Нажимайте 1, 2, 3… на скорость":"Klepejte 1, 2, 3… na rychlost","Нажимайте числа по порядку: сначала 1, потом 2, и так далее. Как можно быстрее!":"Klepejte na čísla po pořádku: nejprve 1, pak 2 a tak dál. Co nejrychleji!","Время:":"Čas:","Найдено:":"Nalezeno:","Что было на картинке":"Co bylo na obrázku","Запомните предметы, потом выберите их":"Zapamatujte si předměty, pak je vyberte","Запомните предметы. Через несколько секунд они исчезнут — выберите те, что были.":"Zapamatujte si předměty. Za pár vteřin zmizí — pak vyberte ty, které tam byly.","Запомните эти предметы…":"Zapamatujte si tyto předměty…","Предметы спрятаны. Какие из них были на картинке? Можно выбрать несколько.":"Předměty jsou skryté. Které z nich byly na obrázku? Můžete vybrat několik.","Какие предметы были на картинке?":"Které předměty byly na obrázku?","Всё верно! Прекрасная память.":"Vše správně! Skvělá paměť.","Начинаем тренировку. Первое упражнение.":"Začínáme. První cvičení.","Упражнение":"Cvičení","Тренировка завершена. Спасибо!":"Trénink dokončen. Děkujeme!","Итог тренировки":"Výsledek tréninku","Память":"Paměť","Внимание":"Pozornost","Зрительная память":"Zraková paměť","Речь":"Řeč","Добавить напоминание":"Přidat připomínku","Например: выпить воду":"Například: napít se vody","Введите текст напоминания":"Zadejte text připomínky","Напоминание добавлено ✓":"Připomínka přidána ✓","Напоминание удалено":"Připomínka smazána","Напоминание:":"Připomínka:","Отмечено ✓":"Splněno ✓","Все дела выполнены 🎉":"Všechny úkoly hotové 🎉","Пока нет напоминаний. Добавьте первое ниже.":"Zatím žádné připomínky. Přidejte první níže.","Кнопка 🔊 проговорит напоминание вслух. Отметьте ✓, когда выполнили. Крестик — удалить.":"Tlačítko 🔊 přečte připomínku nahlas. Klepněte na ✓, když je hotovo, ✕ smaže.","Прочитать вслух":"Přečíst nahlas","Мои близкие":"Moji blízcí","Позвонить":"Zavolat","Видео":"Video","Написать сообщение…":"Napsat zprávu…","Написать:":"Napsat:","Начните переписку — напишите первое сообщение.":"Začněte konverzaci — napište první zprávu.","Сообщений пока нет. Напишите первое.":"Zatím žádné zprávy. Napište první.","Пока нет входящих сообщений":"Zatím žádné příchozí zprávy","Напишите родному человеку. Кнопка 🔊 прочитает последнее сообщение вслух.":"Napište svému blízkému. Tlačítko 🔊 přečte poslední zprávu nahlas.","Зелёная кнопка — позвонить, синяя — открыть переписку.":"Zelené tlačítko volá, modré otevře chat.","Пока никто из родных не подключён. Откройте «Подключение и устройства» и продиктуйте родным ваш код — как только они подключатся, они появятся здесь.":"Zatím není připojen nikdo z blízkých. Otevřete Připojení a zařízení a nadiktujte jim svůj kód — jakmile se připojí, objeví se zde.","Пока никто из родных не подключён. Продиктуйте им ваш код из раздела «Подключение и устройства».":"Zatím není připojen nikdo z blízkých. Dejte jim svůj kód z části Připojení a zařízení.","Номер не указан — добавьте его в настройках":"Chybí telefonní číslo — doplňte ho v účtu","Сначала подключитесь к близкому":"Nejprve se propojte se svým blízkým","Код для подключения родных":"Kód pro připojení blízkých","Продиктуйте этот код близкому. Действует один раз.":"Nadiktujte tento kód příbuznému. Platí jednorázově.","Заявки на подключение":"Žádosti o připojení","Пока нет новых заявок.":"Žádné nové žádosti.","Подключённые близкие":"Připojení příbuzní","Пока никто не подключён.":"Zatím není nikdo připojen.","Ожидает вашего подтверждения":"Čeká na vaše potvrzení","Добавить по коду":"Přidat pomocí kódu","Введите код":"Zadejte kód","Код не найден":"Kód nenalezen","Заявка отправлена":"Žádost odeslána","Попросите пользователя открыть в его приложении «Подключение и устройства» и продиктовать вам код. Введите код ниже.":"Požádejte staršího člověka, aby ve své aplikaci otevřel Připojení a zařízení a nadiktoval vám kód. Zadejte ho níže.","После ввода кода заявку подтверждает сам пользователь. Как только он подтвердит — здесь появятся его данные.":"Po zadání kódu žádost potvrdí sám starší člověk. Jakmile potvrdí, objeví se zde jeho údaje.","Пользователь подключён ✓":"Připojeno ke staršímu člověku ✓","Переключено":"Přepnuto","Браслет отключён":"Náramek odpojen","Браслет не найден — считаем шаги, активность и заряд с телефона.":"Náramek nenalezen — kroky, aktivita a baterie se berou z telefonu.","Подключено к браслету / часам через Apple Health / Health Connect. Данные обновляются автоматически.":"Připojeno k náramku nebo hodinkám přes Apple Health / Health Connect. Data se aktualizují automaticky.","Источник данных":"Zdroj dat","Датчики включены. Носите телефон с собой — шаги считаются автоматически.":"Senzory jsou zapnuté. Noste telefon s sebou — kroky se počítají automaticky.","Нет доступа к датчику движения":"Bez přístupu k pohybovému senzoru","Запрашиваю геопозицию…":"Zjišťuji polohu…","Геопозиция:":"Poloha:","Геолокация недоступна на этом устройстве":"Poloha není na tomto zařízení dostupná","Карта загружается… для неё нужен интернет.":"Načítám mapu… je potřeba internet.","Текущая точка":"Aktuální poloha","Привычные маршруты":"Obvyklé trasy","Пока нет мест. Добавьте первое.":"Zatím žádná místa. Přidejte první.","Место удалено":"Místo smazáno","Впишите название места":"Zadejte název místa","Дом, Рынок, Аптека…":"Domov, Trh, Lékárna…","Подвиньте карту так, чтобы нужное место было под прицелом ⊕, впишите название и нажмите «На карту».":"Posuňte mapu tak, aby místo bylo pod značkou ⊕, napište název a klepněte na Na mapu.","Сигнал о помощи отправлен родным.":"Signál o pomoc byl odeslán blízkým.","Отменить тревогу":"Zrušit poplach","Тревога отменена":"Poplach zrušen","Мои альбомы":"Moje alba","Мои фото":"Moje fotky","Новый альбом":"Nové album","Альбом":"Album","Альбом удалён":"Album smazáno","Удалить альбом":"Smazat album","Название альбома":"Název alba","Настройки альбома":"Nastavení alba","Сохранить название и значок":"Uložit název a ikonu","Впишите название альбома":"Zadejte název alba","Фото добавлено ✓":"Fotka přidána ✓","Фото удалено":"Fotka smazána","В альбоме пока нет фото. Добавьте первое.":"V albu zatím nejsou fotky. Přidejte první.","Пока нет альбомов. Создайте первый ниже.":"Zatím žádná alba. Vytvořte první níže.","Знакомые фотографии помогают памяти и настроению. Создавайте альбомы и добавляйте в них снимки.":"Známé fotografie pomáhají paměti i náladě. Vytvářejte alba a přidávejte do nich snímky.","По этому номеру вам будут звонить близкие.":"Na toto číslo vám budou volat blízcí.","Сохранено ✓":"Uloženo ✓","Укажите, пожалуйста, номер телефона":"Doplňte prosím telefonní číslo","Имя и телефон меняются в личном кабинете — нажмите значок 👤 вверху справа.":"Jméno a telefon se mění v Mém účtu — klepněte na ikonu 👤 vpravo nahoře.","Открыть личный кабинет":"Otevřít můj účet","Удаление аккаунта":"Smazání účtu","Удалить мой аккаунт и данные":"Smazat můj účet a data","Да, удалить навсегда":"Ano, smazat navždy","Введите пароль, чтобы подтвердить":"Pro potvrzení zadejte heslo","Удаляю данные…":"Mažu data…","Аккаунт и данные удалены":"Účet a data smazány","Не удалось удалить:":"Nepodařilo se smazat:","Будут навсегда удалены: ваш профиль, связи с близкими, переписка, записи голоса и данные о местоположении и здоровье. Это действие нельзя отменить.":"Trvale se smaže váš profil, propojení s blízkými, zprávy, hlasové nahrávky, poloha a údaje o zdraví. Nelze vrátit zpět.","Удаление доступно для аккаунта онлайн-режима. Локальные данные можно стереть в Настройках → «Сбросить все данные».":"Smazání se týká online účtu. Místní data lze vymazat v Nastavení → Vymazat všechna data.","Размер шрифта":"Velikost písma","Сбросить все данные":"Vymazat všechna data","Данные сброшены. Перезапустите приложение.":"Data byla vymazána. Restartujte aplikaci.","Настройки и данные сохраняются на этом устройстве и остаются после закрытия приложения.":"Nastavení a data se ukládají v tomto zařízení a zůstávají i po zavření aplikace.","Активность в сравнении с собой раньше":"Aktivita ve srovnání s dřívějškem","100 — обычная норма человека. Меньше — реже, чем раньше.":"100 je obvyklá úroveň tohoto člověka. Nižší znamená méně často než dřív.","Актив.":"Aktivita","Сон":"Spánek","Общение":"Kontakt","Эта неделя":"Tento týden","Показатели за неделю":"Údaje za týden","Показатель":"Ukazatel","Шаги по дням":"Kroky po dnech","Активность сегодня":"Aktivita dnes","Активность и связь":"Aktivita a kontakt","Выполнено заданий":"Dokončená cvičení","Последнее задание":"Poslední cvičení","Скорость в игре «Числа»":"Rychlost ve hře Čísla","Записи «Вопроса дня».":"Nahrávky Otázky dne.","Нажмите ▶, чтобы послушать":"Klepněte na ▶ pro přehrání","аудио ещё загружается…":"zvuk se ještě nahrává…","Не удалось воспроизвести":"Nepodařilo se přehrát","Данных о сне нет — нужен фитнес-браслет или программа «Здоровье».":"Žádná data o spánku — je potřeba fitness náramek nebo aplikace Zdraví.","Данных об активности нет.":"Žádná data o aktivitě.","Сравнение с личной нормой появится, когда накопятся данные.":"Srovnání s obvyklou úrovní se objeví, až bude dost dat.","Пока нет данных от":"Zatím žádná data od","Средняя продолжительность сна за неделю:":"Průměrná délka spánku za týden:","Сон стабильный.":"Spánek je stabilní.","Год назад → сейчас":"Před rokem → nyní","Наши принципы":"Naše zásady","Что собирает приложение":"Co aplikace sbírá","👀 Панель для семьи и врача":"👀 Panel pro rodinu a lékaře","🗺️ Где сейчас":"🗺️ Kde právě je","💗 Здоровье:":"💗 Zdraví:","💬 Связь:":"💬 Kontakt:","👨‍👧 Добавить близкого":"👨‍👧 Přidat staršího člověka","🔒 Данные и согласие":"🔒 Data a souhlas","🧠 Нейро-статистика":"🧠 Kognitivní přehled","🔋 Заряд устройств":"🔋 Baterie zařízení","📌 Мои места":"📌 Moje místa","⏰ Напоминания на сегодня":"⏰ Dnešní připomínky","⌚ Фитнес-браслет и часы":"⌚ Fitness náramek a hodinky","🎙️ Аудио-ответы на «Вопрос дня»":"🎙️ Nahrávky Otázky dne","😴 Сон и бодрствование":"😴 Spánek a bdění","🚶 Активность за неделю":"🚶 Aktivita za týden","📷 Воспоминания":"📷 Vzpomínky","▶ Играть":"▶ Hrát","▶ Пройти всю тренировку":"▶ Projít celý trénink","↻ Начать заново":"↻ Začít znovu","↻ Обновить код":"↻ Nový kód","📍 Вести по GPS в реальном времени":"📍 Sledovat GPS v reálném čase","🔊 Прочитать последнее вслух":"🔊 Přečíst poslední nahlas","🔍 Найти браслет":"🔍 Najít náramek","📄 Сформировать отчёт для врача":"📄 Vytvořit zprávu pro lékaře","⬇️ Установить приложение на телефон":"⬇️ Nainstalovat aplikaci do telefonu","＋ Добавить":"＋ Přidat","＋ Создать":"＋ Vytvořit","＋ На карту":"＋ Na mapu","＋ Добавить фото":"＋ Přidat fotku","＋ Подключиться к другому близкому по коду":"＋ Připojit dalšího blízkého pomocí kódu","🎉 Тренировка завершена!":"🎉 Trénink dokončen!","🎉 Отлично! Вы нашли все пары!":"🎉 Výborně! Našli jste všechny dvojice!","Активность (шаги)":"Aktivita (kroky)","Активность и шаги":"Aktivita a kroky","Геопозиция и маршруты":"Poloha a trasy","Заряд браслета и телефона":"Baterie náramku a telefonu","Звонки близким":"Hovory blízkým","Использование приложений":"Používání aplikací","Набор текста в телефоне":"Psaní na telefonu","Паузы в речи":"Pauzy v řeči","Повторы слов":"Opakování slov","Приём лекарств":"Užívání léků","Прогулки на улице":"Procházky venku","Результаты мини-игр":"Výsledky miniher","Скорость реакции (игры)":"Rychlost reakce (hry)","Скорость набора и исправления":"Rychlost psaní a oprav","Словарный запас":"Slovní zásoba","Связность рассказа":"Souvislost vyprávění","Сон и режим дня":"Spánek a denní režim","Речь («Вопрос дня»)":"Řeč (Otázka dne)","Речь в «Вопросе дня»":"Řeč v Otázce dne","Часы сна за неделю (с фитнес-браслета)":"Hodiny spánku za týden (z náramku)","Фитнес-браслет":"Fitness náramek","Семья":"Rodina","Лекар.":"Léky","В среднем":"V průměru","Раньше:":"Dříve:","Сейчас:":"Nyní:","Осталось дел:":"Zbývá úkolů:","Срок — сегодня":"Termín dnes","сек":"s","из 6":"ze 6","отключить":"vypnout","сейчас здесь":"právě zde","обновлено 2 минуты назад":"aktualizováno před 2 minutami","Браслет не подключён — данные приблизительные":"Náramek není připojen — údaje jsou přibližné","Ночей с коротким/прерывистым сном: 2 ⚠":"Nocí s krátkým či přerušovaným spánkem: 2 ⚠","Пользователь сможет вам позвонить. Можно менять в любой момент.":"Starší člověk vám bude moci zavolat. Kdykoli lze změnit.","Приложение подключается к Apple Health (iPhone) и Health Connect (Android) и читает данные с":"Aplikace se připojí k Apple Health (iPhone) a Health Connect (Android) a čte data z","и большинства браслетов (Fitbit, Garmin, Samsung, Xiaomi и др.): шаги, сон, пульс, активность. Если браслета нет — данные берутся с телефона.":"a většiny náramků (Fitbit, Garmin, Samsung, Xiaomi a dalších): kroky, spánek, tep, aktivita. Bez náramku se data berou z telefonu.","Так работает защита от мошенников: чужой человек не подключится без кода пенсионера и подтверждения, а новых близких одобряет ещё и первый (главный) близкий.":"Takto funguje ochrana před podvodníky: cizí člověk se nepřipojí bez kódu a potvrzení staršího člověka a nové příbuzné navíc schvaluje první (hlavní) příbuzný.","Это не проверка. Приложение не ставит диагноз. Оно бережно сравнивает ваш рассказ с прошлыми — как меняется речь со временем — и делится этим только с теми, кому вы разрешили.":"Toto není zkouška. Aplikace nestanovuje diagnózu. Jemně porovnává vaše vyprávění s dřívějšími — jak se řeč mění v čase — a sdílí to jen s těmi, komu jste to dovolili.","Это демонстрация экрана согласия. В реальном приложении каждый пункт — отдельный переключатель, а согласие можно отозвать.":"Toto je ukázka obrazovky souhlasu. Ve skutečné aplikaci je každá položka samostatný přepínač a souhlas lze odvolat.","✔️ Данные хранятся защищённо, в ЕС (GDPR).":"✔️ Data jsou uložena bezpečně v EU (GDPR).","не ставим диагноз":"nestanovujeme diagnózu","и не заменяем врача.":"a nenahrazujeme lékaře.",", а не с другими.":", ne s ostatními.","только с ним самим":"jen se sebou samým","только по вашему согласию":"jen s vaším souhlasem","любой источник данных в любой момент.":"jakýkoli zdroj dat kdykoli.","в сутки.":"za den.","ночь и утро":"noc a ráno","Язык · Language":"Jazyk · Language","🧩 Тренировка недели":"🧩 Týdenní trénink","Тренировка недели":"Týdenní trénink","Шесть коротких заданий раз в неделю. Между заданиями — небольшой отдых.":"Šest krátkých cvičení jednou týdně, mezi nimi krátký odpočinek.","▶ Пройти тренировку недели":"▶ Projít týdenní trénink","▶ Пройти ещё раз":"▶ Projít znovu","✅ Тренировка на этой неделе выполнена":"✅ Trénink tohoto týdne je hotový","Задания ниже можно повторить в любой момент — на результат недели это не влияет.":"Cvičení níže lze kdykoli zopakovat — na týdenní výsledek to nemá vliv.","Готовимся начать":"Připravujeme se","Небольшой отдых":"Krátký odpočinek","Задание":"Cvičení","💭 Запомните слова":"💭 Zapamatujte si slova","Запомните слова":"Zapamatujte si slova","Запомните слова. Через несколько секунд они исчезнут.":"Zapamatujte si slova. Za pár vteřin zmizí.","Слова спрятаны. Выберите те, которые вы видели.":"Slova jsou skrytá. Vyberte ta, která jste viděli.","Какие слова вы видели?":"Která slova jste viděli?","🎯 Выполните по порядку":"🎯 Proveďte po pořádku","Выполните по порядку":"Proveďte po pořádku","Планирование":"Plánování","Выполнено:":"Hotovo:","🎉 Всё верно, по порядку!":"🎉 Vše správně, ve správném pořadí!","📅 Месяц и время":"📅 Měsíc a čas","Месяц и время":"Měsíc a čas","Ориентация":"Orientace","Какой сейчас месяц?":"Který je teď měsíc?","🎉 Всё верно!":"🎉 Vše správně!","🙂 Найдите лицо":"🙂 Najděte obličej","Найдите лицо":"Najděte obličej","Эмоции":"Emoce","Распознавание эмоций":"Rozpoznávání emocí","Вопрос":"Otázka","радость":"radost","грусть":"smutek","злость":"zlost","удивление":"překvapení","испуг":"strach","спокойствие":"klid","Тревога отправлена близким":"Poplach odeslán blízkým","просит помощи":"potřebuje pomoc","Сигнал отправлен родным":"Signál odeslán blízkým","Заряд устройств пока неизвестен":"Stav baterie zatím není znám","Заряд устройства пока неизвестен":"Stav baterie zatím není znám","шагов":"kroků","💗 Здоровье":"💗 Zdraví","💬 Связь":"💬 Kontakt","📍 Геолокация не подключена":"📍 Poloha není připojena","Данных о геолокации нет.":"Zatím žádná data o poloze.","Попросите":"Požádejte","включить геолокацию в приложении (Главная → «Поделиться местоположением»).":"aby v aplikaci zapnul sdílení polohy (Domů → Sdílet polohu).","Чтобы видеть сон, пульс и активность, подключите фитнес-браслет или программу «Здоровье» (Apple Health / Health Connect).":"Chcete-li vidět spánek, tep a aktivitu, připojte fitness náramek nebo aplikaci Zdraví (Apple Health / Health Connect).","ещё не выполнял(а) упражнения.":"zatím neprovedl(a) žádná cvičení.","ещё не записывал(а) аудио-ответы.":"zatím nenahrál(a) žádné hlasové odpovědi.","Написать":"Napsat","близкий":"blízký","близкого":"vašeho blízkého","Тренировки ещё не выполнялись — данных нет.":"Zatím žádné tréninky — nejsou data.","2 дня назад":"před 2 dny","3 дня назад":"před 3 dny","Дом":"Domov","Парк":"Park","Магазин у дома":"Obchod u domu","Маршрут за вчера":"Včerejší trasa"},"es":{"Главная":"Inicio","Дела":"Tareas","Близкие":"Familia","Фото":"Fotos","Обзор":"Resumen","Карта":"Mapa","Здоровье":"Salud","Связь":"Contacto","Настройки":"Ajustes","Личный кабинет":"Mi cuenta","Отмена":"Cancelar","Сохранить":"Guardar","Удалить":"Eliminar","Подтвердить":"Confirmar","Отправить":"Enviar","Обновить":"Actualizar","Проверить":"Comprobar","Подождите…":"Espere…","Ошибка:":"Error:","Сегодня":"Hoy","Вчера":"Ayer","Сейчас":"Ahora","Раньше":"Antes","Имя":"Nombre","Почта":"Correo","Телефон":"Teléfono","Сообщение":"Mensaje","Чат":"Chat","Переписка":"Mensajes","из":"de","из 100":"de 100","выполнено":"hecho","выполнено ✓":"hecho ✓","Пн":"Lun","Вт":"Mar","Ср":"Mié","Чт":"Jue","Пт":"Vie","Сб":"Sáb","Вс":"Dom","Вход":"Iniciar sesión","Войти":"Iniciar sesión","Регистрация":"Registrarse","Зарегистрироваться":"Crear cuenta","Выйти из аккаунта":"Cerrar sesión","Вы вышли из аккаунта":"Has cerrado sesión","Вход выполнен ✓":"Sesión iniciada ✓","Кто вы?":"¿Quién eres?","Пользователь":"Usuario","Близкий":"Familiar","Ваше имя":"Tu nombre","Ваш пароль":"Tu contraseña","Ваш номер телефона":"Tu número de teléfono","Забыли пароль?":"¿Olvidaste la contraseña?","Нет аккаунта? Зарегистрироваться →":"¿Sin cuenta? Registrarse →","Уже есть аккаунт? Войти →":"¿Ya tienes cuenta? Iniciar sesión →","Введите почту и пароль":"Introduce tu correo y contraseña","Введите пароль":"Introduce la contraseña","Введите имя":"Introduce tu nombre","Введите ваше имя":"Introduce tu nombre","Пароль минимум 6 знаков":"La contraseña debe tener al menos 6 caracteres","Введите номер телефона — по нему с вами будут связываться близкие":"Introduce un teléfono — tu familia te contactará con él","Завершение регистрации":"Completar registro","Завершить":"Finalizar","Почти готово — выберите, кто вы, укажите имя и нажмите «Завершить».":"Casi listo: elige quién eres, escribe tu nombre y pulsa Finalizar.","Пользователь и близкий входят каждый со своего устройства и видят данные друг друга.":"La persona mayor y el familiar inician sesión en sus propios dispositivos y ven la información del otro.","Зарегистрируйтесь или войдите — вы с близким увидите данные друг друга на разных телефонах.":"Regístrate o inicia sesión: tú y tu ser querido veréis los datos del otro en teléfonos distintos.","Вы вошли:":"Sesión iniciada:","Открыть приложение":"Abrir la aplicación","аккаунт не найден":"cuenta no encontrada","Неверный пароль. Попробуйте ещё раз.":"Contraseña incorrecta. Inténtalo de nuevo.","Нет связи с сервером. Проверьте интернет и обновите приложение.":"Sin conexión al servidor. Comprueba tu internet y actualiza.","Письмо для сброса пароля отправлено на":"Correo de restablecimiento enviado a","Впишите почту, затем нажмите «Забыли пароль?»":"Introduce tu correo y pulsa ¿Olvidaste la contraseña?",". Проверьте почту.":". Revisa tu correo.","Здравствуйте,":"Hola,","шагов сегодня":"pasos hoy","Подключите фитнес-браслет или часы. Если их нет — данные возьмём с телефона.":"Conecta una pulsera o reloj. Si no tienes, usaremos el teléfono.","Подключить браслет или часы":"Conectar pulsera o reloj","Мне нужна помощь":"Necesito ayuda","Нажмите — родным придёт срочный сигнал, и телефон позвонит близкому.":"Púlsalo: tu familia recibe una alerta urgente y el teléfono les llama.","Поделиться местоположением":"Compartir ubicación","Выключено — родные не видят, где вы":"Desactivado: tu familia no ve dónde estás","Включаю… родные скоро увидят ваше местоположение":"Activando… tu familia verá tu ubicación en breve","Включить":"Activar","Выключить":"Desactivar","Со мной всё хорошо":"Estoy bien","Нажмите зелёную кнопку — родные получат весточку, что у вас всё в порядке.":"Pulsa el botón verde: tu familia sabrá que estás bien.","Спасибо! Родные получили сообщение, что у вас всё хорошо.":"¡Gracias! Tu familia ha sido informada de que estás bien.","Ежедневная тренировка":"Entrenamiento diario","Четыре задания подряд, 3–5 минут":"Cuatro ejercicios seguidos, 3–5 minutos","Четыре задания подряд, последнее — рассказ о дне. Можно пройти и по отдельности.":"Cuatro ejercicios seguidos, el último es contar tu día. También puedes hacerlos por separado.","Напоминания":"Recordatorios","Задачи на день":"Tareas de hoy","Позвонить близким":"Llamar a la familia","Родные всегда рядом":"La familia siempre cerca","Подключение и устройства":"Conexión y dispositivos","Код для родных и фитнес-браслет":"Código familiar y pulsera","Имя, размер шрифта, близкие":"Nombre, tamaño de texto, familia","Вопрос дня":"Pregunta del día","Расскажите, как прошёл ваш день":"Cuéntanos cómo fue tu día","Расскажите, как прошёл ваш день?":"¿Cómo fue tu día?","Нажмите и расскажите":"Pulsa y habla","Говорите свободно, одну-две минуты. Можно про погоду, еду, звонки, настроение.":"Habla libremente uno o dos minutos: del tiempo, la comida, las llamadas, tu ánimo.","Спасибо! Ваш рассказ сохранён.":"¡Gracias! Tu relato se ha guardado.","Спасибо за рассказ! Всё сохранено.":"¡Gracias por contarlo! Todo está guardado.","Найди пары":"Encuentra las parejas","Откройте одинаковые карточки":"Da la vuelta a las cartas iguales","Найдите одинаковые пары. Нажимайте на карточки.":"Encuentra las parejas iguales. Toca las cartas.","Ходы:":"Movimientos:","Пары:":"Parejas:","Отлично! Вы нашли все пары. Прекрасная работа!":"¡Excelente! Encontraste todas las parejas. ¡Buen trabajo!","Числа по порядку":"Números en orden","Нажимайте 1, 2, 3… на скорость":"Toca 1, 2, 3… lo más rápido posible","Нажимайте числа по порядку: сначала 1, потом 2, и так далее. Как можно быстрее!":"Toca los números en orden: primero 1, luego 2, y así. ¡Lo más rápido posible!","Время:":"Tiempo:","Найдено:":"Encontrados:","Что было на картинке":"Qué había en la imagen","Запомните предметы, потом выберите их":"Memoriza los objetos y luego elígelos","Запомните предметы. Через несколько секунд они исчезнут — выберите те, что были.":"Memoriza los objetos. En unos segundos desaparecen: luego elige los que viste.","Запомните эти предметы…":"Memoriza estos objetos…","Предметы спрятаны. Какие из них были на картинке? Можно выбрать несколько.":"Los objetos están ocultos. ¿Cuáles estaban en la imagen? Puedes elegir varios.","Какие предметы были на картинке?":"¿Qué objetos había en la imagen?","Всё верно! Прекрасная память.":"¡Todo correcto! Excelente memoria.","Начинаем тренировку. Первое упражнение.":"Empecemos. Primer ejercicio.","Упражнение":"Ejercicio","Тренировка завершена. Спасибо!":"Entrenamiento completado. ¡Gracias!","Итог тренировки":"Resultado del entrenamiento","Память":"Memoria","Внимание":"Atención","Зрительная память":"Memoria visual","Речь":"Habla","Добавить напоминание":"Añadir recordatorio","Например: выпить воду":"Por ejemplo: beber agua","Введите текст напоминания":"Escribe el recordatorio","Напоминание добавлено ✓":"Recordatorio añadido ✓","Напоминание удалено":"Recordatorio eliminado","Напоминание:":"Recordatorio:","Отмечено ✓":"Hecho ✓","Все дела выполнены 🎉":"¡Todas las tareas hechas! 🎉","Пока нет напоминаний. Добавьте первое ниже.":"Aún no hay recordatorios. Añade el primero abajo.","Кнопка 🔊 проговорит напоминание вслух. Отметьте ✓, когда выполнили. Крестик — удалить.":"El botón 🔊 lee el recordatorio en voz alta. Pulsa ✓ al terminar, ✕ para borrar.","Прочитать вслух":"Leer en voz alta","Мои близкие":"Mi familia","Позвонить":"Llamar","Видео":"Vídeo","Написать сообщение…":"Escribe un mensaje…","Написать:":"Escribir a:","Начните переписку — напишите первое сообщение.":"Empieza la conversación: escribe el primer mensaje.","Сообщений пока нет. Напишите первое.":"Aún no hay mensajes. Escribe el primero.","Пока нет входящих сообщений":"Aún no hay mensajes recibidos","Напишите родному человеку. Кнопка 🔊 прочитает последнее сообщение вслух.":"Escribe a tu ser querido. El botón 🔊 lee el último mensaje en voz alta.","Зелёная кнопка — позвонить, синяя — открыть переписку.":"El botón verde llama, el azul abre el chat.","Пока никто из родных не подключён. Откройте «Подключение и устройства» и продиктуйте родным ваш код — как только они подключатся, они появятся здесь.":"Aún no hay familiares conectados. Abre Conexión y dispositivos y dales tu código: en cuanto se conecten, aparecerán aquí.","Пока никто из родных не подключён. Продиктуйте им ваш код из раздела «Подключение и устройства».":"Aún no hay familiares conectados. Dales tu código de Conexión y dispositivos.","Номер не указан — добавьте его в настройках":"Falta el número: añádelo en tu cuenta","Сначала подключитесь к близкому":"Primero conéctate con tu ser querido","Код для подключения родных":"Código para conectar a la familia","Продиктуйте этот код близкому. Действует один раз.":"Dile este código a tu familiar. Sirve una sola vez.","Заявки на подключение":"Solicitudes de conexión","Пока нет новых заявок.":"No hay solicitudes nuevas.","Подключённые близкие":"Familiares conectados","Пока никто не подключён.":"Aún no hay nadie conectado.","Ожидает вашего подтверждения":"Esperando tu aprobación","Добавить по коду":"Añadir con código","Введите код":"Introduce el código","Код не найден":"Código no encontrado","Заявка отправлена":"Solicitud enviada","Попросите пользователя открыть в его приложении «Подключение и устройства» и продиктовать вам код. Введите код ниже.":"Pide a la persona mayor que abra Conexión y dispositivos y te dé el código. Introdúcelo abajo.","После ввода кода заявку подтверждает сам пользователь. Как только он подтвердит — здесь появятся его данные.":"Tras introducir el código, la persona mayor aprueba la solicitud. Una vez aprobada, verás su información aquí.","Пользователь подключён ✓":"Conectado con la persona mayor ✓","Переключено":"Cambiado","Браслет отключён":"Pulsera desconectada","Браслет не найден — считаем шаги, активность и заряд с телефона.":"No se encontró pulsera: pasos, actividad y batería vienen del teléfono.","Подключено к браслету / часам через Apple Health / Health Connect. Данные обновляются автоматически.":"Conectado a tu pulsera o reloj vía Apple Health / Health Connect. Los datos se actualizan solos.","Источник данных":"Fuente de datos","Датчики включены. Носите телефон с собой — шаги считаются автоматически.":"Sensores activados. Lleva el teléfono contigo: los pasos se cuentan solos.","Нет доступа к датчику движения":"Sin acceso al sensor de movimiento","Запрашиваю геопозицию…":"Solicitando ubicación…","Геопозиция:":"Ubicación:","Геолокация недоступна на этом устройстве":"La ubicación no está disponible en este dispositivo","Карта загружается… для неё нужен интернет.":"Cargando el mapa… necesita conexión a internet.","Текущая точка":"Posición actual","Привычные маршруты":"Rutas habituales","Пока нет мест. Добавьте первое.":"Aún no hay lugares. Añade el primero.","Место удалено":"Lugar eliminado","Впишите название места":"Escribe un nombre para el lugar","Дом, Рынок, Аптека…":"Casa, Mercado, Farmacia…","Подвиньте карту так, чтобы нужное место было под прицелом ⊕, впишите название и нажмите «На карту».":"Mueve el mapa para que el lugar quede bajo la marca ⊕, escribe un nombre y pulsa Añadir al mapa.","Сигнал о помощи отправлен родным.":"Tu señal de ayuda se ha enviado a tu familia.","Отменить тревогу":"Cancelar la alerta","Тревога отменена":"Alerta cancelada","Мои альбомы":"Mis álbumes","Мои фото":"Mis fotos","Новый альбом":"Nuevo álbum","Альбом":"Álbum","Альбом удалён":"Álbum eliminado","Удалить альбом":"Eliminar álbum","Название альбома":"Nombre del álbum","Настройки альбома":"Ajustes del álbum","Сохранить название и значок":"Guardar nombre e icono","Впишите название альбома":"Escribe un nombre de álbum","Фото добавлено ✓":"Foto añadida ✓","Фото удалено":"Foto eliminada","В альбоме пока нет фото. Добавьте первое.":"Este álbum aún no tiene fotos. Añade la primera.","Пока нет альбомов. Создайте первый ниже.":"Aún no hay álbumes. Crea el primero abajo.","Знакомые фотографии помогают памяти и настроению. Создавайте альбомы и добавляйте в них снимки.":"Las fotos familiares ayudan a la memoria y al ánimo. Crea álbumes y añade imágenes.","По этому номеру вам будут звонить близкие.":"Tu familia te llamará a este número.","Сохранено ✓":"Guardado ✓","Укажите, пожалуйста, номер телефона":"Añade tu número de teléfono, por favor","Имя и телефон меняются в личном кабинете — нажмите значок 👤 вверху справа.":"El nombre y el teléfono se cambian en Mi cuenta: pulsa el icono 👤 arriba a la derecha.","Открыть личный кабинет":"Abrir mi cuenta","Удаление аккаунта":"Eliminar cuenta","Удалить мой аккаунт и данные":"Eliminar mi cuenta y datos","Да, удалить навсегда":"Sí, eliminar para siempre","Введите пароль, чтобы подтвердить":"Introduce tu contraseña para confirmar","Удаляю данные…":"Eliminando datos…","Аккаунт и данные удалены":"Cuenta y datos eliminados","Не удалось удалить:":"No se pudo eliminar:","Будут навсегда удалены: ваш профиль, связи с близкими, переписка, записи голоса и данные о местоположении и здоровье. Это действие нельзя отменить.":"Se eliminarán para siempre tu perfil, conexiones familiares, mensajes, grabaciones de voz, ubicación y datos de salud. No se puede deshacer.","Удаление доступно для аккаунта онлайн-режима. Локальные данные можно стереть в Настройках → «Сбросить все данные».":"La eliminación es para tu cuenta en línea. Los datos locales se borran en Ajustes → Restablecer todo.","Размер шрифта":"Tamaño de texto","Сбросить все данные":"Restablecer todos los datos","Данные сброшены. Перезапустите приложение.":"Datos restablecidos. Reinicia la aplicación.","Настройки и данные сохраняются на этом устройстве и остаются после закрытия приложения.":"Los ajustes y datos se guardan en este dispositivo y permanecen al cerrar la app.","Активность в сравнении с собой раньше":"Actividad comparada con antes","100 — обычная норма человека. Меньше — реже, чем раньше.":"100 es el nivel habitual de la persona. Menos significa con menos frecuencia que antes.","Актив.":"Actividad","Сон":"Sueño","Общение":"Contacto","Эта неделя":"Esta semana","Показатели за неделю":"Datos de la semana","Показатель":"Indicador","Шаги по дням":"Pasos por día","Активность сегодня":"Actividad de hoy","Активность и связь":"Actividad y contacto","Выполнено заданий":"Ejercicios completados","Последнее задание":"Último ejercicio","Скорость в игре «Числа»":"Velocidad en el juego Números","Записи «Вопроса дня».":"Grabaciones de la Pregunta del día.","Нажмите ▶, чтобы послушать":"Pulsa ▶ para escuchar","аудио ещё загружается…":"el audio se está subiendo…","Не удалось воспроизвести":"No se pudo reproducir","Данных о сне нет — нужен фитнес-браслет или программа «Здоровье».":"Sin datos de sueño: hace falta una pulsera o la app de Salud.","Данных об активности нет.":"Sin datos de actividad.","Сравнение с личной нормой появится, когда накопятся данные.":"La comparación con su nivel habitual aparecerá cuando haya datos suficientes.","Пока нет данных от":"Aún no hay datos de","Средняя продолжительность сна за неделю:":"Sueño medio esta semana:","Сон стабильный.":"El sueño es estable.","Год назад → сейчас":"Hace un año → ahora","Наши принципы":"Nuestros principios","Что собирает приложение":"Qué recopila la app","👀 Панель для семьи и врача":"👀 Panel para familia y médico","🗺️ Где сейчас":"🗺️ Dónde está ahora","💗 Здоровье:":"💗 Salud:","💬 Связь:":"💬 Contacto:","👨‍👧 Добавить близкого":"👨‍👧 Añadir persona mayor","🔒 Данные и согласие":"🔒 Datos y consentimiento","🧠 Нейро-статистика":"🧠 Resumen cognitivo","🔋 Заряд устройств":"🔋 Batería de dispositivos","📌 Мои места":"📌 Mis lugares","⏰ Напоминания на сегодня":"⏰ Recordatorios de hoy","⌚ Фитнес-браслет и часы":"⌚ Pulsera y reloj","🎙️ Аудио-ответы на «Вопрос дня»":"🎙️ Grabaciones de la Pregunta del día","😴 Сон и бодрствование":"😴 Sueño y vigilia","🚶 Активность за неделю":"🚶 Actividad de la semana","📷 Воспоминания":"📷 Recuerdos","▶ Играть":"▶ Jugar","▶ Пройти всю тренировку":"▶ Hacer todo el entrenamiento","↻ Начать заново":"↻ Empezar de nuevo","↻ Обновить код":"↻ Código nuevo","📍 Вести по GPS в реальном времени":"📍 Seguir por GPS en tiempo real","🔊 Прочитать последнее вслух":"🔊 Leer el último en voz alta","🔍 Найти браслет":"🔍 Buscar pulsera","📄 Сформировать отчёт для врача":"📄 Crear informe para el médico","⬇️ Установить приложение на телефон":"⬇️ Instalar la app en tu teléfono","＋ Добавить":"＋ Añadir","＋ Создать":"＋ Crear","＋ На карту":"＋ Añadir al mapa","＋ Добавить фото":"＋ Añadir foto","＋ Подключиться к другому близкому по коду":"＋ Conectar con otro ser querido por código","🎉 Тренировка завершена!":"🎉 ¡Entrenamiento completado!","🎉 Отлично! Вы нашли все пары!":"🎉 ¡Excelente! ¡Encontraste todas las parejas!","Активность (шаги)":"Actividad (pasos)","Активность и шаги":"Actividad y pasos","Геопозиция и маршруты":"Ubicación y rutas","Заряд браслета и телефона":"Batería de pulsera y teléfono","Звонки близким":"Llamadas a la familia","Использование приложений":"Uso de aplicaciones","Набор текста в телефоне":"Escritura en el teléfono","Паузы в речи":"Pausas al hablar","Повторы слов":"Palabras repetidas","Приём лекарств":"Toma de medicación","Прогулки на улице":"Paseos al aire libre","Результаты мини-игр":"Resultados de los juegos","Скорость реакции (игры)":"Velocidad de reacción (juegos)","Скорость набора и исправления":"Velocidad de escritura y correcciones","Словарный запас":"Vocabulario","Связность рассказа":"Coherencia del relato","Сон и режим дня":"Sueño y ritmo diario","Речь («Вопрос дня»)":"Habla (Pregunta del día)","Речь в «Вопросе дня»":"Habla en la Pregunta del día","Часы сна за неделю (с фитнес-браслета)":"Horas de sueño esta semana (de la pulsera)","Фитнес-браслет":"Pulsera de actividad","Семья":"Familia","Лекар.":"Medic.","В среднем":"De media","Раньше:":"Antes:","Сейчас:":"Ahora:","Осталось дел:":"Tareas restantes:","Срок — сегодня":"Para hoy","сек":"s","из 6":"de 6","отключить":"desactivar","сейчас здесь":"aquí ahora","обновлено 2 минуты назад":"actualizado hace 2 minutos","Браслет не подключён — данные приблизительные":"Sin pulsera conectada: los datos son aproximados","Ночей с коротким/прерывистым сном: 2 ⚠":"Noches con sueño corto o interrumpido: 2 ⚠","Пользователь сможет вам позвонить. Можно менять в любой момент.":"La persona mayor podrá llamarte. Puedes cambiarlo cuando quieras.","Приложение подключается к Apple Health (iPhone) и Health Connect (Android) и читает данные с":"La app se conecta a Apple Health (iPhone) y Health Connect (Android) y lee datos de","и большинства браслетов (Fitbit, Garmin, Samsung, Xiaomi и др.): шаги, сон, пульс, активность. Если браслета нет — данные берутся с телефона.":"y la mayoría de pulseras (Fitbit, Garmin, Samsung, Xiaomi y otras): pasos, sueño, pulso, actividad. Sin pulsera, los datos vienen del teléfono.","Так работает защита от мошенников: чужой человек не подключится без кода пенсионера и подтверждения, а новых близких одобряет ещё и первый (главный) близкий.":"Así funciona la protección: un desconocido no puede conectarse sin el código y la aprobación de la persona mayor, y los nuevos familiares también los aprueba el primer familiar.","Это не проверка. Приложение не ставит диагноз. Оно бережно сравнивает ваш рассказ с прошлыми — как меняется речь со временем — и делится этим только с теми, кому вы разрешили.":"Esto no es un examen. La app no da diagnósticos. Compara con cuidado tu relato con los anteriores —cómo cambia el habla con el tiempo— y lo comparte solo con quien tú permitas.","Это демонстрация экрана согласия. В реальном приложении каждый пункт — отдельный переключатель, а согласие можно отозвать.":"Esta es una demostración de la pantalla de consentimiento. En la app real cada punto es un interruptor y el consentimiento se puede retirar.","✔️ Данные хранятся защищённо, в ЕС (GDPR).":"✔️ Los datos se guardan de forma segura en la UE (RGPD).","не ставим диагноз":"no damos diagnósticos","и не заменяем врача.":"y no sustituimos al médico.",", а не с другими.":", no con otras personas.","только с ним самим":"solo consigo misma","только по вашему согласию":"solo con tu consentimiento","любой источник данных в любой момент.":"cualquier fuente de datos en cualquier momento.","в сутки.":"al día.","ночь и утро":"noche y mañana","Язык · Language":"Idioma · Language","🧩 Тренировка недели":"🧩 Entrenamiento semanal","Тренировка недели":"Entrenamiento semanal","Шесть коротких заданий раз в неделю. Между заданиями — небольшой отдых.":"Seis ejercicios cortos una vez por semana, con un breve descanso entre ellos.","▶ Пройти тренировку недели":"▶ Empezar el entrenamiento semanal","▶ Пройти ещё раз":"▶ Hacerlo otra vez","✅ Тренировка на этой неделе выполнена":"✅ El entrenamiento de esta semana está hecho","Задания ниже можно повторить в любой момент — на результат недели это не влияет.":"Puedes repetir los ejercicios abajo cuando quieras: no afecta al resultado semanal.","Готовимся начать":"Preparándonos","Небольшой отдых":"Un breve descanso","Задание":"Ejercicio","💭 Запомните слова":"💭 Recuerda las palabras","Запомните слова":"Recuerda las palabras","Запомните слова. Через несколько секунд они исчезнут.":"Memoriza las palabras. Desaparecerán en unos segundos.","Слова спрятаны. Выберите те, которые вы видели.":"Las palabras están ocultas. Elige las que viste.","Какие слова вы видели?":"¿Qué palabras viste?","🎯 Выполните по порядку":"🎯 Hazlo en orden","Выполните по порядку":"Hazlo en orden","Планирование":"Planificación","Выполнено:":"Completado:","🎉 Всё верно, по порядку!":"🎉 ¡Todo correcto y en orden!","📅 Месяц и время":"📅 Mes y hora","Месяц и время":"Mes y hora","Ориентация":"Orientación","Какой сейчас месяц?":"¿En qué mes estamos?","🎉 Всё верно!":"🎉 ¡Todo correcto!","🙂 Найдите лицо":"🙂 Encuentra la cara","Найдите лицо":"Encuentra la cara","Эмоции":"Emociones","Распознавание эмоций":"Reconocimiento de emociones","Вопрос":"Pregunta","радость":"alegría","грусть":"tristeza","злость":"enfado","удивление":"sorpresa","испуг":"miedo","спокойствие":"calma","Тревога отправлена близким":"Alerta enviada a tu familia","просит помощи":"necesita ayuda","Сигнал отправлен родным":"Alerta enviada a tu familia","Заряд устройств пока неизвестен":"Nivel de batería aún desconocido","Заряд устройства пока неизвестен":"Nivel de batería aún desconocido","шагов":"pasos","💗 Здоровье":"💗 Salud","💬 Связь":"💬 Contacto","📍 Геолокация не подключена":"📍 Ubicación no conectada","Данных о геолокации нет.":"Aún no hay datos de ubicación.","Попросите":"Pide a","включить геолокацию в приложении (Главная → «Поделиться местоположением»).":"que active la ubicación en la app (Inicio → Compartir ubicación).","Чтобы видеть сон, пульс и активность, подключите фитнес-браслет или программу «Здоровье» (Apple Health / Health Connect).":"Para ver el sueño, el pulso y la actividad, conecta una pulsera o la app de Salud (Apple Health / Health Connect).","ещё не выполнял(а) упражнения.":"aún no ha hecho ejercicios.","ещё не записывал(а) аудио-ответы.":"aún no ha grabado respuestas de voz.","Написать":"Escribir a","близкий":"familiar","близкого":"tu familiar","Тренировки ещё не выполнялись — данных нет.":"Aún no hay entrenamientos: sin datos.","2 дня назад":"hace 2 días","3 дня назад":"hace 3 días","Дом":"Casa","Парк":"Parque","Магазин у дома":"Tienda cercana","Маршрут за вчера":"Ruta de ayer"}};
+const LANGS=[{c:'ru',n:'Русский',f:'🇷🇺'},{c:'en',n:'English',f:'🇬🇧'},{c:'cs',n:'Čeština',f:'🇨🇿'},{c:'es',n:'Español',f:'🇪🇸'}];
+let LANG=(function(){
+  try{ const s=localStorage.getItem('near_lang'); if(s) return s; }catch(e){}
+  try{ const n=(navigator.language||'ru').slice(0,2).toLowerCase();
+       if(['en','cs','es','ru'].includes(n)) return n; }catch(e){}
+  return 'ru';
+})();
+function LOC(){ return {ru:'ru-RU',en:'en-GB',cs:'cs-CZ',es:'es-ES'}[LANG]||'ru-RU'; }
+function t(s){
+  if(LANG==='ru'||!s) return s;
+  const d=I18N[LANG]; if(!d) return s;
+  const k=String(s).trim();
+  return d[k]!==undefined ? String(s).replace(k,d[k]) : s;
+}
+const _i18nOrig=new WeakMap();
+function _look(k){
+  const d=I18N[LANG]; if(!d) return null;
+  if(d[k]!==undefined) return d[k];
+  // строка может начинаться/заканчиваться эмодзи или знаком — переводим сердцевину
+  const m=String(k).match(/^([^\p{L}\p{N}]*)(.*?)([^\p{L}\p{N}]*)$/u);
+  if(m && m[2] && d[m[2]]!==undefined) return m[1]+d[m[2]]+m[3];
+  return null;
+}
+function _trNode(n){
+  const cur=n.nodeValue; if(!cur) return;
+  let rec=_i18nOrig.get(n);
+  if(!rec || (cur!==rec.src && cur!==rec.out)){
+    // новый или изменённый текст — запоминаем оригинал (только если в нём есть русский)
+    if(!/[А-Яа-яЁё]/.test(cur)) return;
+    rec={src:cur,out:null}; _i18nOrig.set(n,rec);
+  }
+  if(LANG==='ru'){ if(cur!==rec.src) n.nodeValue=rec.src; return; }
+  const key=rec.src.trim(); if(!key) return;
+  const tr=_look(key); if(tr===null) return;
+  const out=rec.src.replace(key,tr);
+  if(cur!==out) n.nodeValue=out;
+  rec.out=out;
+}
+function _trAttr(el,attr){
+  const dk='i18n'+attr;
+  let src=el.dataset[dk];
+  if(src===undefined){ src=el.getAttribute(attr)||''; if(!/[А-Яа-яЁё]/.test(src)) return; el.dataset[dk]=src; }
+  const tr = LANG==='ru' ? src : (_look(src.trim())!==null ? src.replace(src.trim(),_look(src.trim())) : src);
+  if(el.getAttribute(attr)!==tr) el.setAttribute(attr,tr);
+}
+let _i18nObs=null;
+function applyLang(root){
+  const scope=root||document.body; if(!scope) return;
+  if(_i18nObs) _i18nObs.disconnect();
+  try{
+    const w=document.createTreeWalker(scope,NodeFilter.SHOW_TEXT,null);
+    const arr=[]; while(w.nextNode()) arr.push(w.currentNode);
+    arr.forEach(_trNode);
+    scope.querySelectorAll('[placeholder]').forEach(el=>_trAttr(el,'placeholder'));
+    scope.querySelectorAll('[title]').forEach(el=>_trAttr(el,'title'));
+    document.documentElement.lang=LANG;
+  }catch(e){}
+  if(_i18nObs) _i18nObs.observe(document.body,{childList:true,subtree:true,characterData:true});
+}
+function setLang(code){
+  LANG=code; try{ localStorage.setItem('near_lang',code); }catch(e){}
+  applyLang(); renderLangPicker();
+  try{ if(typeof currentScreen!=='undefined') show(currentScreen); }catch(e){}
+}
+function renderLangPicker(){
+  document.querySelectorAll('.langpick').forEach(box=>{
+    box.innerHTML='';
+    LANGS.forEach(l=>{
+      const b=document.createElement('button');
+      const on=l.c===LANG;
+      b.textContent=l.f+' '+l.n;
+      b.style.cssText='flex:1 1 auto; min-width:104px; padding:10px 12px; border-radius:14px; font-size:15px; font-weight:700; cursor:pointer; border:1.5px solid '+(on?'var(--blue)':'var(--line)')+'; background:'+(on?'var(--blue)':'#fff')+'; color:'+(on?'#fff':'var(--text)');
+      b.onclick=()=>setLang(l.c);
+      box.appendChild(b);
+    });
+  });
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  _i18nObs=new MutationObserver(muts=>{
+    if(LANG==='ru') return;
+    if(_i18nObs) _i18nObs.disconnect();
+    try{
+      muts.forEach(m=>{
+        if(m.type==='characterData'){ _trNode(m.target); return; }
+        m.addedNodes.forEach(n=>{
+          if(n.nodeType===3) _trNode(n);
+          else if(n.nodeType===1){
+            const w=document.createTreeWalker(n,NodeFilter.SHOW_TEXT,null);
+            const arr=[]; while(w.nextNode()) arr.push(w.currentNode);
+            arr.forEach(_trNode);
+            if(n.hasAttribute&&n.hasAttribute('placeholder')) _trAttr(n,'placeholder');
+            n.querySelectorAll&&n.querySelectorAll('[placeholder]').forEach(el=>_trAttr(el,'placeholder'));
+          }
+        });
+      });
+    }catch(e){}
+    _i18nObs.observe(document.body,{childList:true,subtree:true,characterData:true});
+  });
+  renderLangPicker();
+  applyLang();
+});
+</script>
+
 <header class="appbar" id="appbar">
   <button class="back" id="backBtn" onclick="goBack()">‹</button>
   <span class="logo">Near</span>
   <span class="sub" id="clock"></span>
-  <button class="back" id="acctBtn" onclick="show('login')" title="Сменить роль" style="display:flex; margin-left:10px">👤</button>
+  <button class="back" id="acctBtn" onclick="openProfile()" title="Личный кабинет" style="display:flex; margin-left:10px">👤</button>
 </header>
 
 <div id="pensSwitcher" style="display:none; gap:8px; overflow-x:auto; padding:8px 14px 0; -webkit-overflow-scrolling:touch"></div>
@@ -350,15 +563,15 @@
         <svg width="42" height="42" viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
       </div>
       <div style="font-size:38px; font-weight:800; letter-spacing:.5px; color:var(--text)">Near</div>
-      <p style="color:var(--muted); margin:8px 22px 0; line-height:1.45">Забота о близких с ранней деменцией — рядом, даже на расстоянии</p>
     </div>
 
+    <div class="langpick" style="display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px"></div>
+
     <div class="card" id="onlineCard">
-      <p style="margin-top:0; font-weight:700">🌐 Онлайн-режим <span class="chip" style="vertical-align:middle">для&nbsp;теста&nbsp;вдвоём</span></p>
       <div id="onlineBody"></div>
     </div>
 
-    <p class="note">Пожилой человек и родственник входят каждый со своего устройства и видят данные друг друга.</p>
+    <p class="note">Пользователь и близкий входят каждый со своего устройства и видят данные друг друга.</p>
   </section>
 
   <!-- AUTH: login / register -->
@@ -368,8 +581,8 @@
       <div id="authRoleRow" style="display:none">
         <p style="margin-top:0; font-weight:700">Кто вы?</p>
         <div class="switchrow">
-          <button id="ar_elder" class="on" onclick="authSetRole('elder')">Пожилой человек</button>
-          <button id="ar_rel" onclick="authSetRole('relative')">Родственник</button>
+          <button id="ar_elder" class="on" onclick="authSetRole('elder')">Пользователь</button>
+          <button id="ar_rel" onclick="authSetRole('relative')">Близкий</button>
         </div>
         <input id="authName" placeholder="Ваше имя" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px; margin-bottom:10px">
         <input id="authPhone" type="tel" autocomplete="tel" placeholder="Телефон (+420 …) — по нему будут звонить" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px; margin-bottom:10px">
@@ -423,15 +636,10 @@
       <button class="bigbtn ghost" style="margin-top:10px" id="geoShareBtn" onclick="shareLocation()">Включить</button>
     </div>
 
-    <button class="tile" onclick="show('daily')" style="margin-bottom:16px">
-      <div class="ico ico-blue">🎙️</div>
-      <div class="txt"><b>Вопрос дня</b><span>Расскажите, как прошёл ваш день</span></div>
-    </button>
-
     <div class="tiles">
-      <button class="tile memory" onclick="show('memory')">
+      <button class="tile memory" onclick="startTraining()">
         <div class="ico ico-purple">🧩</div>
-        <div class="txt"><b>Тренировка памяти</b><span>Короткие задания, 20–40 секунд</span></div>
+        <div class="txt"><b>Ежедневная тренировка</b><span id="trainSub">Четыре задания подряд, 3–5 минут</span></div>
       </button>
       <button class="tile remind" onclick="show('reminders')">
         <div class="ico ico-orange">⏰</div>
@@ -457,25 +665,110 @@
 
   <!-- MEMORY MENU -->
   <section class="screen" id="memory">
-    <h2 class="title">🧩 Тренировка памяти</h2>
-    <p style="margin:0 2px 14px; color:var(--muted)">Выберите упражнение на сегодня.</p>
+    <h2 class="title">🧩 Тренировка недели</h2>
+    <div class="card" id="trainResultCard" style="display:none">
+      <p style="margin-top:0; font-weight:700">🎉 Тренировка завершена!</p>
+      <div id="trainResult"></div>
+    </div>
+    <div class="card" id="trainWeekCard" style="display:none">
+      <div id="trainWeekBody"></div>
+    </div>
+    <p style="margin:0 2px 14px; color:var(--muted)">Шесть коротких заданий раз в неделю. Между заданиями — небольшой отдых.</p>
     <div class="tiles">
-      <button class="tile memory" onclick="show('mem_pairs')">
-        <div class="ico ico-purple">🃏</div>
-        <div class="txt"><b>Найди пары</b><span>Откройте одинаковые карточки</span></div>
+      <button class="tile memory" onclick="show('ex_words')">
+        <div class="ico ico-purple">💭</div>
+        <div class="txt"><b>Запомните слова</b><span>Память</span></div>
       </button>
       <button class="tile remind" onclick="show('mem_numbers')">
         <div class="ico ico-blue">🔢</div>
-        <div class="txt"><b>Числа по порядку</b><span>Нажимайте 1, 2, 3… на скорость</span></div>
+        <div class="txt"><b>Числа по порядку</b><span>Внимание</span></div>
       </button>
-      <button class="tile family" onclick="show('mem_objects')">
-        <div class="ico ico-pink">🖼️</div>
-        <div class="txt"><b>Что было на картинке</b><span>Запомните предметы, потом выберите их</span></div>
+      <button class="tile family" onclick="show('ex_plan')">
+        <div class="ico ico-pink">🎯</div>
+        <div class="txt"><b>Выполните по порядку</b><span>Планирование</span></div>
       </button>
-      <button class="tile" onclick="show('mem_sequence')">
-        <div class="ico ico-orange">🔆</div>
-        <div class="txt"><b>Повторить последовательность</b><span>Запомните, какие кнопки загорелись</span></div>
+      <button class="tile" onclick="show('ex_orient')">
+        <div class="ico ico-teal">📅</div>
+        <div class="txt"><b>Месяц и время</b><span>Ориентация</span></div>
       </button>
+      <button class="tile" onclick="show('ex_emotion')">
+        <div class="ico ico-orange">🙂</div>
+        <div class="txt"><b>Найдите лицо</b><span>Распознавание эмоций</span></div>
+      </button>
+      <button class="tile" onclick="show('daily')">
+        <div class="ico ico-blue">🎙️</div>
+        <div class="txt"><b>Вопрос дня</b><span>Речь</span></div>
+      </button>
+    </div>
+    <button class="bigbtn blue" style="margin-top:16px" id="trainStartBtn" onclick="startTraining()">▶ Пройти всю тренировку</button>
+  </section>
+
+  <!-- ПЕРЕРЫВ МЕЖДУ ЗАДАНИЯМИ -->
+  <section class="screen" id="ex_break">
+    <div style="text-align:center; padding:40px 10px">
+      <svg width="150" height="140" viewBox="0 0 100 92" style="display:block;margin:0 auto 22px">
+        <defs><clipPath id="hclip"><rect id="hfill" x="0" y="92" width="100" height="92" style="transition:y 1s linear"/></clipPath></defs>
+        <path d="M50 88 L46 84 C18 60 4 47 4 30 A24 24 0 0 1 50 20 A24 24 0 0 1 96 30 C96 47 82 60 54 84 Z" fill="#efecff" stroke="#c9c2f5" stroke-width="2.5"/>
+        <path d="M50 88 L46 84 C18 60 4 47 4 30 A24 24 0 0 1 50 20 A24 24 0 0 1 96 30 C96 47 82 60 54 84 Z" fill="#6c5ce7" clip-path="url(#hclip)"/>
+      </svg>
+      <p style="font-size:22px; font-weight:800; margin:0 0 6px" id="breakTitle">Небольшой отдых</p>
+      <p style="color:var(--muted); font-size:17px; margin:0" id="breakText">Следующее задание начнётся через 5 секунд…</p>
+      <p style="color:var(--muted); font-size:15px; margin:16px 0 0" id="breakNext"></p>
+    </div>
+  </section>
+
+  <!-- ПАМЯТЬ: СЛОВА -->
+  <section class="screen" id="ex_words">
+    <h2 class="title">💭 Запомните слова</h2>
+    <div class="card">
+      <p style="margin-top:0" id="wordsHint">Запомните слова. Через несколько секунд они исчезнут.</p>
+      <div id="wordsShow" style="display:flex; flex-wrap:wrap; gap:10px; margin:12px 0"></div>
+      <div id="wordsChoiceWrap" style="display:none">
+        <p style="font-weight:700; margin:6px 2px">Какие слова вы видели?</p>
+        <div id="wordsChoice" style="display:flex; flex-wrap:wrap; gap:10px"></div>
+        <button class="bigbtn green" style="margin-top:16px" onclick="checkWords()">Проверить</button>
+      </div>
+      <div class="banner" id="wordsBanner"></div>
+      <button class="bigbtn blue" style="margin-top:16px" onclick="newWords()">▶ Играть</button>
+    </div>
+  </section>
+
+  <!-- ПЛАНИРОВАНИЕ -->
+  <section class="screen" id="ex_plan">
+    <h2 class="title">🎯 Выполните по порядку</h2>
+    <div class="card">
+      <p style="margin-top:0; font-size:19px; font-weight:700" id="planTask">—</p>
+      <p style="color:var(--muted); margin:4px 2px 10px" id="planProgress"></p>
+      <div class="grid" id="planGrid" style="grid-template-columns:repeat(3,1fr)"></div>
+      <div class="banner" id="planBanner"></div>
+      <button class="bigbtn blue" style="margin-top:16px" onclick="newPlan()">▶ Играть</button>
+    </div>
+  </section>
+
+  <!-- ОРИЕНТАЦИЯ -->
+  <section class="screen" id="ex_orient">
+    <h2 class="title">📅 Месяц и время</h2>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700" id="orientQ1">Какой сейчас месяц?</p>
+      <div class="grid" id="monthGrid" style="grid-template-columns:repeat(3,1fr)"></div>
+      <div id="clockWrap" style="display:none; margin-top:18px">
+        <p style="font-weight:700; margin:6px 2px" id="orientQ2">На каких часах показано время <b id="clockTarget">—</b>?</p>
+        <div class="grid" id="clockGrid" style="grid-template-columns:repeat(2,1fr)"></div>
+      </div>
+      <div class="banner" id="orientBanner"></div>
+      <button class="bigbtn blue" style="margin-top:16px" onclick="newOrient()">▶ Играть</button>
+    </div>
+  </section>
+
+  <!-- ЭМОЦИИ -->
+  <section class="screen" id="ex_emotion">
+    <h2 class="title">🙂 Найдите лицо</h2>
+    <div class="card">
+      <p style="margin-top:0; font-size:19px; font-weight:700" id="emoTask">—</p>
+      <p style="color:var(--muted); margin:4px 2px 10px" id="emoProgress"></p>
+      <div class="grid" id="emoGrid" style="grid-template-columns:repeat(3,1fr)"></div>
+      <div class="banner" id="emoBanner"></div>
+      <button class="bigbtn blue" style="margin-top:16px" onclick="newEmotion()">▶ Играть</button>
     </div>
   </section>
 
@@ -496,7 +789,7 @@
     <h2 class="title">🔢 Числа по порядку</h2>
     <div class="card">
       <p style="margin-top:0" id="numHint">Нажимайте числа по порядку: сначала 1, потом 2, и так далее. Как можно быстрее!</p>
-      <div class="stat"><span>Время: <b id="numTime">0.0</b> сек</span><span>Найдено: <b id="numFound">0</b> из 9</span></div>
+      <div class="stat"><span>Время: <b id="numTime">0.0</b> сек</span><span>Найдено: <b id="numFound">0</b> из <b id="numTotal">24</b></span></div>
       <div class="grid" id="numGrid"></div>
       <div class="banner" id="numBanner"></div>
       <button class="bigbtn blue" style="margin-top:16px" onclick="newNumbers()">▶ Играть</button>
@@ -519,18 +812,6 @@
     </div>
   </section>
 
-  <!-- MEMORY: SEQUENCE -->
-  <section class="screen" id="mem_sequence">
-    <h2 class="title">🔆 Повторить последовательность</h2>
-    <div class="card">
-      <p style="margin-top:0" id="seqHint">Смотрите, какие кнопки загорятся, потом повторите их в том же порядке.</p>
-      <div class="stat"><span>Уровень: <b id="seqLevel">1</b></span><span>Лучший: <b id="seqBest">0</b></span></div>
-      <div class="grid" id="seqGrid" style="grid-template-columns:repeat(2,1fr)"></div>
-      <div class="banner" id="seqBanner"></div>
-      <button class="bigbtn blue" style="margin-top:16px" onclick="newSequence()">▶ Играть</button>
-    </div>
-  </section>
-
   <!-- REMINDERS -->
   <section class="screen" id="reminders">
     <h2 class="title">⏰ Напоминания на сегодня</h2>
@@ -549,11 +830,6 @@
   <!-- FAMILY -->
   <section class="screen" id="family">
     <h2 class="title">❤️ Мои близкие</h2>
-    <div class="card">
-      <p style="margin-top:0; font-weight:700">Ваш номер телефона</p>
-      <input id="elderPhone" type="tel" placeholder="+420 …" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px; box-sizing:border-box">
-      <p style="color:var(--muted); font-size:13px; margin:6px 2px 0">По нему родные смогут вам позвонить. Можно менять в любой момент.</p>
-    </div>
     <div class="card" id="famList"></div>
     <p class="note">Зелёная кнопка — позвонить, синяя — открыть переписку.</p>
   </section>
@@ -625,14 +901,48 @@
   </section>
 
   <!-- SETTINGS -->
+  <!-- PROFILE / личный кабинет -->
+  <section class="screen" id="profile">
+    <h2 class="title">👤 Личный кабинет</h2>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Ваше имя</p>
+      <input id="profName" placeholder="Имя" class="authinput" style="margin-bottom:14px">
+      <p style="font-weight:700; margin:0 0 6px">Ваш номер телефона</p>
+      <input id="profPhone" type="tel" placeholder="+420 601 234 567" class="authinput">
+      <p style="color:var(--muted); font-size:14px; margin:6px 2px 0">По этому номеру вам будут звонить близкие.</p>
+      <button class="bigbtn blue" style="margin-top:12px" onclick="saveProfile()">Сохранить</button>
+      <div class="banner" id="profMsg" style="text-align:left"></div>
+    </div>
+    <div class="card">
+      <p style="margin-top:0; font-weight:700">Язык · Language</p>
+      <p style="color:var(--muted); font-size:13px; margin:0 0 10px">Версия приложения: <b>v7 · 3 августа</b></p>
+      <div class="langpick" style="display:flex; gap:8px; flex-wrap:wrap"></div>
+    </div>
+
+    <div class="card">
+      <button class="bigbtn ghost" onclick="cloudLogout()">Выйти из аккаунта</button>
+    </div>
+
+    <div class="card" style="border:2px solid #ffd6e0; background:#fff5f8">
+      <p style="margin-top:0; font-weight:700">Удаление аккаунта</p>
+      <p style="color:var(--muted); font-size:15px; margin:0 0 10px">Будут навсегда удалены: ваш профиль, связи с близкими, переписка, записи голоса и данные о местоположении и здоровье. Это действие нельзя отменить.</p>
+      <button class="bigbtn ghost" style="color:var(--danger)" onclick="askDeleteAccount()">Удалить мой аккаунт и данные</button>
+
+      <div id="delStep" style="display:none; margin-top:12px">
+        <p style="font-weight:700; margin:0 0 8px">Введите пароль, чтобы подтвердить</p>
+        <input id="delPass" type="password" placeholder="Ваш пароль" class="authinput">
+        <button class="bigbtn ghost" style="margin-top:10px; color:var(--danger)" onclick="confirmDeleteAccount()">Да, удалить навсегда</button>
+        <button class="bigbtn ghost" style="margin-top:8px" onclick="cancelDeleteAccount()">Отмена</button>
+      </div>
+      <div class="banner" id="delMsg" style="text-align:left"></div>
+    </div>
+  </section>
+
   <section class="screen" id="settings">
     <h2 class="title">⚙️ Настройки</h2>
     <div class="card">
-      <p style="margin-top:0; font-weight:700">Как вас зовут?</p>
-      <input id="setName" placeholder="Ваше имя" style="width:100%; font-size:20px; padding:14px; border:2px solid var(--line); border-radius:14px">
-      <p style="font-weight:700; margin:14px 0 6px">Ваш номер телефона</p>
-      <input id="setPhone" type="tel" placeholder="+420 …" style="width:100%; font-size:20px; padding:14px; border:2px solid var(--line); border-radius:14px">
-      <p style="color:var(--muted); font-size:14px; margin:6px 2px 0">По этому номеру родные смогут вам позвонить.</p>
+      <p style="margin-top:0; color:var(--muted)">Имя и телефон меняются в личном кабинете — нажмите значок 👤 вверху справа.</p>
+      <button class="bigbtn ghost" onclick="show('profile')">Открыть личный кабинет</button>
     </div>
     <div class="card">
       <p style="margin-top:0; font-weight:700">Размер шрифта</p>
@@ -643,16 +953,6 @@
         <button data-f="huge" onclick="setFont('huge')" style="font-size:26px">А</button>
       </div>
     </div>
-    <div class="card">
-      <p style="margin-top:0; font-weight:700">Мои близкие</p>
-      <div id="setFamList"></div>
-      <div style="display:flex; gap:10px; margin-top:10px">
-        <input id="setFamName" placeholder="Имя" style="font-size:17px; padding:11px; border:2px solid var(--line); border-radius:12px; flex:1; min-width:0">
-        <input id="setFamRel" placeholder="кто (сын…)" style="font-size:17px; padding:11px; border:2px solid var(--line); border-radius:12px; flex:1; min-width:0">
-      </div>
-      <input id="setFamPhone" type="tel" placeholder="Телефон (+420 …)" style="width:100%; font-size:17px; padding:11px; border:2px solid var(--line); border-radius:12px; margin-top:10px">
-      <button class="bigbtn ghost" style="margin-top:10px" onclick="addFamily()">＋ Добавить близкого</button>
-    </div>
     <button class="bigbtn blue" id="installBtn" style="display:none; margin-bottom:12px" onclick="installApp()">⬇️ Установить приложение на телефон</button>
     <button class="bigbtn ghost" style="color:var(--danger)" onclick="resetAll()">Сбросить все данные</button>
     <p class="note">Настройки и данные сохраняются на этом устройстве и остаются после закрытия приложения.</p>
@@ -661,10 +961,6 @@
   <!-- CAREGIVER -->
   <section class="screen" id="care">
     <h2 class="title">👀 Панель для семьи и врача</h2>
-    <div class="card" style="background:#eef4fa">
-      <p style="margin:0; font-size:17px">Мы сравниваем показатели человека <b>не с другими людьми, а с ним самим раньше</b>. Приложение <b>не ставит диагноз</b> — оно бережно показывает, что меняется со временем.</p>
-    </div>
-
     <div class="card chartcard">
       <p style="margin-top:0; font-weight:700">Активность в сравнении с собой раньше</p>
       <div class="rings" id="careRings"></div>
@@ -710,18 +1006,18 @@
     <div class="card" style="text-align:center; background:#eef4fa">
       <p style="margin:0 0 6px; font-weight:700">Код для подключения родных</p>
       <div id="connCode" style="font-size:44px; font-weight:800; letter-spacing:8px; color:var(--blue)">4827</div>
-      <p style="color:var(--muted); font-size:15px; margin:6px 0 12px">Продиктуйте этот код родственнику. Действует один раз.</p>
+      <p style="color:var(--muted); font-size:15px; margin:6px 0 12px">Продиктуйте этот код близкому. Действует один раз.</p>
       <button class="bigbtn ghost" onclick="newCode()">↻ Обновить код</button>
     </div>
 
     <div class="card">
       <p style="margin-top:0; font-weight:700">Заявки на подключение</p>
       <div id="reqList"><p style="color:var(--muted); margin:6px 2px">Пока нет новых заявок.</p></div>
-      <button class="bigbtn ghost" style="margin-top:10px" onclick="demoRelativeEntersCode()">▶ Демо: родственник ввёл код</button>
+      <button class="bigbtn ghost" style="margin-top:10px" onclick="demoRelativeEntersCode()">▶ Демо: близкий ввёл код</button>
     </div>
 
     <div class="card">
-      <p style="margin-top:0; font-weight:700">Подключённые родственники</p>
+      <p style="margin-top:0; font-weight:700">Подключённые близкие</p>
       <div id="famConnList"><p style="color:var(--muted); margin:6px 2px">Пока никто не подключён.</p></div>
     </div>
 
@@ -730,20 +1026,20 @@
       <p style="color:var(--muted); margin:4px 0 12px">Приложение подключается к Apple Health (iPhone) и Health Connect (Android) и читает данные с <b>Apple Watch</b> и большинства браслетов (Fitbit, Garmin, Samsung, Xiaomi и др.): шаги, сон, пульс, активность. Если браслета нет — данные берутся с телефона.</p>
       <div id="braceletBox"></div>
     </div>
-    <p class="note">Так работает защита от мошенников: чужой человек не подключится без кода пенсионера и подтверждения, а новых родственников одобряет ещё и первый (главный) родственник.</p>
+    <p class="note">Так работает защита от мошенников: чужой человек не подключится без кода пенсионера и подтверждения, а новых близких одобряет ещё и первый (главный) близкий.</p>
   </section>
 
   <!-- RELATIVE: enter code -->
   <section class="screen" id="rel_enter">
-    <h2 class="title">👨‍👧 Добавить пожилого человека</h2>
+    <h2 class="title">👨‍👧 Добавить близкого</h2>
     <div class="card">
-      <p style="margin-top:0">Попросите пожилого человека открыть в его приложении «Подключение и устройства» и продиктовать вам код. Введите код ниже.</p>
+      <p style="margin-top:0">Попросите пользователя открыть в его приложении «Подключение и устройства» и продиктовать вам код. Введите код ниже.</p>
       <input id="codeInput" inputmode="numeric" maxlength="6" placeholder="код"
         style="width:100%; font-size:32px; text-align:center; letter-spacing:8px; padding:16px; border:2px solid var(--line); border-radius:16px; margin:8px 0; box-sizing:border-box">
       <button class="bigbtn green" onclick="relSubmitCode()">Добавить по коду</button>
       <div class="banner" id="relBanner" style="text-align:left"></div>
     </div>
-    <p class="note">После ввода кода заявку подтверждает сам пожилой человек. Как только он подтвердит — здесь появятся его данные.</p>
+    <p class="note">После ввода кода заявку подтверждает сам пользователь. Как только он подтвердит — здесь появятся его данные.</p>
     <div id="relEnterFoot"></div>
   </section>
 
@@ -795,7 +1091,6 @@
 
     <div class="card">
       <p style="margin-top:0; font-weight:700">🧠 Нейро-статистика</p>
-      <p style="color:var(--muted); margin:0 0 8px; font-size:15px">Сравнение с собой раньше. Не диагноз.</p>
       <div id="neuroList"></div>
     </div>
 
@@ -819,7 +1114,7 @@
     <div class="card">
       <p style="margin-top:0; font-weight:700">Ваш номер телефона</p>
       <input id="relPhone" type="tel" placeholder="+420 …" style="width:100%; font-size:18px; padding:13px; border:2px solid var(--line); border-radius:14px; box-sizing:border-box">
-      <p style="color:var(--muted); font-size:13px; margin:6px 2px 0">Пожилой человек сможет вам позвонить. Можно менять в любой момент.</p>
+      <p style="color:var(--muted); font-size:13px; margin:6px 2px 0">Пользователь сможет вам позвонить. Можно менять в любой момент.</p>
     </div>
     <div class="card" style="display:flex; gap:12px">
       <button class="bigbtn green" style="margin:0" onclick="callPensioner()">📞 Позвонить</button>
@@ -851,12 +1146,7 @@ const state = {
     {time:"18:00", text:"Оплатить счёт за электричество", sub:"Срок — сегодня", done:false},
     {time:"21:00", text:"Вечерние лекарства", sub:"2 таблетки перед сном", done:false},
   ],
-  family: [
-    {name:"Анна", rel:"дочь", color:"#e0788f", phone:"+420 601 111 222"},
-    {name:"Пётр", rel:"сын", color:"#4a86c5", phone:"+420 602 333 444"},
-    {name:"Ольга", rel:"внучка", color:"#5aa87a", phone:"+420 603 555 666"},
-    {name:"Иван", rel:"брат", color:"#c58b4a", phone:"+420 604 777 888"},
-  ],
+  family: [],
 };
 
 /* ---------- persistent storage (safe) ---------- */
@@ -879,14 +1169,14 @@ function applySettings(){
   document.body.classList.toggle('relative', isRel);
   document.body.classList.toggle('elder', !isRel);
   document.body.style.fontSize = isRel ? '16px' : (FONTPX[settings.font]||20)+'px';
-  const hello=document.getElementById('hello'); if(hello) hello.textContent='Здравствуйте, '+settings.name+'!';
+  const hello=document.getElementById('hello'); if(hello) hello.textContent=t('Здравствуйте,')+' '+settings.name+'!';
 }
 
 /* ---------- navigation ---------- */
-const parentScreen = { mem_pairs:'memory', mem_numbers:'memory', mem_objects:'memory', mem_sequence:'memory', memory:'home', daily:'home', connect:'home', consent:'care', rel_enter:'contact', elder_chat:'family', settings:'home', auth:'login', fbsetup:'login', album_view:'memories' };
-const tabFor = { memory:'home', mem_pairs:'home', mem_numbers:'home', mem_objects:'home', mem_sequence:'home', daily:'home', connect:'home', consent:'care', elder_chat:'family', settings:'home', album_view:'memories' };
+const parentScreen = { mem_pairs:'memory', mem_numbers:'memory', mem_objects:'memory', ex_words:'memory', ex_plan:'memory', ex_orient:'memory', ex_emotion:'memory', ex_break:'memory', memory:'home', daily:'home', connect:'home', consent:'care', rel_enter:'contact', elder_chat:'family', settings:'home', auth:'login', fbsetup:'login', album_view:'memories', profile:'home' };
+const tabFor = { memory:'home', mem_pairs:'home', mem_numbers:'home', mem_objects:'home', ex_words:'home', ex_plan:'home', ex_orient:'home', ex_emotion:'home', ex_break:'home', daily:'home', connect:'home', consent:'care', elder_chat:'family', settings:'home', album_view:'memories' };
 const topLevel = ['login','home','reminders','family','memories','care','rmap','health','contact'];
-const noNav = ['login','rel_enter','auth','fbsetup'];
+const noNav = ['login','rel_enter','auth','fbsetup','ex_break'];
 let currentScreen = 'home';
 function show(id){
   currentScreen = id;
@@ -901,9 +1191,13 @@ function show(id){
   });
   window.scrollTo(0,0);
   if(id==='mem_pairs') newGame();
+  if(id==='ex_words') newWords();
+  if(id==='ex_plan') newPlan();
+  if(id==='ex_orient') newOrient();
+  if(id==='ex_emotion') newEmotion();
+  if(id==='memory') renderTrainWeek();
   if(id==='mem_numbers') newNumbers();
   if(id==='mem_objects') newObjects();
-  if(id==='mem_sequence') newSequence();
   if(id==='daily') resetDaily();
   if(id==='memories') renderMemories();
   if(id==='care') renderCare();
@@ -917,6 +1211,7 @@ function show(id){
   if(id==='home'){ renderLiveCard(); renderOkStatus(); renderSOS(); }
   if(id==='login') initAuthUI();
   if(id==='rel_enter') renderRelEnterFoot();
+  if(id==='profile') renderProfile();
   if(id==='album_view') renderAlbumView();
   try{ renderPensSwitcher(); }catch(e){}
 }
@@ -933,15 +1228,15 @@ function buildNav(role){
 }
 function loginAs(role){
   account.role = role; account.cloud=false; buildNav(role); applySettings();
-  if(role==='elder'){ show('home'); toast('Демо: пожилой человек'); }
-  else { show('care'); toast('Демо: родственник'); }
+  if(role==='elder'){ show('home'); toast('Демо: пользователь'); }
+  else { show('care'); toast('Демо: близкий'); }
 }
 
 /* ---------- cloud (Firebase) accounts + sync ---------- */
 let authMode='login', authRole='elder', cloudLive=null, cloudSyncTimer=null, cloudRecording=null;
 let cloudCode='—', cloudPending=[], cloudRelatives=[], cloudAuthAttached=false;
 function cloudEnabled(){ return !!(window.NearCloud && window.NearCloud.enabled); }
-function cloudRel(){ return !!(account.cloud && account.role==='relative' && cloudEnabled()); }
+function cloudRel(){ return account.role==='relative'; } // близкий всегда видит только реальные данные, без демо-набора
 let cloudLinked=false;
 function patientName(){
   if(account.role!=='relative') return settings.name;
@@ -954,7 +1249,7 @@ function initAuthUI(){
   if(cloudEnabled()){
     const prof=window.NearCloud._profile;
     if(prof && prof.role){
-      body.innerHTML=`<p style="color:var(--muted); font-size:14px; margin:2px 0 12px">Вы вошли: <b>${prof.name||''}</b> (${prof.role==='elder'?'пожилой человек':'родственник'}).</p>
+      body.innerHTML=`<p style="color:var(--muted); font-size:14px; margin:2px 0 12px">Вы вошли: <b>${prof.name||''}</b> (${prof.role==='elder'?'пользователь':'близкий'}).</p>
         <button class="bigbtn blue" style="margin-bottom:10px" onclick="show('${prof.role==='elder'?'home':'care'}')">Открыть приложение</button>
         <button class="bigbtn ghost" onclick="cloudLogout()">Выйти из аккаунта</button>`;
     } else {
@@ -1015,6 +1310,12 @@ async function authSubmit(){
   const pass=document.getElementById('authPass').value;
   if(!email||!pass){ msg.textContent='Введите почту и пароль'; msg.classList.add('show'); return; }
   if(authMode==='register' && pass.length<6){ msg.textContent='Пароль минимум 6 знаков'; msg.classList.add('show'); return; }
+  if(authMode==='register'){
+    const nm=(document.getElementById('authName')||{}).value||'';
+    const phv=(document.getElementById('authPhone')||{}).value||'';
+    if(!nm.trim()){ msg.textContent='Введите ваше имя'; msg.classList.add('show'); return; }
+    if(!validPhone(phv)){ msg.textContent='Введите номер телефона — по нему с вами будут связываться близкие'; msg.classList.add('show'); return; }
+  }
   msg.classList.remove('show');
   const btn=document.getElementById('authSubmit'); const old=btn.textContent; btn.disabled=true; btn.textContent='Подождите…';
   try{
@@ -1041,8 +1342,14 @@ function attachCloudAuth(){
       if(profile.phone){ settings.phone=profile.phone; }
       if(profile.name||profile.phone){ saveSettings(); }
       buildNav(profile.role); applySettings(); startCloudSync(profile.role);
-      show(profile.role==='elder'?'home':'rel_enter');
-      toast('Вход выполнен ✓');
+      // старые аккаунты без телефона — просим заполнить сразу
+      if(!validPhone(settings.phone)){
+        show('profile');
+        toast('Укажите, пожалуйста, номер телефона');
+      } else {
+        show(profile.role==='elder'?'home':'rel_enter');
+        toast('Вход выполнен ✓');
+      }
     } else if(profile && !profile.role){
       account.cloud=true; authMode='finish'; syncAuthUI(); show('auth');
       const m=document.getElementById('authMsg'); m.innerHTML='Почти готово — выберите, кто вы, укажите имя и нажмите «Завершить».'; m.classList.add('show');
@@ -1078,7 +1385,7 @@ function renderPensSwitcher(){
   list.forEach(p=>{
     const b=document.createElement('button');
     const on = p.pid===curPid;
-    b.textContent = p.name || 'Пожилой человек';
+    b.textContent = p.name || 'Пользователь';
     b.style.cssText='flex:0 0 auto; padding:8px 14px; border-radius:20px; font-size:15px; font-weight:700; border:2px solid '+(on?'var(--blue)':'var(--line)')+'; background:'+(on?'var(--blue)':'#fff')+'; color:'+(on?'#fff':'var(--text)')+'; cursor:pointer';
     b.onclick=()=>switchPensioner(p.pid);
     el.appendChild(b);
@@ -1101,7 +1408,7 @@ function startCloudSync(role){
     try{ if('Notification'in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){}
     window.NearCloud.ensureCode().then(c=>{ cloudCode=c; if(currentScreen==='connect') renderConnect(); }).catch(()=>{});
     window.NearCloud.watchPending(list=>{ cloudPending=list; if(currentScreen==='connect') renderConnect(); });
-    window.NearCloud.watchRelatives(list=>{ cloudRelatives=list; const ap=list.find(r=>r.status==='approved'); cloudRelUid=ap?ap.uid:null; subscribeChat(); if(currentScreen==='connect') renderConnect(); if(currentScreen==='elder_chat') renderElderChat(); });
+    window.NearCloud.watchRelatives(list=>{ cloudRelatives=list; const ap=list.find(r=>r.status==='approved'); cloudRelUid=ap?ap.uid:null; subscribeChat(); if(currentScreen==='connect') renderConnect(); if(currentScreen==='elder_chat') renderElderChat(); if(currentScreen==='family') renderFamily(); });
     cloudSyncTimer=setInterval(pushCloudLive, 15000); setTimeout(pushCloudLive,2000);
   } else {
     cloudLinked=false;
@@ -1114,7 +1421,7 @@ function startCloudSync(role){
       const linked=!!pid;
       if(linked!==cloudLinked){
         cloudLinked=linked;
-        if(linked && currentScreen==='rel_enter'){ show('care'); toast('Пожилой человек подключён ✓'); }
+        if(linked && currentScreen==='rel_enter'){ show('care'); toast('Пользователь подключён ✓'); }
         else if(!linked && ['care','rmap','health','contact'].includes(currentScreen)){ show('rel_enter'); }
       }
       if(currentScreen==='care') renderCare();
@@ -1139,13 +1446,15 @@ function pushCloudLive(){
   const route=realRoute.slice(-30).map(p=>[p[0],p[1]]);
   const ex=Store.get('exStats',null);
   const speech=Store.get('lastSpeech',null);
-  try{ window.NearCloud.pushLive({ name:settings.name, phone:settings.phone||null, steps:liveSteps||0, battery:liveBattery, lat:last?last[1]:null, lng:last?last[0]:null, ok: ok? (ok.day+', '+ok.time):null, route, ex: ex||null, speech: speech||null, sos: sosActive||null }); }catch(e){}
+  const train=Store.get('lastTraining',null);
+  try{ window.NearCloud.pushLive({ name:settings.name, phone:settings.phone||null, steps:liveSteps||0, battery:liveBattery, lat:last?last[1]:null, lng:last?last[0]:null, ok: ok? (ok.day+', '+ok.time):null, route, ex: ex||null, speech: speech||null, sos: sosActive||null, train: train||null, geoOn: !!geoSharing }); }catch(e){}
 }
 let sosActive=null, lastSosTs=0;
 function sendSOS(){
-  let t=''; try{ t=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); }catch(e){}
+  let t=''; try{ t=new Date().toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'}); }catch(e){}
   let ms=1; try{ ms=Date.now(); }catch(e){}
-  sosActive={time:t, ts:ms};
+  let dt=''; try{ dt=new Date(ms).toLocaleString(LOC(),{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}); }catch(e){ dt=t; }
+  sosActive={time:t, when:dt, ts:ms};
   if(account.cloud&&account.role==='elder') pushCloudLive();
   toast('🆘 Сигнал отправлен родным'); speak('Сигнал о помощи отправлен родным.');
   renderSOS();
@@ -1154,21 +1463,26 @@ function sendSOS(){
   if(num) setTimeout(()=>dialNumber(num, rel?rel.name:''),300);
 }
 function cancelSOS(){ sosActive=null; if(account.cloud&&account.role==='elder') pushCloudLive(); toast('Тревога отменена'); renderSOS(); }
+const SOS_TTL=24*3600*1000; // сигнал показывается сутки
+function sosFresh(o){ if(!o||!o.ts) return false; try{ return (Date.now()-o.ts) < SOS_TTL; }catch(e){ return true; } }
 function renderSOS(){
   const el=document.getElementById('sosBody'); if(!el) return; el.innerHTML='';
+  if(sosActive && !sosFresh(sosActive)){ sosActive=null; if(account.cloud&&account.role==='elder') pushCloudLive(); }
   if(sosActive){
-    const h=document.createElement('div'); h.style.cssText='text-align:center; font-size:17px; font-weight:800; color:var(--danger); margin-bottom:10px'; h.textContent='🆘 Тревога отправлена родным ('+sosActive.time+')'; el.appendChild(h);
+    const h=document.createElement('div'); h.style.cssText='text-align:center; font-size:17px; font-weight:800; color:var(--danger); margin-bottom:10px'; h.textContent=t('Тревога отправлена близким')+' — '+(sosActive.when||sosActive.time); el.appendChild(h);
     const b=document.createElement('button'); b.className='bigbtn ghost'; b.textContent='Отменить тревогу'; b.onclick=cancelSOS; el.appendChild(b);
   } else {
     const b=document.createElement('button'); b.className='bigbtn'; b.style.cssText='background:linear-gradient(135deg,#ff5c8a,#ff7a5c); color:#fff; box-shadow:0 6px 16px rgba(255,92,138,.3); font-size:22px'; b.innerHTML='🆘 Мне нужна помощь'; b.onclick=sendSOS; el.appendChild(b);
-    const p=document.createElement('p'); p.className='note'; p.style.margin='8px 2px 0'; p.textContent='Нажмите — родным придёт срочный сигнал, и телефон позвонит родственнику.'; el.appendChild(p);
+    const p=document.createElement('p'); p.className='note'; p.style.margin='8px 2px 0'; p.textContent='Нажмите — родным придёт срочный сигнал, и телефон позвонит близкому.'; el.appendChild(p);
   }
 }
 function notifySOS(live){
   const nm=(live&&live.name)||patientName()||'Близкий';
-  const t=(live&&live.sos&&live.sos.time)||'';
-  toast('🆘 '+nm+' просит помощи! '+t); speak(nm+' просит помощи.');
-  try{ if('Notification'in window && Notification.permission==='granted') new Notification('🆘 Near — тревога', {body:nm+' просит помощи '+t}); }catch(e){}
+  const so=(live&&live.sos)||{};
+  let when=so.when||so.time||'';
+  if(so.ts){ try{ when=new Date(so.ts).toLocaleString(LOC(),{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}); }catch(e){} }
+  toast('🆘 '+nm+' '+t('просит помощи')+' — '+when); speak(nm+' '+t('просит помощи'));
+  try{ if('Notification'in window && Notification.permission==='granted') new Notification('🆘 Near', {body:nm+' '+t('просит помощи')+' '+when}); }catch(e){}
   if(account.role==='relative' && currentScreen!=='care') show('care');
 }
 function exDone(extra){
@@ -1177,6 +1491,337 @@ function exDone(extra){
   if(extra&&extra.last) s.last=extra.last;
   Store.set('exStats', s);
   if(account.cloud&&account.role==='elder') pushCloudLive();
+  try{ trainingStepDone(extra||{}); }catch(e){}
+}
+
+/* ---------- ТРЕНИРОВКА НЕДЕЛИ ---------- */
+const TRAIN_STEPS=[
+  {scr:'ex_words',    name:'Запомните слова',      skill:'Память'},
+  {scr:'mem_numbers', name:'Числа по порядку',     skill:'Внимание'},
+  {scr:'ex_plan',     name:'Выполните по порядку', skill:'Планирование'},
+  {scr:'ex_orient',   name:'Месяц и время',        skill:'Ориентация'},
+  {scr:'ex_emotion',  name:'Найдите лицо',         skill:'Эмоции'},
+  {scr:'daily',       name:'Вопрос дня',           skill:'Речь'},
+];
+let training=null, breakTimer=null;
+
+function weekKey(d){
+  const dt=d?new Date(d):new Date();
+  const t=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate());
+  const day=(t.getDay()+6)%7;            // понедельник = 0
+  t.setDate(t.getDate()-day);
+  return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+}
+function trainingDoneThisWeek(){
+  const last=Store.get('lastTraining',null);
+  if(!last||!last.ts) return false;
+  return weekKey(last.ts)===weekKey();
+}
+function renderTrainWeek(){
+  const card=document.getElementById('trainWeekCard'), body=document.getElementById('trainWeekBody');
+  const btn=document.getElementById('trainStartBtn');
+  if(!card||!body) return;
+  if(trainingDoneThisWeek()){
+    const last=Store.get('lastTraining',null);
+    let nxt=''; try{
+      const d=new Date(); const day=(d.getDay()+6)%7;
+      const mon=new Date(d.getFullYear(),d.getMonth(),d.getDate()+(7-day));
+      nxt=mon.toLocaleDateString(LOC(),{day:'numeric',month:'long'});
+    }catch(e){}
+    body.innerHTML='<p style="margin:0; font-weight:700">✅ Тренировка на этой неделе выполнена</p>'
+      +'<p style="color:var(--muted); margin:6px 0 0">'+(last&&last.date?'Пройдена: '+escapeHtml(last.date)+'. ':'')
+      +(nxt?'Следующая — с '+nxt+'.':'')+'</p>'
+      +'<p style="color:var(--muted); font-size:14px; margin:8px 0 0">Задания ниже можно повторить в любой момент — на результат недели это не влияет.</p>';
+    card.style.display='block';
+    if(btn){ btn.textContent='▶ Пройти ещё раз'; }
+  } else {
+    card.style.display='none';
+    if(btn){ btn.textContent='▶ Пройти тренировку недели'; }
+  }
+}
+function startTraining(){
+  training={idx:0, results:[], startedAt:Date.now()};
+  const c=document.getElementById('trainResultCard'); if(c) c.style.display='none';
+  speak('Начинаем тренировку. Первое задание.');
+  showBreak(0, true);
+}
+/* перерыв 5 секунд с наполняющимся сердечком */
+function showBreak(idx, first){
+  const step=TRAIN_STEPS[idx]; if(!step) return;
+  clearInterval(breakTimer);
+  const title=document.getElementById('breakTitle'), txt=document.getElementById('breakText'), nx=document.getElementById('breakNext');
+  if(title) title.textContent = first? 'Готовимся начать' : 'Небольшой отдых';
+  if(nx) nx.textContent='Задание '+(idx+1)+' из '+TRAIN_STEPS.length+': '+step.name;
+  show('ex_break');
+  let left=5;
+  const fill=document.getElementById('hfill');
+  const tick=()=>{
+    if(txt) txt.textContent='Следующее задание начнётся через '+left+' сек…';
+    if(fill){ const pct=(5-left)/5; fill.setAttribute('y', String(92-92*pct)); }
+    if(left<=0){
+      clearInterval(breakTimer);
+      if(!training) return;
+      show(step.scr);
+      return;
+    }
+    left--;
+  };
+  tick(); breakTimer=setInterval(tick,1000);
+}
+function trainingStepDone(extra){
+  if(!training) return;
+  const step=TRAIN_STEPS[training.idx]; if(!step) return;
+  let score=null;
+  if(step.scr==='ex_words'){ const c=extra.wordsCorrect, tot=extra.wordsTotal; score=(c!=null&&tot)?Math.round(100*c/tot):null; }
+  else if(step.scr==='mem_numbers'){ const t=extra.numTime; score=t?Math.max(20,Math.min(100,Math.round(100*30/Math.max(10,t)))):null; }
+  else if(step.scr==='ex_plan'){ const c=extra.planCorrect, tot=extra.planTotal; score=(c!=null&&tot)?Math.round(100*c/tot):null; }
+  else if(step.scr==='ex_orient'){ const c=extra.orientCorrect, tot=extra.orientTotal; score=(c!=null&&tot)?Math.round(100*c/tot):null; }
+  else if(step.scr==='ex_emotion'){ const c=extra.emoCorrect, tot=extra.emoTotal; score=(c!=null&&tot)?Math.round(100*c/tot):null; }
+  else if(step.scr==='daily'){ score=null; }
+  training.results.push({name:step.name, skill:step.skill, score:score});
+  training.idx++;
+  if(training.idx < TRAIN_STEPS.length){ setTimeout(()=>{ if(training) showBreak(training.idx,false); },1600); }
+  else finishTraining();
+}
+function finishTraining(){
+  if(!training) return;
+  clearInterval(breakTimer);
+  const res=training.results.slice();
+  const vals=res.map(r=>r.score).filter(v=>v!=null);
+  const avg=vals.length? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+  let dl=''; try{ const n=new Date(); dl=n.toLocaleDateString(LOC(),{day:'numeric',month:'long'})+', '+n.toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'}); }catch(e){}
+  let ms=1; try{ ms=Date.now(); }catch(e){}
+  const summary={date:dl, ts:ms, total:avg, items:res};
+  const hist=Store.get('trainHistory',[]); hist.unshift(summary);
+  Store.set('trainHistory', hist.slice(0,30));
+  Store.set('lastTraining', summary);
+  training=null;
+  if(account.cloud&&account.role==='elder') pushCloudLive();
+  const card=document.getElementById('trainResultCard'), box=document.getElementById('trainResult');
+  if(box){
+    box.innerHTML = res.map(r=>`<div class="metric"><div class="mi">✅</div><div class="mv"><b>${escapeHtml(r.skill)}</b><span>${escapeHtml(r.name)}</span></div><div class="trend up">${r.score!=null?r.score:'выполнено'}</div></div>`).join('')
+      + `<p style="margin:10px 0 0; font-weight:700">Итог тренировки: ${avg!=null?avg:'—'} из 100</p>`;
+  }
+  if(card) card.style.display='block';
+  show('memory'); renderTrainWeek();
+  speak('Тренировка завершена. Спасибо!');
+  toast('🎉 Тренировка завершена');
+}
+
+/* ===== ПАМЯТЬ: слова ===== */
+const WORD_POOL=['окно','река','хлеб','кресло','яблоко','ключ','дорога','письмо','сад','чашка','лампа','поезд','цветок','книга','мост','зонт','часы','кошка','стол','море'];
+let wordsTarget=[];
+function newWords(){
+  document.getElementById('wordsBanner').classList.remove('show');
+  document.getElementById('wordsChoiceWrap').style.display='none';
+  const pool=[...WORD_POOL].sort(()=>Math.random()-0.5);
+  wordsTarget=pool.slice(0,5);
+  const show1=document.getElementById('wordsShow'); show1.style.display='flex'; show1.innerHTML='';
+  wordsTarget.forEach(w=>{
+    const d=document.createElement('div');
+    d.textContent=w;
+    d.style.cssText='padding:12px 18px; border-radius:14px; background:#efecff; font-size:21px; font-weight:800; color:var(--blue-d)';
+    show1.appendChild(d);
+  });
+  const hint=document.getElementById('wordsHint');
+  let left=8;
+  const cd=setInterval(()=>{
+    left--; hint.textContent='Запомните слова… '+left;
+    if(left<=0){ clearInterval(cd); startWordsChoice(pool); }
+  },1000);
+  hint.textContent='Запомните слова… '+left;
+}
+function startWordsChoice(pool){
+  document.getElementById('wordsShow').style.display='none';
+  document.getElementById('wordsHint').textContent='Слова спрятаны. Выберите те, которые вы видели.';
+  const choices=[...wordsTarget, ...pool.filter(w=>!wordsTarget.includes(w)).slice(0,6)].sort(()=>Math.random()-0.5);
+  const cg=document.getElementById('wordsChoice'); cg.innerHTML='';
+  choices.forEach(w=>{
+    const b=document.createElement('button');
+    b.textContent=w; b.dataset.w=w; b.dataset.sel='0';
+    b.style.cssText='padding:12px 18px; border-radius:14px; border:2px solid var(--line); background:#fff; font-size:19px; font-weight:700; cursor:pointer';
+    b.onclick=()=>{ const on=b.dataset.sel==='1'; b.dataset.sel=on?'0':'1';
+      b.style.background=on?'#fff':'#dbe9f6'; b.style.borderColor=on?'var(--line)':'var(--blue)'; };
+    cg.appendChild(b);
+  });
+  document.getElementById('wordsChoiceWrap').style.display='block';
+}
+function checkWords(){
+  const chosen=[...document.querySelectorAll('#wordsChoice button')].filter(b=>b.dataset.sel==='1').map(b=>b.dataset.w);
+  const correct=wordsTarget.filter(w=>chosen.includes(w)).length;
+  const wrong=chosen.filter(w=>!wordsTarget.includes(w)).length;
+  const bn=document.getElementById('wordsBanner');
+  bn.textContent = (correct===wordsTarget.length && !wrong)
+    ? '🎉 Всё верно! Прекрасная память.'
+    : `Правильно: ${correct} из ${wordsTarget.length}${wrong?', лишних: '+wrong:''}.`;
+  bn.classList.add('show');
+  exDone({last:'Запомните слова'});
+  trainingStepDone({wordsCorrect:Math.max(0,correct-wrong), wordsTotal:wordsTarget.length});
+}
+
+/* ===== ПЛАНИРОВАНИЕ: выполнить по порядку ===== */
+const PLAN_SHAPES=[
+  {n:'круг',   s:'●'},{n:'квадрат',s:'■'},{n:'треугольник',s:'▲'}
+];
+const PLAN_COLORS=[
+  {n:'синий', c:'#4a86c5', a:'синий'},{n:'красный',c:'#e05a72', a:'красный'},
+  {n:'зелёный',c:'#3faa74', a:'зелёный'},{n:'жёлтый',c:'#e0a33f', a:'жёлтый'}
+];
+let planSeq=[], planPos=0, planErrors=0;
+function newPlan(){
+  document.getElementById('planBanner').classList.remove('show');
+  planPos=0; planErrors=0;
+  const items=[];
+  PLAN_COLORS.forEach(c=>PLAN_SHAPES.forEach(sh=>items.push({c,sh})));
+  const board=items.sort(()=>Math.random()-0.5).slice(0,9);
+  planSeq=board.slice().sort(()=>Math.random()-0.5).slice(0,3);
+  const words=['сначала','потом','затем'];
+  document.getElementById('planTask').textContent =
+    planSeq.map((it,i)=>words[i]+' нажмите '+it.c.a+' '+it.sh.n).join(', ')+'.';
+  const g=document.getElementById('planGrid'); g.innerHTML='';
+  board.forEach(it=>{
+    const b=document.createElement('button');
+    b.className='mcard up'; b.textContent=it.sh.s;
+    b.style.cssText='font-size:38px; color:'+it.c.c+'; background:#fff';
+    b.onclick=()=>planTap(it,b);
+    g.appendChild(b);
+  });
+  renderPlanProgress();
+}
+function renderPlanProgress(){
+  const el=document.getElementById('planProgress');
+  if(el) el.textContent='Выполнено: '+planPos+' из '+planSeq.length;
+}
+function planTap(it,btn){
+  if(planPos>=planSeq.length) return;
+  const need=planSeq[planPos];
+  if(it.c.n===need.c.n && it.sh.n===need.sh.n){
+    planPos++; btn.classList.add('matched'); btn.style.background='#e8f6ee';
+    renderPlanProgress();
+    if(planPos>=planSeq.length){
+      const bn=document.getElementById('planBanner');
+      bn.textContent = planErrors===0 ? '🎉 Всё верно, по порядку!' : `Готово. Неточных нажатий: ${planErrors}.`;
+      bn.classList.add('show');
+      exDone({last:'Выполните по порядку'});
+      trainingStepDone({planCorrect:Math.max(0,planSeq.length-planErrors), planTotal:planSeq.length});
+    }
+  } else {
+    planErrors++;
+    btn.animate([{transform:'scale(1)'},{transform:'scale(.9)',background:'#f6d3cd'},{transform:'scale(1)'}],{duration:260});
+  }
+}
+
+/* ===== ОРИЕНТАЦИЯ: месяц и время ===== */
+let orientScore=0, orientTotal=2, clockAnswer=null;
+function newOrient(){
+  orientScore=0; clockAnswer=null;
+  document.getElementById('orientBanner').classList.remove('show');
+  document.getElementById('clockWrap').style.display='none';
+  const now=new Date();
+  const g=document.getElementById('monthGrid'); g.innerHTML='';
+  for(let m=0;m<12;m++){
+    let nm=''; try{ nm=new Date(2000,m,1).toLocaleDateString(LOC(),{month:'long'}); }catch(e){ nm=String(m+1); }
+    const b=document.createElement('button');
+    b.className='mcard up'; b.textContent=nm;
+    b.style.cssText='font-size:15px; font-weight:700; padding:12px 4px; background:#fff';
+    b.onclick=()=>{
+      if(b.dataset.used) return;
+      document.querySelectorAll('#monthGrid button').forEach(x=>x.dataset.used='1');
+      if(m===now.getMonth()){ b.style.background='#e8f6ee'; orientScore++; }
+      else { b.style.background='#fdeaea';
+        const right=[...document.querySelectorAll('#monthGrid button')][now.getMonth()];
+        if(right) right.style.background='#e8f6ee'; }
+      setTimeout(startClock,700);
+    };
+    g.appendChild(b);
+  }
+}
+function clockSVG(h,m){
+  const ha=(h%12)*30+m*0.5-90, ma=m*6-90, R=Math.PI/180;
+  const hx=50+26*Math.cos(ha*R), hy=50+26*Math.sin(ha*R);
+  const mx=50+36*Math.cos(ma*R), my=50+36*Math.sin(ma*R);
+  let ticks='';
+  for(let i=0;i<12;i++){ const a=i*30-90; ticks+=`<circle cx="${(50+42*Math.cos(a*R)).toFixed(1)}" cy="${(50+42*Math.sin(a*R)).toFixed(1)}" r="2" fill="#b9b6d8"/>`; }
+  return `<svg viewBox="0 0 100 100" style="width:100%;height:auto;max-width:120px">
+    <circle cx="50" cy="50" r="46" fill="#fff" stroke="#e3e0f7" stroke-width="3"/>${ticks}
+    <line x1="50" y1="50" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#26224b" stroke-width="5" stroke-linecap="round"/>
+    <line x1="50" y1="50" x2="${mx.toFixed(1)}" y2="${my.toFixed(1)}" stroke="#6c5ce7" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="50" cy="50" r="3.5" fill="#26224b"/></svg>`;
+}
+function startClock(){
+  const wrap=document.getElementById('clockWrap'); wrap.style.display='block';
+  const h=Math.floor(Math.random()*12)+1, m=[0,15,30,45][Math.floor(Math.random()*4)];
+  clockAnswer=h+':'+String(m).padStart(2,'0');
+  document.getElementById('clockTarget').textContent=clockAnswer;
+  const opts=[{h,m}];
+  while(opts.length<4){
+    const oh=Math.floor(Math.random()*12)+1, om=[0,15,30,45][Math.floor(Math.random()*4)];
+    if(!opts.some(o=>o.h===oh&&o.m===om)) opts.push({h:oh,m:om});
+  }
+  opts.sort(()=>Math.random()-0.5);
+  const g=document.getElementById('clockGrid'); g.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='mcard up'; b.innerHTML=clockSVG(o.h,o.m);
+    b.style.cssText='padding:10px; background:#fff';
+    b.onclick=()=>{
+      if(b.dataset.used) return;
+      document.querySelectorAll('#clockGrid button').forEach(x=>x.dataset.used='1');
+      const ok=(o.h===h && o.m===m);
+      b.style.background= ok? '#e8f6ee':'#fdeaea';
+      if(ok) orientScore++;
+      const bn=document.getElementById('orientBanner');
+      bn.textContent = orientScore===2 ? '🎉 Всё верно!' : `Правильно: ${orientScore} из 2.`;
+      bn.classList.add('show');
+      exDone({last:'Месяц и время'});
+      trainingStepDone({orientCorrect:orientScore, orientTotal:2});
+    };
+    g.appendChild(b);
+  });
+}
+
+/* ===== ЭМОЦИИ ===== */
+const EMOTIONS=[
+  {e:'😀',n:'радость'},{e:'😢',n:'грусть'},{e:'😠',n:'злость'},
+  {e:'😲',n:'удивление'},{e:'😨',n:'испуг'},{e:'😌',n:'спокойствие'}
+];
+let emoRound=0, emoScore=0, emoTarget=null;
+const EMO_ROUNDS=3;
+function newEmotion(){
+  emoRound=0; emoScore=0;
+  document.getElementById('emoBanner').classList.remove('show');
+  emoNextRound();
+}
+function emoNextRound(){
+  const pool=[...EMOTIONS].sort(()=>Math.random()-0.5).slice(0,6);
+  emoTarget=pool[Math.floor(Math.random()*pool.length)];
+  document.getElementById('emoTask').textContent='Выберите лицо, которое выражает: '+emoTarget.n;
+  document.getElementById('emoProgress').textContent='Вопрос '+(emoRound+1)+' из '+EMO_ROUNDS;
+  const g=document.getElementById('emoGrid'); g.innerHTML='';
+  pool.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='mcard up'; b.textContent=o.e;
+    b.style.cssText='font-size:44px; background:#fff';
+    b.onclick=()=>{
+      if(b.dataset.used) return;
+      document.querySelectorAll('#emoGrid button').forEach(x=>x.dataset.used='1');
+      const ok=(o.n===emoTarget.n);
+      b.style.background= ok? '#e8f6ee':'#fdeaea';
+      if(ok) emoScore++;
+      emoRound++;
+      setTimeout(()=>{
+        if(emoRound<EMO_ROUNDS){ emoNextRound(); }
+        else{
+          const bn=document.getElementById('emoBanner');
+          bn.textContent = emoScore===EMO_ROUNDS ? '🎉 Все верно!' : `Правильно: ${emoScore} из ${EMO_ROUNDS}.`;
+          bn.classList.add('show');
+          exDone({last:'Найдите лицо'});
+          trainingStepDone({emoCorrect:emoScore, emoTotal:EMO_ROUNDS});
+        }
+      }, ok?600:1100);
+    };
+    g.appendChild(b);
+  });
 }
 async function initBattery(){
   if(navigator.getBattery){ try{ const bt=await navigator.getBattery(); const upd=()=>{ liveBattery=Math.round(bt.level*100); renderLiveCard(); if(account.cloud&&account.role==='elder') pushCloudLive(); }; bt.addEventListener('levelchange',upd); upd(); }catch(e){} }
@@ -1210,7 +1855,7 @@ function subscribeChat(){
 }
 function ensureCloudChat(){ subscribeChat(); }
 function notifyChat(text){
-  const who = account.role==='relative' ? (patientName()||'Близкий') : (curChat||'Родственник');
+  const who = account.role==='relative' ? (patientName()||'Близкий') : (curChat||'Близкий');
   toast('💬 '+who+': '+text);
   try{ if('Notification'in window && Notification.permission==='granted') new Notification('💬 Near — новое сообщение', {body:(who?who+': ':'')+text}); }catch(e){}
 }
@@ -1227,7 +1872,13 @@ function renderChatBox(boxId, msgs, otherName){
   });
   box.scrollTop=box.scrollHeight;
 }
-function goBack(){ show(parentScreen[currentScreen] || 'home'); }
+function goBack(){
+  // домашний экран зависит от роли: у близкого это «Обзор», у пользователя — «Главная»
+  const homeFor = (account.role==='relative') ? 'care' : 'home';
+  let dest = parentScreen[currentScreen] || homeFor;
+  if(dest==='home' && account.role==='relative') dest = 'care';
+  show(dest);
+}
 function goHome(){ show('home'); }
 
 /* ---------- clock & date ---------- */
@@ -1256,13 +1907,15 @@ function setupToastSwipe(){
   t.addEventListener('touchend',()=>{ t.style.transition=''; if(dx<-55){ t.classList.remove('show'); } t.style.transform=''; t.style.opacity=''; sx=null; },{passive:true});
   t.addEventListener('click',()=>t.classList.remove('show'));
 }
-function _speakNow(text){
+function _speakNow(text0){
+  const text=(typeof t==='function')?t(text0):text0;
   try{
     speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text); u.lang='ru-RU'; u.rate=.95;
+    const u=new SpeechSynthesisUtterance(text); u.lang=LOC(); u.rate=.95;
     const vs=speechSynthesis.getVoices()||[];
-    const ru=vs.find(v=>/ru/i.test(v.lang));
-    if(ru) u.voice=ru;
+    const pref=(typeof LANG!=='undefined'?LANG:'ru');
+    const v2=vs.find(v=>v.lang && v.lang.toLowerCase().indexOf(pref)===0);
+    if(v2) u.voice=v2;
     speechSynthesis.speak(u);
   }catch(e){}
 }
@@ -1338,17 +1991,16 @@ setInterval(checkReminders, 20000);
 
 /* ---------- family ---------- */
 function renderFamily(){
-  const ep=document.getElementById('elderPhone');
-  if(ep){ ep.value=settings.phone||''; ep.oninput=()=>{ settings.phone=ep.value.trim(); saveSettings(); if(account.cloud&&account.role==='elder') pushCloudLive(); }; }
   const el=document.getElementById('famList'); el.innerHTML='';
-  if(account.cloud && account.role==='elder' && cloudEnabled()){
+  // В онлайн-режиме близкие всегда берутся из подключённых близких
+  if(cloudEnabled() && account.role==='elder'){
     const rels=(cloudRelatives||[]).filter(r=>r.status==='approved');
     if(!rels.length){ el.innerHTML='<p style="color:var(--muted); margin:6px 2px">Пока никто из родных не подключён. Продиктуйте им ваш код из раздела «Подключение и устройства».</p>'; return; }
     rels.forEach(p=>{
       const d=document.createElement('div'); d.className='person';
       d.innerHTML=`
         <div class="avatar" style="background:#5aa87a">${escapeHtml((p.name||'Р')[0])}</div>
-        <div><div class="pn">${escapeHtml(p.name||'Родственник')}</div><div class="pr">${p.phone?escapeHtml(p.phone):'номер не указан'}</div></div>
+        <div><div class="pn">${escapeHtml(p.name||'Близкий')}</div><div class="pr">${p.phone?escapeHtml(p.phone):'номер не указан'}</div></div>
         <div class="callbtns">
           <button class="rbtn call" title="Позвонить">📞</button>
           <button class="rbtn msg" title="Сообщение">💬</button>
@@ -1363,7 +2015,7 @@ function renderFamily(){
   el.innerHTML='<p style="color:var(--muted); margin:6px 2px">Пока никто из родных не подключён. Откройте «Подключение и устройства» и продиктуйте родным ваш код — как только они подключатся, они появятся здесь.</p>';
 }
 function imOk(){
-  let t='',dl=''; try{ const n=new Date(); t=n.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); dl=n.toLocaleDateString('ru-RU',{day:'numeric',month:'long'}); }catch(e){}
+  let t='',dl=''; try{ const n=new Date(); t=n.toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'}); dl=n.toLocaleDateString(LOC(),{day:'numeric',month:'long'}); }catch(e){}
   Store.set('okStatus', {time:t, day:dl});
   speak('Спасибо! Родные получили сообщение, что у вас всё хорошо.');
   toast('✓ Родные получили весточку в '+t);
@@ -1391,13 +2043,13 @@ const chats = Store.get('chats', {
 let curChat=null;
 function saveChats(){ Store.set('chats', chats); }
 function openElderChat(name){
-  if(account.cloud && cloudEnabled()){ const ap=cloudRelatives.find(r=>r.status==='approved'); curChat=(ap&&ap.name)||'Родственник'; show('elder_chat'); return; }
+  if(account.cloud && cloudEnabled()){ const ap=cloudRelatives.find(r=>r.status==='approved'); curChat=(ap&&ap.name)||'Близкий'; show('elder_chat'); return; }
   curChat=name; if(!chats[name]) chats[name]=[]; show('elder_chat');
 }
 function renderElderChat(){
   document.getElementById('echatTitle').textContent='💬 '+(curChat||'Переписка');
   if(account.cloud && cloudEnabled()){
-    const inp=document.getElementById('echatInput'); if(inp) inp.placeholder='Написать: '+(curChat||'')+'…';
+    const inp=document.getElementById('echatInput'); if(inp) inp.placeholder=t('Написать')+': '+(curChat||'')+'…';
     ensureCloudChat(); renderChatBox('echatBox', cloudChatMsgs, curChat);
     return;
   }
@@ -1410,7 +2062,7 @@ function renderElderChat(){
     box.appendChild(d);
   });
   box.scrollTop=box.scrollHeight;
-  const inp=document.getElementById('echatInput'); if(inp) inp.placeholder='Написать: '+curChat+'…';
+  const inp=document.getElementById('echatInput'); if(inp) inp.placeholder=t('Написать')+': '+curChat+'…';
 }
 function sendElderChat(){
   const inp=document.getElementById('echatInput'); const t=inp.value.trim(); if(!t) return;
@@ -1431,7 +2083,7 @@ function readLastChat(){
 }
 
 /* ---------- memory game ---------- */
-const EMOJI=["🌻","🐈","🍎","🚗","🏠","🌙"];
+const EMOJI=["🌻","🐈","🍎","🚗","🏠","🌙","🔑","⌚","🎈","🍋"];
 let deck=[], first=null, lock=false, moves=0, pairs=0;
 function newGame(){
   deck=[...EMOJI,...EMOJI].map((e,i)=>({id:i,e,up:false,matched:false}))
@@ -1472,16 +2124,19 @@ function flip(idx){
 
 /* ---------- game: numbers in order ---------- */
 let numNext=1, numTimer=null, numStart=0, numRunning=false;
+const NUM_MAX=24;
 function newNumbers(){
   clearInterval(numTimer); numRunning=false; numNext=1;
   document.getElementById('numTime').textContent='0.0';
   document.getElementById('numFound').textContent='0';
+  const _nt=document.getElementById('numTotal'); if(_nt) _nt.textContent=NUM_MAX;
   document.getElementById('numBanner').classList.remove('show');
-  const nums=[1,2,3,4,5,6,7,8,9].sort(()=>Math.random()-0.5);
+  const nums=Array.from({length:NUM_MAX},(_,i)=>i+1).sort(()=>Math.random()-0.5);
   const g=document.getElementById('numGrid'); g.innerHTML='';
+  g.style.gridTemplateColumns='repeat(4,1fr)';
   nums.forEach(n=>{
     const b=document.createElement('button');
-    b.className='mcard up'; b.style.fontSize='34px'; b.style.fontWeight='800';
+    b.className='mcard up'; b.style.fontSize='24px'; b.style.fontWeight='800';
     b.textContent=n; b.dataset.n=n;
     b.onclick=()=>tapNumber(b,n);
     g.appendChild(b);
@@ -1493,7 +2148,7 @@ function tapNumber(btn,n){
   if(!numRunning){ numRunning=true; numStart=Date.now(); numTimer=setInterval(()=>{ document.getElementById('numTime').textContent=((Date.now()-numStart)/1000).toFixed(1); },100); }
   btn.classList.remove('up'); btn.classList.add('matched');
   numNext++; document.getElementById('numFound').textContent=numNext-1;
-  if(numNext>9){
+  if(numNext>NUM_MAX){
     clearInterval(numTimer); numRunning=false;
     const t=((Date.now()-numStart)/1000).toFixed(1);
     const bn=document.getElementById('numBanner');
@@ -1510,7 +2165,7 @@ function newObjects(){
   document.getElementById('objBanner').classList.remove('show');
   document.getElementById('objChoiceWrap').style.display='none';
   const pool=[...OBJ_POOL].sort(()=>Math.random()-0.5);
-  objTarget=pool.slice(0,4);
+  objTarget=pool.slice(0,7);
   const showG=document.getElementById('objShow');
   showG.style.display='grid'; showG.innerHTML='';
   document.getElementById('objHint').textContent='Запомните эти предметы…';
@@ -1518,7 +2173,7 @@ function newObjects(){
     const d=document.createElement('div'); d.className='mcard matched'; d.textContent=e; showG.appendChild(d);
   });
   // countdown then hide
-  let left=4;
+  let left=5;
   const hintEl=document.getElementById('objHint');
   const cd=setInterval(()=>{
     left--; hintEl.textContent=`Запомните эти предметы… ${left}`;
@@ -1528,7 +2183,7 @@ function newObjects(){
 function startObjChoice(pool){
   document.getElementById('objShow').style.display='none';
   document.getElementById('objHint').textContent='Предметы спрятаны. Какие из них были на картинке? Можно выбрать несколько.';
-  const choices=[...objTarget, ...pool.filter(e=>!objTarget.includes(e)).slice(0,5)].sort(()=>Math.random()-0.5);
+  const choices=[...objTarget, ...pool.filter(e=>!objTarget.includes(e)).slice(0,8)].sort(()=>Math.random()-0.5);
   const cg=document.getElementById('objChoice'); cg.innerHTML='';
   choices.forEach(e=>{
     const b=document.createElement('button'); b.className='mcard up'; b.textContent=e; b.dataset.e=e; b.dataset.sel='0';
@@ -1545,7 +2200,7 @@ function checkObjects(){
   if(correct===objTarget.length && wrong===0){ bn.textContent='🎉 Всё верно! Прекрасная память!'; speak('Всё верно! Прекрасная память.'); }
   else{ bn.textContent=`Правильно: ${correct} из ${objTarget.length}${wrong?`, лишних: ${wrong}`:''}. Попробуйте ещё раз!`; }
   bn.classList.add('show');
-  exDone({last:'Что было на картинке'});
+  exDone({last:'Что было на картинке', objCorrect:Math.max(0,correct-wrong), objTotal:objTarget.length});
 }
 
 /* ---------- caregiver / digital biomarkers ---------- */
@@ -1583,8 +2238,8 @@ function battCloudRow(label,pct){ return `<div class="batt"><div class="bi">📱
 function renderMapBattery(){
   const el=document.getElementById('mapBattery'); if(!el) return;
   if(cloudRel()){
-    if(cloudLive && cloudLive.battery!=null) el.innerHTML=battCloudRow('Телефон '+(patientName()||'близкого'), cloudLive.battery);
-    else el.innerHTML='<div style="color:var(--muted); font-size:15px; padding:4px 2px">🔋 Заряд устройства пока неизвестен</div>';
+    if(cloudLive && cloudLive.battery!=null) el.innerHTML=battCloudRow(t('Телефон')+' '+(patientName()||t('близкого')), cloudLive.battery);
+    else el.innerHTML='<div style="color:var(--muted); font-size:15px; padding:4px 2px">'+'🔋 '+t('Заряд устройства пока неизвестен')+'</div>';
   } else { renderBattery('mapBattery'); }
 }
 function renderCareCloud(){
@@ -1592,23 +2247,28 @@ function renderCareCloud(){
   const sr=document.querySelector('#care .switchrow'); if(sr) sr.style.display='none';
   document.getElementById('careRings').innerHTML='<div style="color:var(--muted); font-size:14px; padding:4px 2px">Сравнение с личной нормой появится, когда накопятся данные.</div>';
   const bb=document.getElementById('careBattery');
-  if(cloudLive && cloudLive.battery!=null) bb.innerHTML=battCloudRow('Телефон '+nm, cloudLive.battery);
-  else bb.innerHTML='<div style="color:var(--muted); font-size:15px; padding:4px 2px">🔋 Заряд устройств пока неизвестен</div>';
+  if(cloudLive && cloudLive.battery!=null) bb.innerHTML=battCloudRow(t('Телефон')+' '+nm, cloudLive.battery);
+  else bb.innerHTML='<div style="color:var(--muted); font-size:15px; padding:4px 2px">'+'🔋 '+t('Заряд устройств пока неизвестен')+'</div>';
   const al=document.getElementById('careAlerts'); al.innerHTML='';
-  if(cloudLive && cloudLive.sos){
+  // Сигнал SOS показывается только сутки после нажатия
+  if(cloudLive && cloudLive.sos && sosFresh(cloudLive.sos)){
+    const so=cloudLive.sos;
+    let when=so.when||'';
+    if(!when && so.ts){ try{ when=new Date(so.ts).toLocaleString(LOC(),{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}); }catch(e){ when=so.time||''; } }
     const s=document.createElement('div'); s.className='alert'; s.style.background='#ffe3ec'; s.style.borderLeftColor='var(--danger)'; s.style.color='var(--danger)'; s.style.fontWeight='800';
-    s.textContent='🆘 '+nm+' просит помощи ('+(cloudLive.sos.time||'')+')!';
+    s.textContent='🆘 '+nm+' '+t('просит помощи')+' — '+when;
     al.appendChild(s);
   }
   const hasData = cloudLive && (cloudLive.steps!=null || cloudLive.lat!=null || cloudLive.ok);
-  const g=document.createElement('div'); g.className='alert'; g.style.background='#eef2ff'; g.style.borderLeftColor='var(--blue)';
-  if(hasData){ const bits=[]; if(cloudLive.steps!=null) bits.push('шагов: '+cloudLive.steps); if(cloudLive.ok) bits.push('«всё хорошо»: '+cloudLive.ok); g.textContent='🟢 На связи — '+nm+(bits.length?' · '+bits.join(' · '):''); }
-  else { g.textContent='Пока нет данных от '+nm+'. Они появятся, когда он(а) поделится активностью и геопозицией с телефона или браслета.'; }
-  al.appendChild(g);
+  if(!hasData){
+    const g=document.createElement('div'); g.className='alert'; g.style.background='#eef2ff'; g.style.borderLeftColor='var(--blue)';
+    g.textContent=t('Пока нет данных от')+' '+nm+'.';
+    al.appendChild(g);
+  }
   const list=document.getElementById('bioList'); list.innerHTML='';
   if(cloudLive && cloudLive.steps!=null){
     const d=document.createElement('div'); d.className='bio';
-    d.innerHTML=`<div class="mi">🚶</div><div class="bv"><b>Активность сегодня</b><span class="now">${cloudLive.steps} шагов</span></div><div class="trend up">✓</div>`;
+    d.innerHTML=`<div class="mi">🚶</div><div class="bv"><b>${t('Активность сегодня')}</b><span class="now">${cloudLive.steps} ${t('шагов')}</span></div><div class="trend up">✓</div>`;
     list.appendChild(d);
   } else { list.innerHTML='<div style="color:var(--muted); padding:10px 2px">Данных об активности нет.</div>'; }
 }
@@ -1649,32 +2309,103 @@ function switchCareView(btn,which){
   document.querySelectorAll('.switchrow button').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on'); careView=which; renderCare();
 }
+function _rowOrNone(label, value, note){
+  const has = value!==null && value!==undefined && value!=='';
+  return `<tr><td>${label}</td><td>${has?String(value):'<i>нет данных</i>'}</td><td class="muted">${note||''}</td></tr>`;
+}
 function buildReportHTML(){
-  const bio=CARE.year.bio.map(b=>`<tr><td>${b.name}</td><td>${b.before.replace(/^Раньше:\s*/,'')}</td><td>${b.after.replace(/^Сейчас:\s*/,'')}</td></tr>`).join('');
-  const avg=(SLEEP.reduce((a,s)=>a+s.h,0)/SLEEP.length).toFixed(1);
-  let d=''; try{ d=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}); }catch(e){ d=''; }
-  return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Near — отчёт</title>
-  <style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:720px;margin:24px auto;color:#26224b;padding:0 16px}
-  h1{color:#6c5ce7} table{width:100%;border-collapse:collapse;margin:12px 0} td,th{border:1px solid #eae8fb;padding:8px;text-align:left;font-size:14px}
-  th{background:#f3f2ff} .muted{color:#7c7aa6;font-size:13px}</style></head><body>
-  <h1>Near — сводка для врача</h1>
-  <p><b>Человек:</b> ${settings.name}<br><b>Дата:</b> ${d}</p>
-  <p class="muted">Это вспомогательная сводка наблюдений на дому. Приложение не ставит диагноз и не заменяет обследование. Данные предоставлены с согласия пользователя.</p>
-  <h3>Изменения «раньше → сейчас» (сравнение человека с собой)</h3>
-  <table><tr><th>Показатель</th><th>Раньше</th><th>Сейчас</th></tr>${bio}</table>
-  <h3>Сон</h3><p>Средняя продолжительность сна за неделю: <b>${avg} ч</b>. Отмечены ночи с коротким/прерывистым сном.</p>
-  <h3>Активность и связь</h3><p>Снижение повседневной активности и частоты звонков близким по сравнению с личной нормой; изменения в речи (короче фразы, больше пауз).</p>
-  <p class="muted">Сформировано приложением Near, ${d}.</p>
+  // ВАЖНО: в отчёт попадают ТОЛЬКО реально собранные данные.
+  // Если данных нет — пишем «нет данных». Ничего не додумываем.
+  const L=cloudLive||null;
+  const person = (L&&L.name) || (account.role==='elder'? settings.name : '') || '—';
+  let d=''; try{ d=new Date().toLocaleDateString(LOC(),{day:'numeric',month:'long',year:'numeric'}); }catch(e){}
+  let upd=''; try{ if(L&&L.ts) upd=new Date(L.ts).toLocaleString(LOC()); }catch(e){}
+
+  const steps = (L && L.steps!=null) ? L.steps : null;
+  const stepsNote = steps==null ? '' : (healthSource==='bracelet' ? 'источник: фитнес-браслет' : 'источник: датчик телефона (без браслета — приблизительно)');
+  const ok = (L && L.ok) ? L.ok : null;
+  const geo = (L && L.geoOn) ? 'включена пользователем' : 'выключена';
+
+  // тренировки
+  const tr = L && L.train;
+  let trainBlock = '<p><i>Тренировки ещё не выполнялись — данных нет.</i></p>';
+  if(tr && tr.items && tr.items.length){
+    const rows = tr.items.map(i=>`<tr><td>${i.skill}</td><td>${i.score!=null? i.score+' из 100' : 'выполнено'}</td><td class="muted">${i.name}</td></tr>`).join('');
+    trainBlock = `<p>Последняя тренировка: <b>${tr.date||'—'}</b>${tr.total!=null?', итог <b>'+tr.total+' из 100</b>':''}</p>
+      <table><tr><th>Навык</th><th>Результат</th><th>Задание</th></tr>${rows}</table>
+      <p class="muted">Баллы рассчитаны по заданиям в приложении (скорость и точность). Это не клинический тест.</p>`;
+  }
+  const exDone = (L && L.ex && L.ex.done) ? L.ex.done : null;
+
+  // аудио
+  const recDate = (typeof cloudRecording!=='undefined' && cloudRecording && cloudRecording.date) ? cloudRecording.date : null;
+
+  return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Near — сводка для врача</title>
+  <style>
+  @page{ size:A4; margin:16mm; }
+  body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1b1b2b;margin:0;font-size:13px;line-height:1.55}
+  h1{color:#5847d6;font-size:21px;margin:0 0 2px} h3{font-size:15px;margin:18px 0 6px;color:#3b3570}
+  table{width:100%;border-collapse:collapse;margin:8px 0}
+  td,th{border:1px solid #ddd;padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:#f3f2ff;font-size:12px}
+  .muted{color:#6b6b85;font-size:12px}
+  .warn{border:1px solid #e8c9d4;background:#fff6f9;padding:10px 12px;border-radius:8px;margin:10px 0}
+  .hdr{border-bottom:2px solid #5847d6;padding-bottom:8px;margin-bottom:12px}
+  i{color:#8a8aa0}
+  @media print{ .noprint{display:none} }
+  </style></head><body>
+  <div class="hdr">
+    <h1>Near — сводка наблюдений на дому</h1>
+    <div class="muted">Сформировано ${d}</div>
+  </div>
+
+  <table>
+    <tr><td style="width:34%"><b>Пациент</b></td><td>${person}</td></tr>
+    <tr><td><b>Дата отчёта</b></td><td>${d}</td></tr>
+    <tr><td><b>Данные обновлены</b></td><td>${upd||'<i>нет данных</i>'}</td></tr>
+  </table>
+
+  <div class="warn">
+    <b>Как читать этот документ.</b> Это не медицинское заключение и не результат обследования.
+    Здесь собраны только те показатели, которые приложение фактически зафиксировало на телефоне
+    и (при наличии) на фитнес-браслете пользователя. Приложение <b>не ставит диагноз</b>.
+    Там, где написано «нет данных», измерения не проводились — пустые места намеренно не заполняются.
+  </div>
+
+  <h3>Активность</h3>
+  <table>
+    <tr><th>Показатель</th><th>Значение</th><th>Примечание</th></tr>
+    ${_rowOrNone('Шаги за сегодня', steps, stepsNote)}
+    ${_rowOrNone('Отметка «со мной всё хорошо»', ok, 'нажимается пользователем вручную')}
+    ${_rowOrNone('Выполнено заданий всего', exDone, '')}
+    <tr><td>Передача местоположения</td><td>${geo}</td><td class="muted">включается самим пользователем</td></tr>
+  </table>
+
+  <h3>Сон и пульс</h3>
+  <p><i>Нет данных.</i> <span class="muted">Эти показатели собираются только при подключённом фитнес-браслете или часах через Health Connect / Apple Health.</span></p>
+
+  <h3>Когнитивные задания в приложении</h3>
+  ${trainBlock}
+
+  <h3>Голосовые записи «Вопрос дня»</h3>
+  <p>${recDate ? 'Последняя запись: <b>'+recDate+'</b>. Аудио доступно близкому в приложении.' : '<i>Записей нет.</i>'}</p>
+
+  <h3>Приём лекарств</h3>
+  <p><i>Нет данных.</i> <span class="muted">Приложение показывает напоминания, но не подтверждает фактический приём препаратов.</span></p>
+
+  <p class="muted" style="margin-top:22px;border-top:1px solid #ddd;padding-top:10px">
+    Документ сформирован приложением Near ${d} по данным, переданным с согласия пользователя.
+    Приложение не является медицинским изделием.
+  </p>
+  <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
   </body></html>`;
 }
 function doctorReport(){
   try{
-    const blob=new Blob([buildReportHTML()],{type:'text/html'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download='Near-otchet.html';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),5000);
-    toast('📄 Отчёт сохранён на устройство');
+    const w=window.open('','_blank');
+    if(!w){ toast('Разрешите всплывающие окна, чтобы сохранить PDF'); return; }
+    w.document.open(); w.document.write(buildReportHTML()); w.document.close();
+    toast('📄 Выберите «Сохранить как PDF»');
   }catch(e){ toast('Не удалось сформировать отчёт'); }
 }
 
@@ -1798,7 +2529,7 @@ function startSpeechRec(){
   speechText=''; speechConf=[];
   if(!SR) return false;
   try{
-    speechRec=new SR(); speechRec.lang='ru-RU'; speechRec.continuous=true; speechRec.interimResults=false;
+    speechRec=new SR(); speechRec.lang=LOC(); speechRec.continuous=true; speechRec.interimResults=false;
     speechRec.onresult=(ev)=>{ for(let i=ev.resultIndex;i<ev.results.length;i++){ const r=ev.results[i]; if(r.isFinal){ speechText+=' '+r[0].transcript; if(typeof r[0].confidence==='number' && r[0].confidence>0) speechConf.push(r[0].confidence); } } };
     speechRec.onerror=()=>{};
     speechRec.start(); return true;
@@ -1835,7 +2566,7 @@ function getRecordings(){
   return pr;
 }
 function fmtDur(s){ const m=Math.floor(s/60), ss=String(s%60).padStart(2,'0'); return m+':'+ss; }
-function nowLabel(){ try{ const n=new Date(); return n.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})+', '+n.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return 'запись'; } }
+function nowLabel(){ try{ const n=new Date(); return n.toLocaleDateString(LOC(),{day:'numeric',month:'long'})+', '+n.toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'}); }catch(e){ return 'запись'; } }
 function resetDaily(){
   recOn=false; clearInterval(recAnim);
   if(recStream){ recStream.getTracks().forEach(t=>t.stop()); recStream=null; }
@@ -1843,13 +2574,19 @@ function resetDaily(){
   const lbl=document.getElementById('micLabel'); if(lbl) lbl.textContent='Нажмите и расскажите';
   document.getElementById('dailyBanner').classList.remove('show');
 }
+const REC_MAX=120; // максимум 2 минуты
 async function toggleRec(){
   const b=document.getElementById('micBtn'), lbl=document.getElementById('micLabel');
   if(!recOn){
     let gotMic=false;
     try{
-      recStream=await navigator.mediaDevices.getUserMedia({audio:true});
-      mediaRec=new MediaRecorder(recStream); recChunks=[];
+      recStream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1, echoCancellation:true, noiseSuppression:true}});
+      // низкий битрейт — чтобы запись была маленькой и точно дошла до родных
+      let opts={audioBitsPerSecond:16000};
+      const types=['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/mp4','audio/webm'];
+      for(const t of types){ try{ if(MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t)){ opts.mimeType=t; break; } }catch(e){} }
+      try{ mediaRec=new MediaRecorder(recStream, opts); }catch(e){ mediaRec=new MediaRecorder(recStream); }
+      recChunks=[];
       mediaRec.ondataavailable=e=>{ if(e.data&&e.data.size) recChunks.push(e.data); };
       mediaRec.onstop=saveRecording;
       mediaRec.start(1000); gotMic=true;
@@ -1858,7 +2595,14 @@ async function toggleRec(){
     recOn=true; recSeconds=0;
     b.textContent='⏸️'; b.style.background='var(--danger)';
     clearInterval(recAnim);
-    recAnim=setInterval(()=>{ recSeconds++; lbl.textContent='● Записываю… '+recSeconds+' сек (нажмите, чтобы закончить)'; },1000);
+    recAnim=setInterval(()=>{
+      recSeconds++;
+      const left=REC_MAX-recSeconds;
+      if(left<=0){ toast('Запись завершена — 2 минуты'); toggleRec(); return; }
+      lbl.textContent = left<=15
+        ? ('● Записываю… осталось '+left+' сек')
+        : ('● Записываю… '+recSeconds+' сек (нажмите, чтобы закончить)');
+    },1000);
     lbl.textContent=(gotMic?'● Записываю… 0 сек':'● Запись (демо, нет микрофона)…')+' (нажмите, чтобы закончить)';
   } else {
     recOn=false; clearInterval(recAnim);
@@ -1882,20 +2626,19 @@ function saveRecording(demo){
     if(account.cloud&&account.role==='elder'){
       pushCloudLive();
       if(cloudEnabled() && window.NearCloud.pushRecording){
-        const audio=(dataUrl && dataUrl.length<700000)? dataUrl : null;
+        const audio=(dataUrl && dataUrl.length<950000)? dataUrl : null;
         let ms=1; try{ ms=Date.now(); }catch(e){}
-        try{ window.NearCloud.pushRecording({ audio, summary: sum||null, date: nowLabel(), ts: ms }); }catch(e){}
+        try{ window.NearCloud.pushRecording({ audio, date: nowLabel(), ts: ms }); }catch(e){}
       }
     }
     if(recStream){ recStream.getTracks().forEach(t=>t.stop()); recStream=null; }
     const bn=document.getElementById('dailyBanner');
-    let analysis;
-    if(sum){ analysis='🧠 Анализ речи: '+sum+'.'; }
-    else if(!(window.SpeechRecognition||window.webkitSpeechRecognition)){ analysis='Распознавание речи не поддерживается этим браузером (лучше всего работает в Chrome на Android). Аудио сохранено — родные смогут послушать.'; }
-    else { analysis='Речь не распозналась — попробуйте в тихом месте и говорите чуть ближе к телефону. Аудио сохранено.'; }
-    bn.innerHTML='✔️ Рассказ сохранён'+(dataUrl?' (аудио записано)':'')+'.<br>'+analysis+'<br><span style="color:var(--muted); font-size:14px">Приложение не ставит диагноз, а бережно сравнивает рассказы со временем.</span>';
+    bn.innerHTML= dataUrl
+      ? '✔️ Рассказ сохранён — родные смогут его послушать.'
+      : '✔️ Рассказ сохранён.';
     bn.classList.add('show');
     document.getElementById('micLabel').textContent='Спасибо! Ваш рассказ сохранён.';
+    try{ trainingStepDone({recSeconds:recSeconds}); }catch(e){}
     speak('Спасибо за рассказ! Всё сохранено.');
   };
   if(demo || !recChunks.length){ finish(null); return; }
@@ -1961,34 +2704,80 @@ function seqTap(i){
 
 /* ---------- settings ---------- */
 function renderSettings(){
-  const n=document.getElementById('setName'); n.value=settings.name;
-  n.oninput=()=>{ settings.name=n.value.trim()||'друг'; saveSettings(); applySettings(); };
-  const ph=document.getElementById('setPhone'); ph.value=settings.phone||'';
-  ph.oninput=()=>{ settings.phone=ph.value.trim(); saveSettings(); };
   document.querySelectorAll('#fontRow button').forEach(b=>b.classList.toggle('on', b.dataset.f===settings.font));
-  const fl=document.getElementById('setFamList'); fl.innerHTML='';
-  if(!state.family.length) fl.innerHTML='<p style="color:var(--muted); margin:6px 2px">Список пуст.</p>';
-  state.family.forEach((p,i)=>{
-    const d=document.createElement('div'); d.className='person';
-    d.innerHTML=`<div class="avatar" style="background:${p.color}">${p.name[0]||'?'}</div>
-      <div><div class="pn">${p.name}</div><div class="pr">${p.rel}${p.phone?' · '+p.phone:''}</div></div>
-      <div class="callbtns"><button class="rbtn" style="background:var(--danger)" title="Удалить">✕</button></div>`;
-    d.querySelector('.rbtn').onclick=()=>{ state.family.splice(i,1); saveFamily(); renderFamily(); renderSettings(); toast('Удалено'); };
-    fl.appendChild(d);
-  });
 }
 function setFont(f){ settings.font=f; saveSettings(); applySettings(); renderSettings(); }
-const FAM_COLORS=['#e0788f','#4a86c5','#5aa87a','#c58b4a','#8a5fa8','#c0392b'];
-function addFamily(){
-  const name=document.getElementById('setFamName').value.trim();
-  const rel=document.getElementById('setFamRel').value.trim()||'близкий человек';
-  const phone=document.getElementById('setFamPhone').value.trim();
-  if(!name){ toast('Введите имя'); return; }
-  state.family.push({name, rel, phone, color:FAM_COLORS[state.family.length%FAM_COLORS.length]});
-  saveFamily();
-  document.getElementById('setFamName').value=''; document.getElementById('setFamRel').value=''; document.getElementById('setFamPhone').value='';
-  renderFamily(); renderSettings(); toast('Близкий добавлен ✓');
+
+/* ---------- удаление аккаунта (требование Google Play) ---------- */
+function askDeleteAccount(){
+  const st=document.getElementById('delStep'), m=document.getElementById('delMsg');
+  if(!cloudEnabled() || !account.cloud){
+    m.innerHTML='Удаление доступно для аккаунта онлайн-режима. Локальные данные можно стереть в Настройках → «Сбросить все данные».';
+    m.classList.add('show'); return;
+  }
+  st.style.display='block';
+  document.getElementById('delPass').value='';
+  m.classList.remove('show'); m.innerHTML='';
 }
+function cancelDeleteAccount(){
+  document.getElementById('delStep').style.display='none';
+  const m=document.getElementById('delMsg'); m.classList.remove('show'); m.innerHTML='';
+}
+function confirmDeleteAccount(){
+  const m=document.getElementById('delMsg');
+  const pass=(document.getElementById('delPass').value||'').trim();
+  if(!pass){ m.innerHTML='Введите пароль'; m.classList.add('show'); return; }
+  m.innerHTML='Удаляю данные…'; m.classList.add('show');
+  window.NearCloud.deleteAccount(pass)
+    .then(()=>{
+      try{ ['reminders','family','settings','consent','albums','recordings','route','chats','relChat','exStats','trainHistory','lastTraining','lastSpeech','okStatus','steps','geoSharing'].forEach(k=>Store.del(k)); }catch(e){}
+      account.cloud=false; stopCloudSync();
+      toast('Аккаунт и данные удалены');
+      show('login');
+    })
+    .catch(e=>{
+      const c=String((e&&e.code)||'');
+      m.innerHTML = /wrong-password|invalid-credential/i.test(c)
+        ? 'Неверный пароль. Попробуйте ещё раз.'
+        : 'Не удалось удалить: '+cloudErr(e);
+      m.classList.add('show');
+    });
+}
+
+/* ---------- личный кабинет ---------- */
+function openProfile(){
+  if(!account.cloud && !cloudEnabled()){ show('login'); return; }
+  show('profile');
+}
+function renderProfile(){
+  const n=document.getElementById('profName'), p=document.getElementById('profPhone');
+  if(n) n.value=settings.name||'';
+  if(p) p.value=settings.phone||'';
+  const m=document.getElementById('profMsg'); if(m){ m.classList.remove('show'); m.innerHTML=''; }
+  if(needPhone()){
+    const m2=document.getElementById('profMsg');
+    if(m2){ m2.innerHTML='❗ Укажите номер телефона — без него близкие не смогут вам позвонить.'; m2.classList.add('show'); }
+  }
+}
+function validPhone(v){ return String(v||'').replace(/[^\d]/g,'').length>=6; }
+function needPhone(){ return account.cloud && cloudEnabled() && !validPhone(settings.phone); }
+function _saveProfileFields(name, phone, msg){
+  settings.name=name; settings.phone=phone; saveSettings(); applySettings();
+  if(cloudEnabled() && window.NearCloud.saveProfileFields){
+    window.NearCloud.saveProfileFields({name, phone})
+      .then(()=>{ msg.innerHTML='✅ Сохранено'; msg.classList.add('show'); toast('Сохранено ✓'); if(account.role==='elder') pushCloudLive(); })
+      .catch(e=>{ msg.innerHTML='Ошибка: '+cloudErr(e); msg.classList.add('show'); });
+  } else { msg.innerHTML='✅ Сохранено'; msg.classList.add('show'); toast('Сохранено ✓'); }
+}
+function saveProfile(){
+  const n=document.getElementById('profName'), p=document.getElementById('profPhone');
+  const msg=document.getElementById('profMsg');
+  const name=(n&&n.value||'').trim(); const phone=(p&&p.value||'').trim();
+  if(!name){ msg.innerHTML='Введите имя'; msg.classList.add('show'); return; }
+  if(!validPhone(phone)){ msg.innerHTML='Введите номер телефона (например, +420 601 234 567)'; msg.classList.add('show'); return; }
+  _saveProfileFields(name, phone, msg);
+}
+const FAM_COLORS=['#e0788f','#4a86c5','#5aa87a','#c58b4a','#8a5fa8','#c0392b'];
 function resetAll(){
   ['reminders','family','settings','consent'].forEach(k=>Store.del(k));
   toast('Данные сброшены. Перезапустите приложение.');
@@ -2023,23 +2812,28 @@ function relSubmitCode(){
   const bn=document.getElementById('relBanner');
   if(account.cloud && cloudEnabled()){
     if(!val){ bn.innerHTML='Введите код'; bn.classList.add('show'); return; }
-    window.NearCloud.linkByCode(val, settings.name, settings.phone).then(r=>{
+    const myPhone=(settings.phone||'').trim();
+    if(!validPhone(myPhone)){
+      bn.innerHTML='❗ В вашем профиле не указан телефон. Откройте личный кабинет (значок 👤 вверху справа) и впишите номер — без него пользователь не сможет вам позвонить.';
+      bn.classList.add('show'); setTimeout(()=>show('profile'), 1200); return;
+    }
+    window.NearCloud.linkByCode(val, settings.name, myPhone).then(r=>{
       if(r&&r.error){ bn.innerHTML='❌ '+r.error; }
-      else { bn.innerHTML='✔️ Заявка отправлена! Пожилой человек подтвердит её у себя, после чего вы увидите его данные.'; document.getElementById('codeInput').value=''; }
+      else { bn.innerHTML='✔️ Заявка отправлена! Пользователь подтвердит её у себя, после чего вы увидите его данные.'; document.getElementById('codeInput').value=''; }
       bn.classList.add('show');
     }).catch(e=>{ bn.innerHTML='Ошибка: '+cloudErr(e); bn.classList.add('show'); });
     return;
   }
   if(val!==connection.code){
-    bn.innerHTML='❌ Код неверный. Попросите пожилого человека продиктовать актуальный код из раздела «Подключение и устройства».';
+    bn.innerHTML='❌ Код неверный. Попросите пользователя продиктовать актуальный код из раздела «Подключение и устройства».';
     bn.classList.add('show'); return;
   }
   if(connection.pending.some(p=>p.me)||connection.relatives.some(r=>r.me)){
     bn.innerHTML='ℹ️ Вы уже отправили заявку.'; bn.classList.add('show'); return;
   }
   connection.pending.push({name:'Вы', stage:'elder', me:true});
-  const extra = hasPrimary() ? ' Затем заявку одобрит главный родственник.' : ' Вы станете главным родственником.';
-  bn.innerHTML='✔️ Заявка отправлена! Её должен подтвердить пожилой человек в своём приложении.'+extra;
+  const extra = hasPrimary() ? ' Затем заявку одобрит главный близкий.' : ' Вы станете главным близким.';
+  bn.innerHTML='✔️ Заявка отправлена! Её должен подтвердить пользователь в своём приложении.'+extra;
   bn.classList.add('show');
   document.getElementById('codeInput').value='';
   toast('Заявка отправлена');
@@ -2049,10 +2843,10 @@ function approveElder(i){
   if(!hasPrimary()){
     connection.pending.splice(i,1);
     connection.relatives.push({name:p.name, primary:true, me:p.me});
-    toast(p.name+' подключён(а) как главный родственник');
+    toast(p.name+' подключён(а) как главный близкий');
   } else {
     p.stage='primary';
-    toast('Подтверждено. Теперь нужно одобрение главного родственника');
+    toast('Подтверждено. Теперь нужно одобрение главного близкого');
   }
   renderConnect();
 }
@@ -2075,10 +2869,10 @@ function renderConnect(){
     const d=document.createElement('div'); d.className='person';
     const stageTxt = p.stage==='elder'
       ? 'Ожидает вашего подтверждения'
-      : 'Ждёт одобрения главного родственника';
+      : 'Ждёт одобрения главного близкого';
     const btn = p.stage==='elder'
       ? `<button class="rbtn call" title="Подтвердить" onclick="approveElder(${i})">✓</button>`
-      : `<button class="rbtn call" title="Одобрить как главный" onclick="approvePrimary(${i})">★</button>`;
+      : `<button class="rbtn call" title="Одобрить как главного" onclick="approvePrimary(${i})">★</button>`;
     d.innerHTML=`<div class="avatar" style="background:#8a8f96">${p.name[0]}</div>
       <div><div class="pn">${p.name}${p.me?' (вы)':''}</div><div class="pr">${stageTxt}</div></div>
       <div class="callbtns">${btn}<button class="rbtn" style="background:var(--danger)" title="Отклонить" onclick="rejectReq(${i})">✕</button></div>`;
@@ -2090,7 +2884,7 @@ function renderConnect(){
   connection.relatives.forEach(r=>{
     const d=document.createElement('div'); d.className='person';
     d.innerHTML=`<div class="avatar" style="background:${r.primary?'#2e8b57':'#4a86c5'}">${r.name[0]}</div>
-      <div><div class="pn">${r.name}${r.me?' (вы)':''}</div><div class="pr">${r.primary?'★ главный родственник':'родственник'}</div></div>`;
+      <div><div class="pn">${r.name}${r.me?' (вы)':''}</div><div class="pr">${r.primary?'★ главный близкий':'близкий'}</div></div>`;
     fl.appendChild(d);
   });
   renderBraceletBox();
@@ -2114,7 +2908,7 @@ function renderConnectCloud(){
   cloudPending.forEach(p=>{
     const d=document.createElement('div'); d.className='person';
     d.innerHTML=`<div class="avatar" style="background:#8a8f96">${(p.name||'Р')[0]}</div>
-      <div><div class="pn">${p.name||'Родственник'}</div><div class="pr">Ожидает вашего подтверждения</div></div>
+      <div><div class="pn">${p.name||'Близкий'}</div><div class="pr">Ожидает вашего подтверждения</div></div>
       <div class="callbtns"><button class="rbtn call" title="Подтвердить">✓</button></div>`;
     d.querySelector('.call').onclick=()=>{ window.NearCloud.approve(p.uid).then(()=>{ toast('Подключён(а): '+(p.name||'')); window.NearCloud.ensureCode().then(c=>{ cloudCode=c; if(currentScreen==='connect') renderConnect(); }).catch(()=>{}); }).catch(e=>toast('Ошибка: '+cloudErr(e))); };
     rl.appendChild(d);
@@ -2122,7 +2916,7 @@ function renderConnectCloud(){
   const fl=document.getElementById('famConnList'); fl.innerHTML='';
   const appr=cloudRelatives.filter(r=>r.status==='approved');
   if(!appr.length){ fl.innerHTML='<p style="color:var(--muted); margin:6px 2px">Пока никто не подключён.</p>'; }
-  appr.forEach(r=>{ const d=document.createElement('div'); d.className='person'; d.innerHTML=`<div class="avatar" style="background:#4a86c5">${(r.name||'Р')[0]}</div><div><div class="pn">${r.name||'Родственник'}</div><div class="pr">родственник</div></div>`; fl.appendChild(d); });
+  appr.forEach(r=>{ const d=document.createElement('div'); d.className='person'; d.innerHTML=`<div class="avatar" style="background:#4a86c5">${(r.name||'Р')[0]}</div><div><div class="pn">${r.name||'Близкий'}</div><div class="pr">близкий</div></div>`; fl.appendChild(d); });
   renderBraceletBox();
 }
 function pairBracelet(){
@@ -2204,7 +2998,7 @@ const DAY_ROUTES = [
       {t:'🌳',n:'Парк',s:'прогулка, 25 мин',time:'11:15'},
       {t:'🏠',n:'Дом',s:'сейчас здесь',time:'13:10'},
     ]},
-  { name:'Вчера', label:'Маршрут за вчера', updated:'',
+  { name:'Вчера', label:t('Маршрут за вчера'), updated:'',
     points:[[50.0876,14.4212],[50.0862,14.4250],[50.0845,14.4290],[50.0858,14.4320],[50.0876,14.4212]],
     places:[
       {t:'🏠',n:'Дом',s:'утро',time:'09:10'},
@@ -2212,14 +3006,14 @@ const DAY_ROUTES = [
       {t:'💊',n:'Аптека',s:'лекарства',time:'12:20'},
       {t:'🏠',n:'Дом',s:'вернулась',time:'13:30'},
     ]},
-  { name:'2 дня назад', label:'Маршрут 2 дня назад', updated:'',
+  { name:t('2 дня назад'), label:'Маршрут 2 дня назад', updated:'',
     points:[[50.0876,14.4212],[50.0895,14.4180],[50.0910,14.4205],[50.0876,14.4212]],
     places:[
       {t:'⛪',n:'Церковь',s:'утренняя служба',time:'10:00'},
       {t:'🏠',n:'Дом',s:'весь день',time:''},
       {t:'⚠️',n:'Вечером не выходила',s:'меньше активности, чем обычно',time:''},
     ]},
-  { name:'3 дня назад', label:'Маршрут 3 дня назад', updated:'',
+  { name:t('3 дня назад'), label:'Маршрут 3 дня назад', updated:'',
     points:[[50.0876,14.4212],[50.0850,14.4230],[50.0835,14.4270],[50.0860,14.4300],[50.0876,14.4212]],
     places:[
       {t:'🏠',n:'Дом',s:'утро',time:'08:40'},
@@ -2267,7 +3061,7 @@ function renderPlaces(places){
   });
 }
 function renderMap(){
-  document.querySelector('#rmap .title').textContent='🗺️ Где сейчас '+patientName();
+  document.querySelector('#rmap .title').textContent=t('🗺️ Где сейчас')+' '+patientName();
   renderMapBattery();
   buildDayChips();
   const _gb=document.getElementById('geoBtn'), _dr=document.getElementById('dayRow');
@@ -2280,9 +3074,9 @@ function renderMap(){
   }
   if(cloudRel() && !(cloudLive && cloudLive.lat!=null)){
     if(mapReady()){ try{ ensureMap(); leafLayer&&leafLayer.clearLayers(); }catch(e){} }
-    document.getElementById('liveLabel').textContent='📍 Геолокация не подключена';
+    document.getElementById('liveLabel').textContent=t('📍 Геолокация не подключена');
     document.getElementById('mapUpdated').textContent='';
-    document.getElementById('placeList').innerHTML='<div style="color:var(--muted); padding:8px 2px; font-size:15px; line-height:1.5">Данных о геолокации нет. Попросите '+(patientName()||'близкого')+' включить геолокацию в приложении (Главная → «Поделиться местоположением») — это даёт согласие на обработку геоданных с телефона или браслета.</div>';
+    document.getElementById('placeList').innerHTML='<div style="color:var(--muted); padding:8px 2px; font-size:15px; line-height:1.5">'+t('Данных о геолокации нет.')+' '+t('Попросите')+' '+escapeHtml(patientName()||t('близкого'))+' '+t('включить геолокацию в приложении (Главная → «Поделиться местоположением»).')+'</div>';
     renderMyPlaces(null);
     return;
   }
@@ -2384,9 +3178,9 @@ const AUDIO=[
   {date:'2 дня назад, 21:10',dur:'1:05',note:'—'},
 ];
 function renderHealthCloud(){
-  const nm=patientName()||'Пожилой человек';
-  document.querySelector('#health .title').textContent='💗 Здоровье: '+(patientName()||'близкий');
-  document.getElementById('healthRings').innerHTML='<div style="color:var(--muted); font-size:14px; padding:4px 2px; line-height:1.5">Неполные сведения о здоровье. Чтобы видеть сон, пульс и активность, подключите здоровье пожилого человека — фитнес-браслет или программу «Здоровье» (Apple Health / Health Connect) в его приложении.</div>';
+  const nm=patientName()||'Пользователь';
+  document.querySelector('#health .title').textContent=t('💗 Здоровье')+': '+(patientName()||t('близкий'));
+  document.getElementById('healthRings').innerHTML='<div style="color:var(--muted); font-size:14px; padding:4px 2px; line-height:1.5">'+t('Чтобы видеть сон, пульс и активность, подключите фитнес-браслет или программу «Здоровье» (Apple Health / Health Connect).')+'</div>';
   const act=document.getElementById('activityChart');
   act.innerHTML = (cloudLive && cloudLive.steps!=null)
     ? '<div style="padding:6px 2px"><b style="font-size:22px">'+cloudLive.steps+'</b> шагов сегодня</div>'
@@ -2394,13 +3188,23 @@ function renderHealthCloud(){
   document.getElementById('sleepDays').innerHTML='<div style="color:var(--muted); padding:6px 2px">Данных о сне нет — нужен фитнес-браслет или программа «Здоровье».</div>';
   document.getElementById('sleepSummary').innerHTML='';
   const ex=cloudLive&&cloudLive.ex;
-  if(ex && ex.done>0){
+  const tr=cloudLive&&cloudLive.train;
+  if(tr && tr.items && tr.items.length){
+    let html='<div class="bio"><div class="mi">🏅</div><div class="bv"><b>Итог тренировки</b><span class="now">'+(tr.total!=null?tr.total+' из 100':'—')+'</span></div><div class="trend up">✓</div></div>';
+    tr.items.forEach(it=>{
+      const ic = it.skill==='Внимание'?'⚡':(it.skill==='Зрительная память'?'👁️':(it.skill==='Речь'?'🎙️':'🧠'));
+      html+='<div class="bio"><div class="mi">'+ic+'</div><div class="bv"><b>'+escapeHtml(it.skill)+'</b><span class="now">'+(it.score!=null?it.score+' из 100':'выполнено ✓')+'</span></div></div>';
+    });
+    if(tr.date) html+='<div style="color:var(--muted); font-size:14px; padding:6px 2px">Последняя тренировка: '+escapeHtml(tr.date)+'</div>';
+    if(ex&&ex.done) html+='<div style="color:var(--muted); font-size:14px; padding:0 2px 4px">Всего выполнено заданий: '+ex.done+'</div>';
+    document.getElementById('neuroList').innerHTML=html;
+  } else if(ex && ex.done>0){
     let html='<div class="bio"><div class="mi">🧩</div><div class="bv"><b>Выполнено заданий</b><span class="now">'+ex.done+'</span></div><div class="trend up">✓</div></div>';
     if(ex.numTime!=null) html+='<div class="bio"><div class="mi">⚡</div><div class="bv"><b>Скорость в игре «Числа»</b><span class="now">'+ex.numTime+' сек</span></div></div>';
     if(ex.last) html+='<div class="bio"><div class="mi">🎯</div><div class="bv"><b>Последнее задание</b><span class="now">'+escapeHtml(ex.last)+'</span></div></div>';
     document.getElementById('neuroList').innerHTML=html;
   } else {
-    document.getElementById('neuroList').innerHTML='<div style="color:var(--muted); padding:6px 2px">'+escapeHtml(nm)+' ещё не выполнял(а) упражнения — показатели появятся после первых заданий.</div>';
+    document.getElementById('neuroList').innerHTML='<div style="color:var(--muted); padding:6px 2px">'+escapeHtml(nm)+' '+t('ещё не выполнял(а) упражнения.')+'</div>';
   }
   const al=document.getElementById('audioList');
   let rec=cloudRecording;
@@ -2408,18 +3212,16 @@ function renderHealthCloud(){
   if(rec && (rec.audio || rec.summary)){
     al.innerHTML='';
     const d=document.createElement('div'); d.className='music';
-    d.innerHTML=`${rec.audio?'<button class="pbtn">▶</button>':''}<div style="flex:1"><b>${escapeHtml(rec.date||'Вопрос дня')}</b>${rec.summary?'<div style="color:var(--muted); font-size:13px; margin-top:2px">🧠 '+escapeHtml(rec.summary)+'</div>':''}${rec.audio?'':'<div style="color:var(--muted); font-size:13px">аудио не передано (запись слишком большая)</div>'}</div>`;
+    d.innerHTML=`${rec.audio?'<button class="pbtn">▶</button>':''}<div style="flex:1"><b>${escapeHtml(rec.date||'Вопрос дня')}</b>${rec.audio?'<div style="color:var(--muted); font-size:13px; margin-top:2px">Нажмите ▶, чтобы послушать</div>':'<div style="color:var(--muted); font-size:13px">аудио не сохранилось — запись оказалась слишком большой</div>'}</div>`;
     if(rec.audio){ const btn=d.querySelector('.pbtn'); btn.onclick=()=>{ try{ const au=new Audio(rec.audio); au.play(); toast('▶ Воспроизведение'); }catch(e){ toast('Не удалось воспроизвести'); } }; }
     al.appendChild(d);
-  } else if(cloudLive && cloudLive.speech && cloudLive.speech.summary){
-    al.innerHTML='<div class="music"><div style="flex:1"><b>'+escapeHtml(cloudLive.speech.date||'Вопрос дня')+'</b><div style="color:var(--muted); font-size:13px; margin-top:2px">🧠 '+escapeHtml(cloudLive.speech.summary)+'</div></div></div>';
   } else {
-    al.innerHTML='<div style="color:var(--muted); padding:6px 2px">'+escapeHtml(nm)+' ещё не записывал(а) аудио-ответы.</div>';
+    al.innerHTML='<div style="color:var(--muted); padding:6px 2px">'+escapeHtml(nm)+' '+t('ещё не записывал(а) аудио-ответы.')+'</div>';
   }
 }
 function renderHealth(){
   if(cloudRel()){ renderHealthCloud(); return; }
-  document.querySelector('#health .title').textContent='💗 Здоровье: '+patientName();
+  document.querySelector('#health .title').textContent=t('💗 Здоровье')+': '+patientName();
   renderRings('healthRings', [{label:'Сон',value:68},{label:'Актив.',value:52},{label:'Лекар.',value:80},{label:'Память',value:74}]);
   document.getElementById('activityChart').innerHTML=areaSVG(ACT, ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'], '#5b8cf6');
   const nl=document.getElementById('neuroList'); nl.innerHTML='';
@@ -2461,10 +3263,10 @@ let chatMsgs=Store.get('relChat', [
   {who:'them',text:'Уже приняла 💊'},
 ]);
 function renderContact(){
-  document.querySelector('#contact .title').textContent='💬 Связь: '+patientName();
+  document.querySelector('#contact .title').textContent=t('💬 Связь')+': '+patientName();
   const rp=document.getElementById('relPhone');
   if(rp){ rp.value=settings.phone||''; rp.oninput=()=>{ settings.phone=rp.value.trim(); saveSettings(); if(account.cloud && cloudEnabled() && window.NearCloud.updateRelProfile) window.NearCloud.updateRelProfile({name:settings.name, phone:settings.phone}); }; }
-  const inp=document.getElementById('chatInput'); if(inp) inp.placeholder='Написать сообщение…';
+  const inp=document.getElementById('chatInput'); if(inp) inp.placeholder=t('Написать сообщение…');
   if(account.cloud && cloudEnabled()){
     ensureCloudChat(); renderChatBox('chatBox', cloudChatMsgs, patientName());
     return;
@@ -2544,10 +3346,20 @@ function realMapSVG(route){
 let geoSharing=false;
 function shareLocation(){
   geoSharing=!geoSharing;
-  toggleGeo();
   const hint=document.getElementById('geoShareHint'), btn=document.getElementById('geoShareBtn');
-  if(geoSharing){ if(hint) hint.textContent='Включаю… родные скоро увидят ваше местоположение'; if(btn) btn.textContent='Выключить'; if(account.cloud) setTimeout(pushCloudLive,1500); }
-  else { if(hint) hint.textContent='Выключено — родные не видят, где вы'; if(btn) btn.textContent='Включить'; }
+  // Включаем/выключаем GPS осознанно, а не «переключаем вслепую»
+  if(geoSharing){
+    if(!geoOn) toggleGeo();
+    if(hint) hint.textContent='Включаю… родные скоро увидят ваше местоположение';
+    if(btn) btn.textContent='Выключить';
+    if(account.cloud){ setTimeout(pushCloudLive,1500); setTimeout(pushCloudLive,5000); }
+  } else {
+    if(geoOn) toggleGeo();
+    if(hint) hint.textContent='Выключено — родные не видят, где вы';
+    if(btn) btn.textContent='Включить';
+    if(account.cloud) setTimeout(pushCloudLive,300);
+  }
+  Store.set('geoSharing', geoSharing);
 }
 function stopGeoWatch(){
   const C=window.Capacitor;
@@ -2574,17 +3386,25 @@ async function toggleGeo(){
   // Нативно (на телефоне): точная геолокация через плагин Capacitor
   if(C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.Geolocation){
     const G=C.Plugins.Geolocation;
+    let nativeOk=false;
     try{ await G.requestPermissions(); }catch(e){}
     try{
       geoNative=true;
       geoWatch=await G.watchPosition({enableHighAccuracy:true, timeout:20000, maximumAge:3000}, (pos,err)=>{
         if(err){ onErr(err.message||'ошибка'); return; }
-        if(pos&&pos.coords) onPos(pos.coords.latitude, pos.coords.longitude);
+        if(pos&&pos.coords){ nativeOk=true; onPos(pos.coords.latitude, pos.coords.longitude); }
       });
-    }catch(e){ onErr(String(e&&e.message||e)); }
-    return;
+      // Если за 6 секунд нативный GPS ничего не дал — пробуем обычный способ
+      setTimeout(()=>{
+        if(!nativeOk && !realRoute.length && navigator.geolocation){
+          geoNative=false;
+          try{ navigator.geolocation.watchPosition(p=>onPos(p.coords.latitude,p.coords.longitude), e=>onErr(e.message), {enableHighAccuracy:true,maximumAge:5000,timeout:20000}); }catch(e){}
+        }
+      }, 6000);
+      return;
+    }catch(e){ geoNative=false; onErr('нет доступа к GPS, пробую другой способ'); }
   }
-  // Веб-версия: обычная геолокация браузера
+  // Веб-версия / запасной путь: обычная геолокация
   geoNative=false;
   if(!navigator.geolocation){ toast('Геолокация недоступна на этом устройстве'); return; }
   geoWatch=navigator.geolocation.watchPosition(pos=>{
@@ -2798,6 +3618,62 @@ window.addEventListener('appinstalled',()=>toast('✅ Near установлен 
           await F.setDoc(F.doc(db,'rels',uid,'pens',pid),{status:'pending'});
           return {ok:true,pid};
         };
+        // ---- полное удаление аккаунта и всех данных ----
+        NC.deleteAccount = async (password)=>{
+          const user=auth.currentUser; if(!user) throw new Error('нет входа в аккаунт');
+          const uid=user.uid;
+          // Google требует свежий вход перед удалением — подтверждаем пароль
+          if(password && user.email){
+            const cred=A.EmailAuthProvider.credential(user.email, password);
+            await A.reauthenticateWithCredential(user, cred);
+          }
+          const del=async(ref)=>{ try{ await F.deleteDoc(ref); }catch(e){} };
+          const delAll=async(col)=>{ try{ const s=await F.getDocs(col); for(const d of s.docs) await del(d.ref); }catch(e){} };
+
+          // 1) мой профиль и мой код подключения
+          try{
+            const me=await F.getDoc(uref(uid));
+            const code=me.exists()&&me.data().code;
+            if(code) await del(F.doc(db,'codes',String(code)));
+          }catch(e){}
+
+          // 2) если я пользователь: живые данные, записи, список близких и наши чаты
+          try{
+            const rels=await F.getDocs(F.collection(db,'pensioners',uid,'rel'));
+            for(const d of rels.docs){
+              await delAll(F.collection(db,'chats', uid+'__'+d.id, 'msgs'));
+              await del(F.doc(db,'rels',d.id,'pens',uid));
+              await del(d.ref);
+            }
+          }catch(e){}
+          await del(F.doc(db,'pensioners',uid,'live','state'));
+          await del(F.doc(db,'pensioners',uid,'recordings','last'));
+
+          // 3) если я близкий: отвязываемся от всех пожилых и чистим наши чаты
+          try{
+            const pens=await F.getDocs(F.collection(db,'rels',uid,'pens'));
+            for(const d of pens.docs){
+              await delAll(F.collection(db,'chats', d.id+'__'+uid, 'msgs'));
+              await del(F.doc(db,'pensioners',d.id,'rel',uid));
+              await del(d.ref);
+            }
+          }catch(e){}
+
+          // 4) сам профиль и учётная запись
+          await del(uref(uid));
+          await A.deleteUser(user);
+          return true;
+        };
+        // сохранить имя/телефон в свой профиль (и разослать связанным)
+        NC.saveProfileFields = async ({name,phone})=>{
+          const uid=auth.currentUser.uid;
+          await F.setDoc(uref(uid),{name:name||'',phone:phone||''},{merge:true});
+          if(NC._profile){ NC._profile.name=name; NC._profile.phone=phone; }
+          // если это близкий — обновим карточку у всех его пожилых
+          try{ const snap=await F.getDocs(F.collection(db,'rels',uid,'pens')); for(const d of snap.docs){ await F.setDoc(F.doc(db,'pensioners',d.id,'rel',uid),{name:name||'',phone:phone||''},{merge:true}); } }catch(e){}
+          // если это пожилой — обновим имя в списках у близких
+          try{ const snap2=await F.getDocs(F.collection(db,'pensioners',uid,'rel')); for(const d of snap2.docs){ await F.setDoc(F.doc(db,'rels',d.id,'pens',uid),{name:name||''},{merge:true}); } }catch(e){}
+        };
         NC.updateRelProfile = async ({name,phone})=>{
           const uid=auth.currentUser.uid;
           await F.setDoc(uref(uid),{name:name||'',phone:phone||''},{merge:true});
@@ -2805,7 +3681,7 @@ window.addEventListener('appinstalled',()=>toast('✅ Near установлен 
         };
         let liveUnsub=null, recUnsub=null;
         NC.pushRecording = async (rec)=>{ const uid=auth.currentUser.uid; try{ await F.setDoc(F.doc(db,'pensioners',uid,'recordings','last'), rec); }catch(e){} };
-        // --- поддержка нескольких пожилых людей у родственника ---
+        // --- поддержка нескольких пожилых людей у близкого ---
         let _pensDocs=[], _activePid=null, _liveCb=null, _recCb=null, _pensCb=null, _pensStarted=false;
         function _pickPid(){
           const appr=_pensDocs.filter(d=>d.status==='approved');
@@ -2830,9 +3706,11 @@ window.addEventListener('appinstalled',()=>toast('✅ Near установлен 
           });
           NC._unsub.push(u);
         }
-        NC.watchRecording = (cb)=>{ _recCb=cb; _ensurePensWatch(); };
-        NC.watchPensioner = (cb)=>{ _liveCb=cb; _ensurePensWatch(); };
-        NC.watchPensList = (cb)=>{ _pensCb=cb; _ensurePensWatch(); };
+        // ВАЖНО: после назначения обработчика всегда пере-подключаемся к данным,
+        // иначе подписка, созданная раньше, останется без обработчика.
+        NC.watchRecording = (cb)=>{ _recCb=cb; _ensurePensWatch(); _rewire(); };
+        NC.watchPensioner = (cb)=>{ _liveCb=cb; _ensurePensWatch(); _rewire(); };
+        NC.watchPensList = (cb)=>{ _pensCb=cb; _ensurePensWatch(); if(_pensDocs.length&&_pensCb) _pensCb(_pensDocs.filter(d=>d.status==='approved')); };
         NC.setActivePid = (pid)=>{ _activePid=pid; _rewire(); };
         NC.uid = ()=> auth.currentUser && auth.currentUser.uid;
         NC.sendMessage = async (chatId,text)=>{ const uid=auth.currentUser.uid; await F.addDoc(F.collection(db,'chats',chatId,'msgs'),{from:uid,text,ts:Date.now()}); };
@@ -2843,5 +3721,6 @@ window.addEventListener('appinstalled',()=>toast('✅ Near установлен 
     })();
   }
 </script>
+
 </body>
 </html>

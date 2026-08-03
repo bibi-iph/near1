@@ -120,3 +120,160 @@ workflows:
       email:
         recipients:
           - hhzzzd@seznam.cz
+
+  android-release:
+    name: Near Android (подписанный AAB для Google Play)
+    max_build_duration: 60
+    environment:
+      node: 20
+      java: 21
+      groups:
+        - near_keystore
+    scripts:
+      - name: Установить зависимости
+        script: npm install
+
+      - name: Добавить платформу Android
+        script: npx cap add android || true
+
+      - name: Правки Health Connect и исправление плагина
+        script: |
+          python3 - <<'PY'
+          import re, io, glob
+          # 1) AndroidManifest.xml — разрешения здоровья и активность-обоснование
+          mpath = "android/app/src/main/AndroidManifest.xml"
+          m = io.open(mpath, encoding="utf-8").read()
+          if "READ_STEPS" not in m:
+              activities = '''
+              <activity
+                  android:name="com.fit_up.health.capacitor.PermissionsRationaleActivity"
+                  android:exported="true">
+                  <intent-filter>
+                      <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+                  </intent-filter>
+              </activity>
+              <activity-alias
+                  android:name="ViewPermissionUsageActivity"
+                  android:exported="true"
+                  android:targetActivity="com.fit_up.health.capacitor.PermissionsRationaleActivity"
+                  android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+                  <intent-filter>
+                      <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                      <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+                  </intent-filter>
+              </activity-alias>
+          '''
+              m = m.replace("</application>", activities + "    </application>", 1)
+              health = '''
+              <queries>
+                  <package android:name="com.google.android.apps.healthdata" />
+              </queries>
+              <uses-permission android:name="android.permission.health.READ_STEPS" />
+              <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
+              <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+              <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+              <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTE" />
+              <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+          '''
+              m = m.replace("</manifest>", health + "</manifest>", 1)
+              io.open(mpath, "w", encoding="utf-8").write(m)
+              print("AndroidManifest.xml пропатчен")
+
+          # 2) variables.gradle — minSdk 26, compileSdk 36, targetSdk 36
+          vpath = "android/variables.gradle"
+          v = io.open(vpath, encoding="utf-8").read()
+          v = re.sub(r"minSdkVersion\s*=\s*\d+", "minSdkVersion = 26", v)
+          v = re.sub(r"compileSdkVersion\s*=\s*\d+", "compileSdkVersion = 36", v)
+          v = re.sub(r"targetSdkVersion\s*=\s*\d+", "targetSdkVersion = 36", v)
+          io.open(vpath, "w", encoding="utf-8").write(v)
+          print("variables.gradle:", [l for l in v.splitlines() if "SdkVersion" in l])
+
+          # 3) build.gradle — Android Gradle Plugin 8.9.1
+          bpath = "android/build.gradle"
+          b = io.open(bpath, encoding="utf-8").read()
+          b = re.sub(r"com\.android\.tools\.build:gradle:[0-9.]+", "com.android.tools.build:gradle:8.9.1", b)
+          io.open(bpath, "w", encoding="utf-8").write(b)
+
+          # 4) Gradle wrapper 8.11.1
+          wpath = "android/gradle/wrapper/gradle-wrapper.properties"
+          w = io.open(wpath, encoding="utf-8").read()
+          w = re.sub(r"gradle-[0-9.]+-(all|bin)\.zip", "gradle-8.11.1-all.zip", w)
+          io.open(wpath, "w", encoding="utf-8").write(w)
+
+          # 5) Исправляем два бага в коде плагина:
+          #    (а) опечатку dataOriginsFilter -> dataOriginFilter
+          #    (б) вызов suspend-функции hasPermission из обычного контекста —
+          #        делаем hasPermission обычной функцией-обёрткой через runBlocking
+          fixed = 0
+          decl = "private suspend fun hasPermission(p: CapHealthPermission): Boolean {"
+          wrap = ("private fun hasPermission(p: CapHealthPermission): Boolean = "
+                  "kotlinx.coroutines.runBlocking { hasPermissionSuspend(p) }\n\n"
+                  "    private suspend fun hasPermissionSuspend(p: CapHealthPermission): Boolean {")
+          for f in glob.glob("node_modules/capacitor-health/android/src/main/**/*.kt", recursive=True):
+              t = io.open(f, encoding="utf-8").read()
+              orig = t
+              t = t.replace("dataOriginsFilter", "dataOriginFilter")
+              if decl in t and "hasPermissionSuspend" not in t:
+                  t = t.replace(decl, wrap)
+              if t != orig:
+                  io.open(f, "w", encoding="utf-8").write(t)
+                  fixed += 1
+                  print("плагин пропатчен:", f)
+          print("исправлено файлов плагина:", fixed)
+          PY
+
+      - name: Синхронизировать веб-код в приложение
+        script: npx cap sync android
+
+      - name: Собрать debug APK
+        script: |
+          chmod +x android/gradlew || true
+          cd android
+          ./gradlew assembleDebug
+      - name: Настроить подпись приложения
+        script: |
+          echo $NEAR_KEYSTORE | base64 --decode > /tmp/near.keystore
+          python3 - <<'PY'
+          import io, os
+          cfg = '''
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file("/tmp/near.keystore")
+                      storePassword System.getenv("NEAR_KEYSTORE_PASS")
+                      keyAlias System.getenv("NEAR_KEY_ALIAS")
+                      keyPassword System.getenv("NEAR_KEYSTORE_PASS")
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                  }
+              }
+          }
+          '''
+          p = "android/app/build.gradle"
+          t = io.open(p, encoding="utf-8").read()
+          if "signingConfigs" not in t:
+              io.open(p, "a", encoding="utf-8").write(cfg)
+              print("подпись добавлена в build.gradle")
+          else:
+              print("подпись уже настроена")
+          PY
+
+      - name: Собрать подписанный AAB для Google Play
+        script: |
+          chmod +x android/gradlew || true
+          cd android
+          ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/bundle/**/*.aab
+    publishing:
+      email:
+        recipients:
+          - hhzzzd@seznam.cz
