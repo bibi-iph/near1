@@ -11,7 +11,14 @@ workflows:
       java: 21
     scripts:
       - name: Установить зависимости
-        script: npm install
+        script: |
+          npm install
+          # Гарантируем наличие плагинов, даже если package.json в репозитории устарел
+          npm install capacitor-health@^7.1.0 @capacitor/geolocation@^7.0.0 --save
+          echo "--- зависимости после установки ---"
+          node -e "const p=require('./package.json'); console.log(JSON.stringify(p.dependencies,null,1));"
+          test -d node_modules/capacitor-health || { echo 'ОШИБКА: плагин браслета не установился'; exit 1; }
+          echo "плагин браслета на месте"
 
       - name: Добавить платформу Android
         script: npx cap add android || true
@@ -107,7 +114,14 @@ workflows:
           PY
 
       - name: Синхронизировать веб-код в приложение
-        script: npx cap sync android
+        script: |
+          npx cap sync android
+          echo "--- плагины, подключённые к Android ---"
+          cat android/capacitor.settings.gradle || true
+          grep -q "capacitor-health" android/capacitor.settings.gradle || { echo 'ОШИБКА: плагин браслета не подключился к Android-проекту'; exit 1; }
+          grep -q "READ_STEPS" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешений Health Connect'; exit 1; }
+          grep -q "ACCESS_FINE_LOCATION" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на геолокацию'; exit 1; }
+          echo "проверка пройдена: браслет, здоровье и геолокация подключены"
 
       - name: Собрать debug APK
         script: |
@@ -131,7 +145,14 @@ workflows:
         - near_keystore
     scripts:
       - name: Установить зависимости
-        script: npm install
+        script: |
+          npm install
+          # Гарантируем наличие плагинов, даже если package.json в репозитории устарел
+          npm install capacitor-health@^7.1.0 @capacitor/geolocation@^7.0.0 --save
+          echo "--- зависимости после установки ---"
+          node -e "const p=require('./package.json'); console.log(JSON.stringify(p.dependencies,null,1));"
+          test -d node_modules/capacitor-health || { echo 'ОШИБКА: плагин браслета не установился'; exit 1; }
+          echo "плагин браслета на месте"
 
       - name: Добавить платформу Android
         script: npx cap add android || true
@@ -227,7 +248,14 @@ workflows:
           PY
 
       - name: Синхронизировать веб-код в приложение
-        script: npx cap sync android
+        script: |
+          npx cap sync android
+          echo "--- плагины, подключённые к Android ---"
+          cat android/capacitor.settings.gradle || true
+          grep -q "capacitor-health" android/capacitor.settings.gradle || { echo 'ОШИБКА: плагин браслета не подключился к Android-проекту'; exit 1; }
+          grep -q "READ_STEPS" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешений Health Connect'; exit 1; }
+          grep -q "ACCESS_FINE_LOCATION" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на геолокацию'; exit 1; }
+          echo "проверка пройдена: браслет, здоровье и геолокация подключены"
 
       - name: Собрать debug APK
         script: |
