@@ -931,7 +931,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     </div>
     <div class="card">
       <p style="margin-top:0; font-weight:700">Язык · Language</p>
-      <p style="color:var(--muted); font-size:13px; margin:0 0 10px">Версия приложения: <b>v13 · 3 августа</b></p>
+      <p style="color:var(--muted); font-size:13px; margin:0 0 10px">Версия приложения: <b id="buildStamp">—</b></p>
       <div class="langpick" style="display:flex; gap:8px; flex-wrap:wrap"></div>
     </div>
 
@@ -2769,6 +2769,7 @@ function openProfile(){
   show('profile');
 }
 function renderProfile(){
+  const bs=document.getElementById('buildStamp'); if(bs) bs.textContent=APP_BUILD;
   const n=document.getElementById('profName'), p=document.getElementById('profPhone');
   if(n) n.value=settings.name||'';
   if(p) p.value=settings.phone||'';
@@ -3484,17 +3485,31 @@ async function toggleGeo(){
 /* ---------- Health: bracelet/watch via HealthKit / Health Connect, else phone ---------- */
 const Health = {
   plugin:null, available:false,
+  getPlugin(){
+    const C=window.Capacitor; if(!C) return null;
+    // 1) обычный способ
+    if(C.Plugins && C.Plugins.Health) return C.Plugins.Health;
+    // 2) явная регистрация — в новых версиях Capacitor объект Plugins не создаётся сам
+    try{ if(typeof C.registerPlugin==='function'){ const h=C.registerPlugin('Health'); if(h) return h; } }catch(e){}
+    // 3) через список плагинов, вшитых в сборку
+    try{
+      const heads=C.PluginHeaders||[];
+      const found=heads.find(x=>x && (x.name==='Health'||x.name==='CapacitorHealth'));
+      if(found && typeof C.registerPlugin==='function') return C.registerPlugin(found.name);
+    }catch(e){}
+    return null;
+  },
   async init(){
+    this.plugin=null; this.available=false;
     try{
       const C=window.Capacitor;
-      if(C && C.isNativePlatform && C.isNativePlatform()){
-        const H=C.Plugins && C.Plugins.Health;
-        if(H){
-          let ok=true;
-          try{ const r=await H.isHealthAvailable(); ok=!(r&&r.available===false); }catch(e){}
-          if(ok){ this.plugin=H; this.available=true; }
-        }
-      }
+      if(!(C && C.isNativePlatform && C.isNativePlatform())) return;
+      const H=this.getPlugin();
+      if(!H) return;
+      this.plugin=H;
+      let ok=true;
+      try{ const r=await H.isHealthAvailable(); ok=!(r&&r.available===false); }catch(e){ ok=true; }
+      this.available=ok;
     }catch(e){}
   },
   async requestPermissions(){
@@ -3558,6 +3573,7 @@ const Health = {
 
 
 /* ---------- Мастер подключения браслета: подсказки под конкретный телефон ---------- */
+const APP_BUILD='v14 · 3 авг 21:30';
 function detectPhone(){
   const ua=navigator.userAgent||'';
   let vendor='other', vname='ваш телефон', app='приложение вашего браслета';
@@ -3687,9 +3703,22 @@ async function healthDiag(){
     if(isIOS){
       add('!! ВНИМАНИЕ', 'Файл .apk — только для Android, на iPhone он не ставится.');
     }
-    add('2. Версия кода', 'v13');
-    const H=(C && C.Plugins && C.Plugins.Health) || null;
-    add('3. Плагин здоровья в сборке', H? 'ЕСТЬ' : 'НЕТ — нужна пересборка .apk');
+    add('2. Версия кода', APP_BUILD);
+    // список всех плагинов, вшитых в приложение
+    let names=[];
+    try{
+      const heads=(C&&C.PluginHeaders)||[];
+      names=heads.map(x=>x&&x.name).filter(Boolean);
+      if(!names.length && C&&C.Plugins) names=Object.keys(C.Plugins);
+    }catch(e){}
+    add('2b. Плагины в сборке', names.length? names.join(', ') : 'список недоступен');
+    const H=Health.getPlugin();
+    add('3. Плагин здоровья в сборке', H? 'ЕСТЬ' : 'НЕТ — его нет в собранном .apk');
+    if(!H && names.length){
+      add('3b. Подсказка', names.some(n=>/health/i.test(n))
+        ? 'Плагин есть в списке, но называется иначе — пришлите строку 2b'
+        : 'Плагина нет в сборке: при сборке не установился capacitor-health');
+    }
     if(H){
       let av='?';
       try{ const r=await H.isHealthAvailable(); av=JSON.stringify(r); }catch(e){ av='ОШИБКА '+(e&&e.message||e); }
