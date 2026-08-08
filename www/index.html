@@ -252,7 +252,11 @@
   .ico-teal{ background:#25c9c1 !important; }
   .ico-gray{ background:#8b90b8 !important; }
   /* charts */
-  .rings{ display:flex; gap:10px; justify-content:space-between; }
+  /* В этих карточках лежат строки показателей (.bio) — они должны идти
+     друг под другом. Раньше здесь был горизонтальный flex: при пяти
+     показателях каждая колонка сжималась почти до нуля, и текст
+     рассыпался в столбик по одной букве. */
+  .rings{ display:block; }
   .ringcell{ flex:1; text-align:center; }
   .ringcell .rl{ font-size:13px; color:var(--muted); margin-top:4px; font-weight:700; }
   .chartcard svg{ display:block; width:100%; }
@@ -274,7 +278,6 @@
   }
   .rtxt, .bv, .pl, .mv { flex:1; min-width:0; }
   .person > div:not(.avatar):not(.callbtns) { min-width:0; overflow:hidden; }
-  .rings { gap:6px; }
   .ringcell { min-width:0; }
   .rl { line-height:1.15; }
   .appbar .logo { white-space:nowrap; }
@@ -622,6 +625,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       <div id="liveExtra" style="color:var(--muted); font-size:15px; margin-top:4px"></div>
       <div id="liveSource" style="font-size:14px; font-weight:700; margin-top:6px"></div>
       <div id="liveHint" style="color:var(--muted); font-size:15px; margin-top:6px">Подключите фитнес-браслет или часы. Если их нет — данные возьмём с телефона.</div>
+      <button class="bigbtn green" style="margin-top:10px; display:none" id="healthAccessBtn" onclick="grantHealthAccess()">Разрешить сон, пульс и кислород</button>
       <button class="bigbtn ghost" style="margin-top:10px" id="enableSensorsBtn" onclick="show('band_setup')">Подключить браслет или часы</button>
       <button class="bigbtn ghost" style="margin-top:8px; font-size:15px" onclick="healthDiag()">🔧 Проверить браслет (диагностика)</button>
       <pre id="healthDiagBox" style="display:none; white-space:pre-wrap; font-size:12px; background:#f6f5ff; border:1px solid var(--line); border-radius:12px; padding:10px; margin-top:10px; overflow-x:auto"></pre>
@@ -1443,7 +1447,14 @@ function startCloudSync(role){
     window.NearCloud.watchRecording((r)=>{ cloudRecording=r; if(currentScreen==='health') renderHealth(); });
     window.NearCloud.watchPensioner((live,pid)=>{
       cloudLive=live; cloudPid=pid; subscribeChat();
-      if(cloudLive && cloudLive.sos && cloudLive.sos.ts && cloudLive.sos.ts!==lastSosTs){ lastSosTs=cloudLive.sos.ts; notifySOS(cloudLive); }
+      // Голосом и уведомлением сообщаем только о СВЕЖЕЙ тревоге (сутки).
+      // Раньше проверки на давность не было: при каждом входе в приложение
+      // заново проигрывался сигнал недельной давности.
+      if(cloudLive && cloudLive.sos && cloudLive.sos.ts && cloudLive.sos.ts!==lastSosTs && sosFresh(cloudLive.sos)){
+        lastSosTs=cloudLive.sos.ts; notifySOS(cloudLive);
+      } else if(cloudLive && cloudLive.sos && cloudLive.sos.ts){
+        lastSosTs=cloudLive.sos.ts;   // старую тревогу просто запоминаем молча
+      }
       const linked=!!pid;
       if(linked!==cloudLinked){
         cloudLinked=linked;
@@ -1485,6 +1496,7 @@ function pushCloudLive(){
       steps: stepsOut, stepsSource: stepsSource, stepsTs: healthStepsTime||null,
       battery:liveBattery,
       hr:healthHR!=null?healthHR:null, hrTs: healthHRTime||null, hrStatus:Health.hrStatus,
+      hrAvg: healthHRAvg!=null?healthHRAvg:null, hrMin: healthHRMin!=null?healthHRMin:null,
       spo2:healthSpo2!=null?healthSpo2:null, spo2Ts: healthSpo2Time||null, spo2Status:Health.spo2Status,
       calories:healthCalories!=null?healthCalories:null,
       sleep:healthSleep!=null?healthSleep:null, sleepStatus:Health.sleepStatus, sleepSource: healthSleepSource||null,
@@ -2257,6 +2269,7 @@ function renderMapBattery(){
   if(cloudRel()){
     if(cloudLive && cloudLive.battery!=null) el.innerHTML=battCloudRow(t('Телефон')+' '+(patientName()||t('близкого')), cloudLive.battery);
     else el.innerHTML='<div style="color:var(--muted); font-size:15px; padding:4px 2px">'+'🔋 '+t('Заряд устройства пока неизвестен')+'</div>';
+    el.insertAdjacentHTML('beforeend', braceletBatteryNote());
   } else { renderBattery('mapBattery'); }
 }
 function renderCareCloud(){
@@ -2266,6 +2279,7 @@ function renderCareCloud(){
   const bb=document.getElementById('careBattery');
   if(cloudLive && cloudLive.battery!=null) bb.innerHTML=battCloudRow(t('Телефон')+' '+nm, cloudLive.battery);
   else bb.innerHTML='<div style="color:var(--muted); font-size:15px; padding:4px 2px">'+'🔋 '+t('Заряд устройств пока неизвестен')+'</div>';
+  bb.insertAdjacentHTML('beforeend', braceletBatteryNote());
   const al=document.getElementById('careAlerts'); al.innerHTML='';
   // Сигнал SOS показывается только сутки после нажатия
   if(cloudLive && cloudLive.sos && sosFresh(cloudLive.sos)){
@@ -2318,7 +2332,7 @@ function renderCare(){
   const rows=[];
   recalcSteps();
   if(stepsSource!=='none') rows.push(['🚶', t('Шаги за сегодня'), String(liveSteps)+(stepsSource==='phone'? ' · '+t('считает телефон, приблизительно') : '')]);
-  if(healthHR!=null) rows.push(['❤️', t('Пульс'), healthHR+' '+t('уд/мин')+(healthHRTime? ' · '+freshLabel(healthHRTime) : '')]);
+  if(healthHR!=null) rows.push(['❤️', t('Пульс'), hrText()]);
   if(healthSpo2!=null) rows.push(['🫁', t('Кислород в крови (SpO₂)'), healthSpo2+'%'+(healthSpo2Time? ' · '+freshLabel(healthSpo2Time) : '')]);
   if(healthCalories!=null) rows.push(['🔥', t('Калории за сегодня'), healthCalories+' '+t('ккал')]);
   if(healthSleep!=null) rows.push(['😴', t('Сон'), healthSleep+' '+t('ч')]);
@@ -2360,7 +2374,12 @@ function buildReportHTML(){
 
   // Сон и пульс — ровно то, что пришло с браслета, со временем измерения
   const hr = (L && L.hr!=null) ? L.hr : null;
-  const hrNote = (L && L.hrTs) ? ('измерено: '+agoText(L.hrTs)) : (L && L.hrStatus==='unsupported' ? 'браслет не передаёт этот показатель' : '');
+  const hrBits=[];
+  if(L && L.hrTs) hrBits.push('измерено: '+agoText(L.hrTs));
+  if(L && L.hrAvg!=null) hrBits.push('за день в среднем '+L.hrAvg);
+  if(L && L.hrMin!=null) hrBits.push('минимум '+L.hrMin);
+  const hrNote = hrBits.length ? hrBits.join(', ')
+    : (L && L.hrStatus==='unsupported' ? 'браслет не передаёт этот показатель' : '');
   const spo2 = (L && L.spo2!=null) ? L.spo2 : null;
   const spo2Note = (L && L.spo2Ts) ? ('измерено: '+agoText(L.spo2Ts)) : (L && L.spo2Status==='unsupported' ? 'браслет не передаёт этот показатель' : '');
   const sleep = (L && L.sleep!=null) ? L.sleep : null;
@@ -2963,6 +2982,15 @@ function renderConnectCloud(){
 
 /* ---------- battery ---------- */
 function battColor(p){ return p>50?'#2e8b57':(p>20?'#e8955b':'#c0392b'); }
+
+/* Заряд браслета получить неоткуда: в Health Connect нет такого типа записи,
+   а приложения браслетов (Mi Fitness и другие) его туда не передают.
+   Поэтому вместо выдуманного числа — честное объяснение. */
+function braceletBatteryNote(){
+  return '<div style="color:var(--muted); font-size:13px; padding:6px 2px; line-height:1.45">⌚ '
+    + t('Заряд браслета Health Connect не передаёт — его видно только в приложении браслета.')
+    + '</div>';
+}
 function renderBattery(id){
   const el=document.getElementById(id); if(!el) return; el.innerHTML='';
   // Только реальный заряд этого телефона (Battery API). Ничего не выдумываем.
@@ -2976,6 +3004,7 @@ function renderBattery(id){
   } else {
     el.innerHTML='<div style="color:var(--muted); font-size:15px; padding:4px 2px">🔋 '+t('Заряд устройства пока неизвестен')+'</div>';
   }
+  el.insertAdjacentHTML('beforeend', braceletBatteryNote());
 }
 
 /* ---------- SVG charts (rings, bars, area) ---------- */
@@ -3180,7 +3209,9 @@ function renderHealthCloud(){
     const note = L.stepsSource==='phone' ? t('считает телефон, приблизительно') : (L.stepsTs? agoText(L.stepsTs) : '');
     rows.push(['🚶', t('Шаги за сегодня'), L.steps + (note? ' · '+note : '')]);
   }
-  if(L.hr!=null) rows.push(['❤️', t('Пульс'), L.hr+' '+t('уд/мин') + (L.hrTs? ' · '+freshLabel(L.hrTs) : '')]);
+  if(L.hr!=null) rows.push(['❤️', t('Пульс'), L.hr+' '+t('уд/мин')
+    + (L.hrAvg!=null && L.hrAvg!==L.hr ? ' · '+t('за день в среднем')+' '+L.hrAvg : '')
+    + (L.hrTs? ' · '+freshLabel(L.hrTs) : '')]);
   else if(L.hrStatus==='unsupported') rows.push(['❤️', t('Пульс'), t('браслет не поддерживает этот показатель')]);
   else if(L.hrStatus==='denied') rows.push(['❤️', t('Пульс'), t('нет доступа — включите в Health Connect')]);
   if(L.spo2!=null) rows.push(['🫁', t('Кислород в крови (SpO₂)'), L.spo2+'%' + (L.spo2Ts? ' · '+freshLabel(L.spo2Ts) : '')]);
@@ -3248,7 +3279,7 @@ function renderHealth(){
   const rows=[];
   recalcSteps();
   if(stepsSource!=='none') rows.push(['🚶', t('Шаги за сегодня'), liveSteps+(stepsSource==='phone'? ' · '+t('считает телефон, приблизительно') : '')]);
-  if(healthHR!=null) rows.push(['❤️', t('Пульс'), healthHR+' '+t('уд/мин')+(healthHRTime? ' · '+freshLabel(healthHRTime) : '')]);
+  if(healthHR!=null) rows.push(['❤️', t('Пульс'), hrText()]);
   else if(Health.hrStatus==='unsupported') rows.push(['❤️', t('Пульс'), t('браслет не поддерживает этот показатель')]);
   else if(Health.hrStatus==='denied') rows.push(['❤️', t('Пульс'), t('нет доступа — включите в Health Connect')]);
   if(healthSpo2!=null) rows.push(['🫁', t('Кислород в крови (SpO₂)'), healthSpo2+'%'+(healthSpo2Time? ' · '+freshLabel(healthSpo2Time) : '')]);
@@ -3327,6 +3358,9 @@ let liveBattery = null, motionOn=false, lastStepT=0;
 let healthSource='none', healthSleep=null, healthHR=null, healthSpo2=null, healthCalories=null, healthWorkouts=null;
 // Время измерения обязательно: без него нельзя отличить свежий пульс от прошлогоднего
 let healthHRTime=null, healthSpo2Time=null, healthStepsTime=null, healthSleepSource=null;
+// Пульс за день: последнее измерение бывает выбросом от движения руки,
+// поэтому рядом всегда показываем средний — он куда информативнее.
+let healthHRAvg=null, healthHRMin=null;
 
 function recalcSteps(){
   if(stepsHealth!=null){ liveSteps=stepsHealth; stepsSource='bracelet'; }
@@ -3342,13 +3376,24 @@ function freshLabel(ts, freshMs){
   return (Date.now()-ts) <= (freshMs||HR_FRESH_MS) ? agoText(ts) : (t('последнее измерение')+': '+agoText(ts));
 }
 
+/* «пульс 99 · за день в среднем 63» — одно число без второго вводит в заблуждение */
+function hrText(){
+  if(healthHR==null) return '';
+  let s=String(healthHR)+' '+t('уд/мин');
+  if(healthHRAvg!=null && healthHRAvg!==healthHR) s+=' · '+t('за день в среднем')+' '+healthHRAvg;
+  if(healthHRTime) s+=' · '+freshLabel(healthHRTime);
+  return s;
+}
+
 function renderLiveCard(){
   recalcSteps();
   const v=document.getElementById('liveStepsVal'); if(v) v.textContent=liveSteps||'—';
   const b=document.getElementById('liveBattIco'); if(b) b.textContent = liveBattery!=null ? ('🔋 '+liveBattery+'%') : '';
   const ex=document.getElementById('liveExtra');
   if(ex){ const parts=[];
-    if(healthHR!=null) parts.push('❤️ '+t('пульс')+' '+healthHR+(healthHRTime? ' ('+freshLabel(healthHRTime)+')' : ''));
+    // время последней записи о шагах: объясняет, почему на браслете число больше
+    if(stepsSource==='bracelet' && healthStepsTime) parts.push('👟 '+t('шаги обновлены')+' '+agoText(healthStepsTime));
+    if(healthHR!=null) parts.push('❤️ '+t('пульс')+' '+hrText());
     if(healthSpo2!=null) parts.push('🫁 SpO₂ '+healthSpo2+'%');
     if(healthCalories!=null) parts.push('🔥 '+healthCalories+' '+t('ккал'));
     if(healthWorkouts&&healthWorkouts.count) parts.push('🏃 '+healthWorkouts.count+' '+t('тренировок за неделю'));
@@ -3754,6 +3799,7 @@ const Health = {
   },
   access:null,        // что именно разрешил пользователь в Health Connect
   accessError:null,
+  accessRaw:null,     // сырой ответ на запрос — видно, показалось ли окно вообще
   async requestPermissions(){
     // ВАЖНО. Health Connect выдаёт доступ отдельно к каждому показателю.
     // Готовый плагин просит только шаги, тренировки, калории и дистанцию —
@@ -3764,9 +3810,10 @@ const Health = {
     if(SP && typeof SP.requestAccess==='function'){
       try{
         this.access=await SP.requestAccess();
+        this.accessRaw=this.access;
         this.accessError=null;
         if(this.access && this.access.available!==false) return true;
-      }catch(e){ this.accessError=String(e&&e.message||e); }
+      }catch(e){ this.accessError=String(e&&e.message||e); this.accessRaw={error:this.accessError}; }
     }
     // Запасной путь — окно готового плагина (без сна и SpO2)
     if(this.plugin){
@@ -3916,6 +3963,9 @@ const Health = {
       this.hrTime = (r && r.hrTime!=null) ? Number(r.hrTime) : null;
       this.spo2Time = (r && r.spo2Time!=null) ? Number(r.spo2Time) : null;
       this.hrSourceApp = (r && r.hrSource) || null;
+      this.hrAvg = (r && r.hrAvg!=null) ? Math.round(Number(r.hrAvg)) : null;
+      this.hrMin = (r && r.hrMin!=null) ? Math.round(Number(r.hrMin)) : null;
+      this.hrSamples = (r && r.hrSamples!=null) ? Number(r.hrSamples) : null;
       let spo2=null, hr=null;
       // --- SpO2 ---
       if(r && r.spo2Error){ this.spo2Status='denied'; }
@@ -3965,8 +4015,18 @@ const Health = {
     }
   },
   async todayCalories(){
-    if(!this.plugin) return null;
     const end=new Date(), start=new Date(); start.setHours(0,0,0,0);
+    // Готовый плагин калории не умеет вовсе — отвечает «Unsupported dataType:
+    // calories». Поэтому читаем записи сами.
+    const SP=this.getSleepPlugin();
+    if(SP && typeof SP.queryCalories==='function'){
+      try{
+        const r=await SP.queryCalories({startDate:start.toISOString(), endDate:end.toISOString()});
+        if(r && r.kcal!=null) return Math.round(Number(r.kcal));
+        if(r && r.available!==false) return null;   // доступ есть, записей нет
+      }catch(e){}
+    }
+    if(!this.plugin) return null;
     const v=await this._agg('calories', start.toISOString(), end.toISOString());
     return v!=null? Math.round(v) : null;
   },
@@ -4002,7 +4062,7 @@ const Health = {
 
 
 /* ---------- Мастер подключения браслета: подсказки под конкретный телефон ---------- */
-const APP_BUILD='v23 · 08.08.2026';
+const APP_BUILD='v24 · 08.08.2026';
 function detectPhone(){
   const ua=navigator.userAgent||'';
   let vendor='other', vname=t('ваш телефон'), app=t('приложение вашего браслета');
@@ -4085,13 +4145,51 @@ function renderBandSetup(){
   box.innerHTML=html;
 }
 async function openHealthConnectSettings(){
+  // Сначала — страница разрешений именно нашего приложения. Так человеку
+  // не нужно искать Near в списке из десятков программ.
+  const SP=Health.getSleepPlugin();
+  if(SP && typeof SP.openHealthSettings==='function'){
+    try{ const r=await SP.openHealthSettings(); if(r && r.opened) return; }catch(e){}
+  }
   const H=Health.getPlugin();
   if(H && typeof H.openHealthConnectSettings==='function'){
     try{ await H.openHealthConnectSettings(); return; }catch(e){}
   }
-  // запасной путь — системный экран Health Connect
   try{ window.location.href='intent://healthconnect#Intent;scheme=android-app;package=com.google.android.apps.healthdata;end'; return; }catch(e){}
   toast(t('Откройте Health Connect в Настройках телефона'));
+}
+
+/* Один понятный шаг для человека: «разрешить сон, пульс и кислород».
+   Если окно Health Connect не появится (так бывает, когда запрос уже
+   отклоняли раньше — система тогда молча отвечает отказом), отводим
+   пользователя прямо на страницу разрешений Near. */
+async function grantHealthAccess(){
+  const btn=document.getElementById('healthAccessBtn');
+  const hint=document.getElementById('liveHint');
+  await Health.init();
+  const SP=Health.getSleepPlugin();
+  if(!SP || typeof SP.requestAccess!=='function'){
+    toast(t('Нужна новая сборка приложения')); return;
+  }
+  if(btn) btn.textContent=t('Открываю Health Connect…');
+  try{ Health.accessRaw=await SP.requestAccess(); Health.access=Health.accessRaw; }
+  catch(e){ Health.accessRaw={error:String(e&&e.message||e)}; }
+  await Health.checkPermissions();
+  await refreshHealth(true);
+
+  const missing=Health.missingAccess();
+  if(!missing.length){
+    toast('✅ '+t('Доступ выдан'));
+    if(btn) btn.style.display='none';
+    return;
+  }
+  if(btn) btn.textContent=t('Открыть Health Connect и разрешить вручную');
+  if(hint){
+    hint.textContent = t('Осталось разрешить вручную')+': '+missing.join(', ')+'. '
+      + t('В Health Connect откройте «Разрешения приложений» → Near и включите эти пункты, затем вернитесь и нажмите «Обновить данные».');
+  }
+  const shown = Health.accessRaw && Health.accessRaw.dialogShown;
+  if(shown===false || missing.length) await openHealthConnectSettings();
 }
 function openHealthConnect(){
   try{ window.open('https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata','_blank'); }
@@ -4250,6 +4348,11 @@ async function healthDiag(){
         add('9a. Разрешения Health Connect', acc? JSON.stringify(acc) : 'проверка недоступна');
         const miss=Health.missingAccess();
         add('9a2. Не хватает доступа к', miss.length? miss.join(', ') : 'всё выдано');
+        // Ключевая строка: показывалось ли окно запроса вообще.
+        // dialogShown:false = система отказала молча, поможет только ручная выдача.
+        add('9a3. Ответ на наш запрос доступа', Health.accessRaw
+          ? JSON.stringify(Health.accessRaw)
+          : 'запрос ещё не делался — нажмите зелёную кнопку «Разрешить сон, пульс и кислород»');
         const h=await Health.lastNightSleep();
         const st={ok:'данные получены', empty:'ответ пришёл, но записей о сне нет', denied:'нет доступа к «Сну» в Health Connect', absent:'Health Connect недоступен'}[Health.sleepStatus]||Health.sleepStatus;
         add('9b. Сон прошлой ночью', (h!=null? (h+' ч') : '—')+' ('+st+')');
@@ -4379,7 +4482,10 @@ async function refreshHealth(first){
   // обычно нет, а старое значение оттуда выглядело как «текущий пульс».
   try{
     const v=await Health.vitals();
-    if(v.hr!=null){ healthHR=v.hr; healthHRTime=Health.hrTime||null; any=true; }
+    if(v.hr!=null){
+      healthHR=v.hr; healthHRTime=Health.hrTime||null;
+      healthHRAvg=Health.hrAvg||null; healthHRMin=Health.hrMin||null; any=true;
+    }
     if(v.spo2!=null){ healthSpo2=v.spo2; healthSpo2Time=Health.spo2Time||null; any=true; }
   }catch(e){}
   if(healthHR==null){
@@ -4419,16 +4525,27 @@ async function refreshHealth(first){
   // Подсказку пишем последней: enableSensors выше тоже её меняет
   const hint=document.getElementById('liveHint');
   const missing=Health.missingAccess();
+  // Браслет синхронизируется в Health Connect с задержкой. Если последняя
+  // запись давняя, число в приложении честно отстаёт от числа на браслете —
+  // говорим об этом прямо, иначе выглядит как ошибка приложения.
+  const stepsStale = healthStepsTime && (Date.now()-healthStepsTime > 2*3600*1000);
   if(hint){
     if(missing.length){
       hint.textContent = t('Health Connect не дал доступа к показателям')+': '+missing.join(', ')+'. '
-        + t('Откройте Health Connect и разрешите их приложению Near.');
+        + t('Нажмите зелёную кнопку ниже — приложение поможет их включить.');
+    } else if(stepsStale){
+      hint.textContent = t('Браслет давно не передавал данные')+' ('+agoText(healthStepsTime)+'). '
+        + t('Откройте приложение браслета (например, Mi Fitness) и дождитесь синхронизации — тогда числа совпадут.');
     } else if(stepsHealth!=null || any){
       hint.textContent = t('Подключено к браслету / часам через Apple Health / Health Connect. Данные обновляются автоматически.');
     } else if(healthSource==='phone'){
       hint.textContent = t('Браслет не передаёт данные — считаем шаги датчиком телефона, он менее точный.');
     }
   }
+  // Кнопка выдачи доступа появляется ровно тогда, когда доступа не хватает
+  const acc=document.getElementById('healthAccessBtn');
+  if(acc) acc.style.display = missing.length ? 'block' : 'none';
+
   const btn=document.getElementById('enableSensorsBtn');
   if(btn && (stepsHealth!=null || any)){ btn.textContent='↻ '+t('Обновить данные'); btn.setAttribute('onclick','refreshHealth()'); }
 

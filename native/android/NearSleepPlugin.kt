@@ -1,5 +1,6 @@
 package com.fit_up.health.capacitor
 
+import android.content.Intent
 import androidx.activity.result.ActivityResult
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
@@ -103,13 +104,19 @@ class NearSleepPlugin : Plugin() {
             if (c == null) { call.resolve(report(emptySet(), false)); return@launch }
             val granted = withContext(Dispatchers.IO) { grantedSet() }
             val missing = wanted.values.toSet() - granted
-            if (missing.isEmpty()) { call.resolve(report(granted, true)); return@launch }
+            if (missing.isEmpty()) {
+                val out = report(granted, true)
+                out.put("dialogShown", false)
+                out.put("note", "всё уже разрешено")
+                call.resolve(out); return@launch
+            }
             try {
                 val contract = PermissionController.createRequestPermissionResultContract()
                 val intent = contract.createIntent(activity, wanted.values.toSet())
                 startActivityForResult(call, intent, "accessResult")
             } catch (e: Exception) {
                 val out = report(granted, true)
+                out.put("dialogShown", false)
                 out.put("error", e.message ?: "cannot open Health Connect")
                 call.resolve(out)
             }
@@ -120,7 +127,90 @@ class NearSleepPlugin : Plugin() {
     fun accessResult(call: PluginCall?, result: ActivityResult?) {
         if (call == null) return
         CoroutineScope(Dispatchers.IO).launch {
-            call.resolve(report(grantedSet(), true))
+            val out = report(grantedSet(), true)
+            out.put("dialogShown", true)
+            out.put("resultCode", result?.resultCode ?: -999)
+            call.resolve(out)
+        }
+    }
+
+    /**
+     * Открыть страницу разрешений именно нашего приложения в Health Connect.
+     *
+     * Это надёжный ручной путь. Он нужен, потому что окно запроса разрешений
+     * Health Connect иногда не показывается вовсе — например, если человек уже
+     * отклонял запрос: система тогда молча отвечает отказом, и приложению
+     * остаётся только отвести пользователя в настройки.
+     */
+    @PluginMethod
+    fun openHealthSettings(call: PluginCall) {
+        val out = JSObject()
+        val attempts = listOf(
+            Intent("androidx.health.ACTION_MANAGE_HEALTH_PERMISSIONS")
+                .putExtra("android.intent.extra.PACKAGE_NAME", context.packageName),
+            Intent("androidx.health.ACTION_HEALTH_CONNECT_SETTINGS"),
+            Intent("android.health.connect.action.HEALTH_HOME_SETTINGS")
+        )
+        for (i in attempts) {
+            try {
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(i)
+                out.put("opened", i.action)
+                call.resolve(out)
+                return
+            } catch (e: Exception) { }
+        }
+        // последняя попытка — просто запустить приложение Health Connect
+        try {
+            val launch = context.packageManager
+                .getLaunchIntentForPackage("com.google.android.apps.healthdata")
+            if (launch != null) {
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(launch)
+                out.put("opened", "app")
+                call.resolve(out)
+                return
+            }
+        } catch (e: Exception) { }
+        out.put("opened", false)
+        call.resolve(out)
+    }
+
+    /**
+     * Калории за период. Готовый плагин их не умеет вовсе — он отвечает
+     * «Unsupported dataType: calories», поэтому читаем записи сами.
+     */
+    @PluginMethod
+    fun queryCalories(call: PluginCall) {
+        val startStr = call.getString("startDate")
+        val endStr = call.getString("endDate")
+        CoroutineScope(Dispatchers.IO).launch {
+            val out = JSObject()
+            try {
+                val c = hcClient()
+                if (c == null) { out.put("available", false); call.resolve(out); return@launch }
+                val range = TimeRangeFilter.between(Instant.parse(startStr), Instant.parse(endStr))
+                out.put("available", true)
+                var total = 0.0
+                var n = 0
+                try {
+                    val res = c.readRecords(ReadRecordsRequest(TotalCaloriesBurnedRecord::class, range))
+                    for (r in res.records) { total += r.energy.inKilocalories; n++ }
+                } catch (e: Exception) { out.put("totalError", e.message ?: "") }
+                if (n == 0) {
+                    try {
+                        val res = c.readRecords(ReadRecordsRequest(ActiveCaloriesBurnedRecord::class, range))
+                        for (r in res.records) { total += r.energy.inKilocalories; n++ }
+                    } catch (e: Exception) { out.put("activeError", e.message ?: "") }
+                }
+                out.put("count", n)
+                if (n > 0) out.put("kcal", Math.round(total))
+                call.resolve(out)
+            } catch (e: Exception) {
+                out.put("available", true)
+                out.put("error", e.message ?: "calories read error")
+                call.resolve(out)
+            }
         }
     }
 
