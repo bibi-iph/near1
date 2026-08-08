@@ -61,6 +61,8 @@ workflows:
               <uses-permission android:name="android.permission.health.READ_EXERCISE" />
               <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTE" />
               <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+              <uses-permission android:name="android.permission.health.READ_SLEEP" />
+              <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
               <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
               <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -113,6 +115,143 @@ workflows:
           print("исправлено файлов плагина:", fixed)
           PY
 
+      - name: Добавить чтение сна, пульса и SpO2 (Health Connect)
+        script: |
+          cat > /tmp/near_extra.b64 <<'B64'
+          cGFja2FnZSBjb20uZml0X3VwLmhlYWx0aC5jYXBhY2l0b3IKCmltcG9ydCBhbmRyb2lkeC5oZWFsdGguY29ubmVjdC5jbGllbnQu
+          SGVhbHRoQ29ubmVjdENsaWVudAppbXBvcnQgYW5kcm9pZHguaGVhbHRoLmNvbm5lY3QuY2xpZW50LnJlY29yZHMuSGVhcnRSYXRl
+          UmVjb3JkCmltcG9ydCBhbmRyb2lkeC5oZWFsdGguY29ubmVjdC5jbGllbnQucmVjb3Jkcy5PeHlnZW5TYXR1cmF0aW9uUmVjb3Jk
+          CmltcG9ydCBhbmRyb2lkeC5oZWFsdGguY29ubmVjdC5jbGllbnQucmVjb3Jkcy5TbGVlcFNlc3Npb25SZWNvcmQKaW1wb3J0IGFu
+          ZHJvaWR4LmhlYWx0aC5jb25uZWN0LmNsaWVudC5yZXF1ZXN0LlJlYWRSZWNvcmRzUmVxdWVzdAppbXBvcnQgYW5kcm9pZHguaGVh
+          bHRoLmNvbm5lY3QuY2xpZW50LnRpbWUuVGltZVJhbmdlRmlsdGVyCmltcG9ydCBjb20uZ2V0Y2FwYWNpdG9yLkpTQXJyYXkKaW1w
+          b3J0IGNvbS5nZXRjYXBhY2l0b3IuSlNPYmplY3QKaW1wb3J0IGNvbS5nZXRjYXBhY2l0b3IuUGx1Z2luCmltcG9ydCBjb20uZ2V0
+          Y2FwYWNpdG9yLlBsdWdpbkNhbGwKaW1wb3J0IGNvbS5nZXRjYXBhY2l0b3IuUGx1Z2luTWV0aG9kCmltcG9ydCBjb20uZ2V0Y2Fw
+          YWNpdG9yLmFubm90YXRpb24uQ2FwYWNpdG9yUGx1Z2luCmltcG9ydCBrb3RsaW54LmNvcm91dGluZXMuQ29yb3V0aW5lU2NvcGUK
+          aW1wb3J0IGtvdGxpbnguY29yb3V0aW5lcy5EaXNwYXRjaGVycwppbXBvcnQga290bGlueC5jb3JvdXRpbmVzLmxhdW5jaAppbXBv
+          cnQgamF2YS50aW1lLkR1cmF0aW9uCmltcG9ydCBqYXZhLnRpbWUuSW5zdGFudAoKQENhcGFjaXRvclBsdWdpbihuYW1lID0gIk5l
+          YXJTbGVlcCIpCmNsYXNzIE5lYXJTbGVlcFBsdWdpbiA6IFBsdWdpbigpIHsKCiAgICBwcml2YXRlIGZ1biBoY0NsaWVudCgpOiBI
+          ZWFsdGhDb25uZWN0Q2xpZW50PyA9IHRyeSB7CiAgICAgICAgaWYgKEhlYWx0aENvbm5lY3RDbGllbnQuZ2V0U2RrU3RhdHVzKGNv
+          bnRleHQpID09IEhlYWx0aENvbm5lY3RDbGllbnQuU0RLX0FWQUlMQUJMRSkKICAgICAgICAgICAgSGVhbHRoQ29ubmVjdENsaWVu
+          dC5nZXRPckNyZWF0ZShjb250ZXh0KQogICAgICAgIGVsc2UgbnVsbAogICAgfSBjYXRjaCAoZTogRXhjZXB0aW9uKSB7CiAgICAg
+          ICAgbnVsbAogICAgfQoKICAgIEBQbHVnaW5NZXRob2QKICAgIGZ1biBxdWVyeVNsZWVwKGNhbGw6IFBsdWdpbkNhbGwpIHsKICAg
+          ICAgICB2YWwgc3RhcnRTdHIgPSBjYWxsLmdldFN0cmluZygic3RhcnREYXRlIikKICAgICAgICB2YWwgZW5kU3RyID0gY2FsbC5n
+          ZXRTdHJpbmcoImVuZERhdGUiKQogICAgICAgIENvcm91dGluZVNjb3BlKERpc3BhdGNoZXJzLklPKS5sYXVuY2ggewogICAgICAg
+          ICAgICB0cnkgewogICAgICAgICAgICAgICAgdmFsIGMgPSBoY0NsaWVudCgpCiAgICAgICAgICAgICAgICBpZiAoYyA9PSBudWxs
+          KSB7CiAgICAgICAgICAgICAgICAgICAgdmFsIG91dCA9IEpTT2JqZWN0KCkKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJh
+          dmFpbGFibGUiLCBmYWxzZSkKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJ0b3RhbE1pbnV0ZXMiLCAwKQogICAgICAgICAg
+          ICAgICAgICAgIG91dC5wdXQoInNlc3Npb25zIiwgSlNBcnJheSgpKQogICAgICAgICAgICAgICAgICAgIGNhbGwucmVzb2x2ZShv
+          dXQpCiAgICAgICAgICAgICAgICAgICAgcmV0dXJuQGxhdW5jaAogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgdmFs
+          IHN0YXJ0ID0gSW5zdGFudC5wYXJzZShzdGFydFN0cikKICAgICAgICAgICAgICAgIHZhbCBlbmQgPSBJbnN0YW50LnBhcnNlKGVu
+          ZFN0cikKICAgICAgICAgICAgICAgIHZhbCByZXMgPSBjLnJlYWRSZWNvcmRzKAogICAgICAgICAgICAgICAgICAgIFJlYWRSZWNv
+          cmRzUmVxdWVzdCgKICAgICAgICAgICAgICAgICAgICAgICAgcmVjb3JkVHlwZSA9IFNsZWVwU2Vzc2lvblJlY29yZDo6Y2xhc3Ms
+          CiAgICAgICAgICAgICAgICAgICAgICAgIHRpbWVSYW5nZUZpbHRlciA9IFRpbWVSYW5nZUZpbHRlci5iZXR3ZWVuKHN0YXJ0LCBl
+          bmQpCiAgICAgICAgICAgICAgICAgICAgKQogICAgICAgICAgICAgICAgKQogICAgICAgICAgICAgICAgdmFsIGFyciA9IEpTQXJy
+          YXkoKQogICAgICAgICAgICAgICAgdmFyIHRvdGFsID0gMEwKICAgICAgICAgICAgICAgIGZvciAociBpbiByZXMucmVjb3Jkcykg
+          ewogICAgICAgICAgICAgICAgICAgIHZhbCBtaW5zID0gRHVyYXRpb24uYmV0d2VlbihyLnN0YXJ0VGltZSwgci5lbmRUaW1lKS50
+          b01pbnV0ZXMoKQogICAgICAgICAgICAgICAgICAgIHRvdGFsICs9IG1pbnMKICAgICAgICAgICAgICAgICAgICB2YWwgbyA9IEpT
+          T2JqZWN0KCkKICAgICAgICAgICAgICAgICAgICBvLnB1dCgic3RhcnREYXRlIiwgci5zdGFydFRpbWUudG9TdHJpbmcoKSkKICAg
+          ICAgICAgICAgICAgICAgICBvLnB1dCgiZW5kRGF0ZSIsIHIuZW5kVGltZS50b1N0cmluZygpKQogICAgICAgICAgICAgICAgICAg
+          IG8ucHV0KCJtaW51dGVzIiwgbWlucykKICAgICAgICAgICAgICAgICAgICB0cnkgeyBvLnB1dCgic291cmNlIiwgci5tZXRhZGF0
+          YS5kYXRhT3JpZ2luLnBhY2thZ2VOYW1lKSB9IGNhdGNoIChlOiBFeGNlcHRpb24pIHt9CiAgICAgICAgICAgICAgICAgICAgYXJy
+          LnB1dChvKQogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgdmFsIG91dCA9IEpTT2JqZWN0KCkKICAgICAgICAgICAg
+          ICAgIG91dC5wdXQoImF2YWlsYWJsZSIsIHRydWUpCiAgICAgICAgICAgICAgICBvdXQucHV0KCJ0b3RhbE1pbnV0ZXMiLCB0b3Rh
+          bCkKICAgICAgICAgICAgICAgIG91dC5wdXQoImNvdW50IiwgcmVzLnJlY29yZHMuc2l6ZSkKICAgICAgICAgICAgICAgIG91dC5w
+          dXQoInNlc3Npb25zIiwgYXJyKQogICAgICAgICAgICAgICAgY2FsbC5yZXNvbHZlKG91dCkKICAgICAgICAgICAgfSBjYXRjaCAo
+          ZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgICAgICBjYWxsLnJlamVjdChlLm1lc3NhZ2UgPzogInNsZWVwIHJlYWQgZXJyb3Ii
+          KQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQoKICAgIC8vINCf0YPQu9GM0YEg0Lgg0L3QsNGB0YvRidC10L3QuNC1INC6
+          0YDQvtCy0Lgg0LrQuNGB0LvQvtGA0L7QtNC+0LwgKFNwTzIpLgogICAgLy8g0JLQvtC30LLRgNCw0YnQsNC10Lwg0YLQvtC70YzQ
+          utC+INGC0L4sINGH0YLQviDRgNC10LDQu9GM0L3QviDQu9C10LbQuNGCINCyIEhlYWx0aCBDb25uZWN0LgogICAgQFBsdWdpbk1l
+          dGhvZAogICAgZnVuIHF1ZXJ5Vml0YWxzKGNhbGw6IFBsdWdpbkNhbGwpIHsKICAgICAgICB2YWwgc3RhcnRTdHIgPSBjYWxsLmdl
+          dFN0cmluZygic3RhcnREYXRlIikKICAgICAgICB2YWwgZW5kU3RyID0gY2FsbC5nZXRTdHJpbmcoImVuZERhdGUiKQogICAgICAg
+          IENvcm91dGluZVNjb3BlKERpc3BhdGNoZXJzLklPKS5sYXVuY2ggewogICAgICAgICAgICB2YWwgb3V0ID0gSlNPYmplY3QoKQog
+          ICAgICAgICAgICB0cnkgewogICAgICAgICAgICAgICAgdmFsIGMgPSBoY0NsaWVudCgpCiAgICAgICAgICAgICAgICBpZiAoYyA9
+          PSBudWxsKSB7CiAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgiYXZhaWxhYmxlIiwgZmFsc2UpCiAgICAgICAgICAgICAgICAg
+          ICAgY2FsbC5yZXNvbHZlKG91dCkKICAgICAgICAgICAgICAgICAgICByZXR1cm5AbGF1bmNoCiAgICAgICAgICAgICAgICB9CiAg
+          ICAgICAgICAgICAgICBvdXQucHV0KCJhdmFpbGFibGUiLCB0cnVlKQogICAgICAgICAgICAgICAgdmFsIHN0YXJ0ID0gSW5zdGFu
+          dC5wYXJzZShzdGFydFN0cikKICAgICAgICAgICAgICAgIHZhbCBlbmQgPSBJbnN0YW50LnBhcnNlKGVuZFN0cikKCiAgICAgICAg
+          ICAgICAgICAvLyAtLS0gU3BPMiAtLS0KICAgICAgICAgICAgICAgIHRyeSB7CiAgICAgICAgICAgICAgICAgICAgdmFsIHJlcyA9
+          IGMucmVhZFJlY29yZHMoCiAgICAgICAgICAgICAgICAgICAgICAgIFJlYWRSZWNvcmRzUmVxdWVzdCgKICAgICAgICAgICAgICAg
+          ICAgICAgICAgICAgIHJlY29yZFR5cGUgPSBPeHlnZW5TYXR1cmF0aW9uUmVjb3JkOjpjbGFzcywKICAgICAgICAgICAgICAgICAg
+          ICAgICAgICAgIHRpbWVSYW5nZUZpbHRlciA9IFRpbWVSYW5nZUZpbHRlci5iZXR3ZWVuKHN0YXJ0LCBlbmQpCiAgICAgICAgICAg
+          ICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgic3BvMkNvdW50
+          IiwgcmVzLnJlY29yZHMuc2l6ZSkKICAgICAgICAgICAgICAgICAgICB2YXIgYmVzdDogT3h5Z2VuU2F0dXJhdGlvblJlY29yZD8g
+          PSBudWxsCiAgICAgICAgICAgICAgICAgICAgZm9yIChyIGluIHJlcy5yZWNvcmRzKSB7CiAgICAgICAgICAgICAgICAgICAgICAg
+          IHZhbCBiID0gYmVzdAogICAgICAgICAgICAgICAgICAgICAgICBpZiAoYiA9PSBudWxsIHx8IHIudGltZS5pc0FmdGVyKGIudGlt
+          ZSkpIGJlc3QgPSByCiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgIHZhbCBiYiA9IGJlc3QKICAgICAg
+          ICAgICAgICAgICAgICBpZiAoYmIgIT0gbnVsbCkgewogICAgICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJzcG8yIiwgYmIu
+          cGVyY2VudGFnZS52YWx1ZSkKICAgICAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgic3BvMlRpbWUiLCBiYi50aW1lLnRvU3Ry
+          aW5nKCkpCiAgICAgICAgICAgICAgICAgICAgICAgIHRyeSB7IG91dC5wdXQoInNwbzJTb3VyY2UiLCBiYi5tZXRhZGF0YS5kYXRh
+          T3JpZ2luLnBhY2thZ2VOYW1lKSB9IGNhdGNoIChlOiBFeGNlcHRpb24pIHt9CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAg
+          ICAgICAgICAgfSBjYXRjaCAoZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgic3BvMkVycm9yIiwg
+          ZS5tZXNzYWdlID86ICJzcG8yIGVycm9yIikKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICAvLyAtLS0g0J/Rg9C7
+          0YzRgSAtLS0KICAgICAgICAgICAgICAgIHRyeSB7CiAgICAgICAgICAgICAgICAgICAgdmFsIHJlcyA9IGMucmVhZFJlY29yZHMo
+          CiAgICAgICAgICAgICAgICAgICAgICAgIFJlYWRSZWNvcmRzUmVxdWVzdCgKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJl
+          Y29yZFR5cGUgPSBIZWFydFJhdGVSZWNvcmQ6OmNsYXNzLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgdGltZVJhbmdlRmls
+          dGVyID0gVGltZVJhbmdlRmlsdGVyLmJldHdlZW4oc3RhcnQsIGVuZCkKICAgICAgICAgICAgICAgICAgICAgICAgKQogICAgICAg
+          ICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJockNvdW50IiwgcmVzLnJlY29yZHMuc2l6ZSkKICAg
+          ICAgICAgICAgICAgICAgICB2YXIgYnBtID0gMEwKICAgICAgICAgICAgICAgICAgICB2YXIgYXQ6IEluc3RhbnQ/ID0gbnVsbAog
+          ICAgICAgICAgICAgICAgICAgIHZhciBzcmMgPSAiIgogICAgICAgICAgICAgICAgICAgIGZvciAociBpbiByZXMucmVjb3Jkcykg
+          ewogICAgICAgICAgICAgICAgICAgICAgICBmb3IgKHNtIGluIHIuc2FtcGxlcykgewogICAgICAgICAgICAgICAgICAgICAgICAg
+          ICAgdmFsIGEgPSBhdAogICAgICAgICAgICAgICAgICAgICAgICAgICAgaWYgKGEgPT0gbnVsbCB8fCBzbS50aW1lLmlzQWZ0ZXIo
+          YSkpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBhdCA9IHNtLnRpbWUKICAgICAgICAgICAgICAgICAgICAgICAg
+          ICAgICAgICBicG0gPSBzbS5iZWF0c1Blck1pbnV0ZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHNyYyA9IHRyeSB7
+          IHIubWV0YWRhdGEuZGF0YU9yaWdpbi5wYWNrYWdlTmFtZSB9IGNhdGNoIChlOiBFeGNlcHRpb24pIHsgIiIgfQogICAgICAgICAg
+          ICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAg
+          ICAgICAgICAgICAgIHZhbCBhdHYgPSBhdAogICAgICAgICAgICAgICAgICAgIGlmIChhdHYgIT0gbnVsbCAmJiBicG0gPiAwTCkg
+          ewogICAgICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJociIsIGJwbSkKICAgICAgICAgICAgICAgICAgICAgICAgb3V0LnB1
+          dCgiaHJUaW1lIiwgYXR2LnRvU3RyaW5nKCkpCiAgICAgICAgICAgICAgICAgICAgICAgIGlmIChzcmMuaXNOb3RFbXB0eSgpKSBv
+          dXQucHV0KCJoclNvdXJjZSIsIHNyYykKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9IGNhdGNoIChlOiBF
+          eGNlcHRpb24pIHsKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJockVycm9yIiwgZS5tZXNzYWdlID86ICJociBlcnJvciIp
+          CiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgY2FsbC5yZXNvbHZlKG91dCkKICAgICAgICAgICAgfSBjYXRjaCAo
+          ZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgICAgICBjYWxsLnJlamVjdChlLm1lc3NhZ2UgPzogInZpdGFscyByZWFkIGVycm9y
+          IikKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KfQo=
+          B64
+          python3 - <<'PY'
+          import io, os, glob, base64, re
+
+          # 1) Находим исходники плагина здоровья — там уже есть Kotlin,
+          #    корутины и библиотека Health Connect.
+          dirs = glob.glob("node_modules/capacitor-health/android/src/main/java/com/fit_up/health/capacitor")
+          if not dirs:
+              dirs = [os.path.dirname(f) for f in glob.glob(
+                  "node_modules/capacitor-health/android/src/main/**/HealthPlugin.kt", recursive=True)]
+          if not dirs:
+              raise SystemExit("ОШИБКА: не найден исходный код плагина здоровья")
+          src_dir = dirs[0]
+          pkg = src_dir.split("java/")[-1].replace("/", ".")
+          print("пакет плагина:", pkg)
+
+          raw = io.open("/tmp/near_extra.b64", encoding="utf-8").read()
+          raw = "".join(raw.split())
+          kt = base64.b64decode(raw).decode("utf-8")
+          # если пакет плагина вдруг другой — подставляем настоящий
+          kt = re.sub(r"^package .*$", "package " + pkg, kt, count=1, flags=re.M)
+
+          out_path = os.path.join(src_dir, "NearSleepPlugin.kt")
+          io.open(out_path, "w", encoding="utf-8").write(kt)
+          print("создан", out_path, len(kt), "символов")
+
+          # 2) Регистрируем наш плагин в MainActivity
+          mains = glob.glob("android/app/src/main/java/**/MainActivity.java", recursive=True)
+          if not mains:
+              raise SystemExit("ОШИБКА: MainActivity.java не найден")
+          for mp in mains:
+              t = io.open(mp, encoding="utf-8").read()
+              if "NearSleepPlugin" in t:
+                  print("MainActivity уже настроен"); continue
+              method = ("    @Override\n"
+                        "    public void onCreate(android.os.Bundle savedInstanceState) {\n"
+                        "        registerPlugin(" + pkg + ".NearSleepPlugin.class);\n"
+                        "        super.onCreate(savedInstanceState);\n"
+                        "    }\n")
+              t2 = re.sub(r"public class MainActivity extends BridgeActivity \{\s*\}",
+                          "public class MainActivity extends BridgeActivity {\n" + method + "}", t)
+              if t2 == t:
+                  i = t.rstrip().rfind("}")
+                  t2 = t[:i] + method + t[i:]
+              io.open(mp, "w", encoding="utf-8").write(t2)
+              print("MainActivity пропатчен:", mp)
+          PY
       - name: Синхронизировать веб-код в приложение
         script: |
           npx cap sync android
@@ -121,7 +260,12 @@ workflows:
           grep -q "capacitor-health" android/capacitor.settings.gradle || { echo 'ОШИБКА: плагин браслета не подключился к Android-проекту'; exit 1; }
           grep -q "READ_STEPS" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешений Health Connect'; exit 1; }
           grep -q "ACCESS_FINE_LOCATION" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на геолокацию'; exit 1; }
-          echo "проверка пройдена: браслет, здоровье и геолокация подключены"
+          grep -q "READ_SLEEP" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на чтение сна'; exit 1; }
+          grep -q "READ_OXYGEN_SATURATION" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на SpO2'; exit 1; }
+          grep -q "queryVitals" node_modules/capacitor-health/android/src/main/java/com/fit_up/health/capacitor/NearSleepPlugin.kt || { echo 'ОШИБКА: чтение пульса и SpO2 не добавилось'; exit 1; }
+          grep -rq "NearSleepPlugin" android/app/src/main/java || { echo 'ОШИБКА: чтение сна не зарегистрировано'; exit 1; }
+          test -f node_modules/capacitor-health/android/src/main/java/com/fit_up/health/capacitor/NearSleepPlugin.kt || echo 'ВНИМАНИЕ: файл сна лежит в другом месте — проверьте лог выше'
+          echo "проверка пройдена: браслет, здоровье, сон, пульс, SpO2 и геолокация подключены"
 
       - name: Собрать debug APK
         script: |
@@ -195,6 +339,8 @@ workflows:
               <uses-permission android:name="android.permission.health.READ_EXERCISE" />
               <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTE" />
               <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+              <uses-permission android:name="android.permission.health.READ_SLEEP" />
+              <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
               <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
               <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -247,6 +393,143 @@ workflows:
           print("исправлено файлов плагина:", fixed)
           PY
 
+      - name: Добавить чтение сна, пульса и SpO2 (Health Connect)
+        script: |
+          cat > /tmp/near_extra.b64 <<'B64'
+          cGFja2FnZSBjb20uZml0X3VwLmhlYWx0aC5jYXBhY2l0b3IKCmltcG9ydCBhbmRyb2lkeC5oZWFsdGguY29ubmVjdC5jbGllbnQu
+          SGVhbHRoQ29ubmVjdENsaWVudAppbXBvcnQgYW5kcm9pZHguaGVhbHRoLmNvbm5lY3QuY2xpZW50LnJlY29yZHMuSGVhcnRSYXRl
+          UmVjb3JkCmltcG9ydCBhbmRyb2lkeC5oZWFsdGguY29ubmVjdC5jbGllbnQucmVjb3Jkcy5PeHlnZW5TYXR1cmF0aW9uUmVjb3Jk
+          CmltcG9ydCBhbmRyb2lkeC5oZWFsdGguY29ubmVjdC5jbGllbnQucmVjb3Jkcy5TbGVlcFNlc3Npb25SZWNvcmQKaW1wb3J0IGFu
+          ZHJvaWR4LmhlYWx0aC5jb25uZWN0LmNsaWVudC5yZXF1ZXN0LlJlYWRSZWNvcmRzUmVxdWVzdAppbXBvcnQgYW5kcm9pZHguaGVh
+          bHRoLmNvbm5lY3QuY2xpZW50LnRpbWUuVGltZVJhbmdlRmlsdGVyCmltcG9ydCBjb20uZ2V0Y2FwYWNpdG9yLkpTQXJyYXkKaW1w
+          b3J0IGNvbS5nZXRjYXBhY2l0b3IuSlNPYmplY3QKaW1wb3J0IGNvbS5nZXRjYXBhY2l0b3IuUGx1Z2luCmltcG9ydCBjb20uZ2V0
+          Y2FwYWNpdG9yLlBsdWdpbkNhbGwKaW1wb3J0IGNvbS5nZXRjYXBhY2l0b3IuUGx1Z2luTWV0aG9kCmltcG9ydCBjb20uZ2V0Y2Fw
+          YWNpdG9yLmFubm90YXRpb24uQ2FwYWNpdG9yUGx1Z2luCmltcG9ydCBrb3RsaW54LmNvcm91dGluZXMuQ29yb3V0aW5lU2NvcGUK
+          aW1wb3J0IGtvdGxpbnguY29yb3V0aW5lcy5EaXNwYXRjaGVycwppbXBvcnQga290bGlueC5jb3JvdXRpbmVzLmxhdW5jaAppbXBv
+          cnQgamF2YS50aW1lLkR1cmF0aW9uCmltcG9ydCBqYXZhLnRpbWUuSW5zdGFudAoKQENhcGFjaXRvclBsdWdpbihuYW1lID0gIk5l
+          YXJTbGVlcCIpCmNsYXNzIE5lYXJTbGVlcFBsdWdpbiA6IFBsdWdpbigpIHsKCiAgICBwcml2YXRlIGZ1biBoY0NsaWVudCgpOiBI
+          ZWFsdGhDb25uZWN0Q2xpZW50PyA9IHRyeSB7CiAgICAgICAgaWYgKEhlYWx0aENvbm5lY3RDbGllbnQuZ2V0U2RrU3RhdHVzKGNv
+          bnRleHQpID09IEhlYWx0aENvbm5lY3RDbGllbnQuU0RLX0FWQUlMQUJMRSkKICAgICAgICAgICAgSGVhbHRoQ29ubmVjdENsaWVu
+          dC5nZXRPckNyZWF0ZShjb250ZXh0KQogICAgICAgIGVsc2UgbnVsbAogICAgfSBjYXRjaCAoZTogRXhjZXB0aW9uKSB7CiAgICAg
+          ICAgbnVsbAogICAgfQoKICAgIEBQbHVnaW5NZXRob2QKICAgIGZ1biBxdWVyeVNsZWVwKGNhbGw6IFBsdWdpbkNhbGwpIHsKICAg
+          ICAgICB2YWwgc3RhcnRTdHIgPSBjYWxsLmdldFN0cmluZygic3RhcnREYXRlIikKICAgICAgICB2YWwgZW5kU3RyID0gY2FsbC5n
+          ZXRTdHJpbmcoImVuZERhdGUiKQogICAgICAgIENvcm91dGluZVNjb3BlKERpc3BhdGNoZXJzLklPKS5sYXVuY2ggewogICAgICAg
+          ICAgICB0cnkgewogICAgICAgICAgICAgICAgdmFsIGMgPSBoY0NsaWVudCgpCiAgICAgICAgICAgICAgICBpZiAoYyA9PSBudWxs
+          KSB7CiAgICAgICAgICAgICAgICAgICAgdmFsIG91dCA9IEpTT2JqZWN0KCkKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJh
+          dmFpbGFibGUiLCBmYWxzZSkKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJ0b3RhbE1pbnV0ZXMiLCAwKQogICAgICAgICAg
+          ICAgICAgICAgIG91dC5wdXQoInNlc3Npb25zIiwgSlNBcnJheSgpKQogICAgICAgICAgICAgICAgICAgIGNhbGwucmVzb2x2ZShv
+          dXQpCiAgICAgICAgICAgICAgICAgICAgcmV0dXJuQGxhdW5jaAogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgdmFs
+          IHN0YXJ0ID0gSW5zdGFudC5wYXJzZShzdGFydFN0cikKICAgICAgICAgICAgICAgIHZhbCBlbmQgPSBJbnN0YW50LnBhcnNlKGVu
+          ZFN0cikKICAgICAgICAgICAgICAgIHZhbCByZXMgPSBjLnJlYWRSZWNvcmRzKAogICAgICAgICAgICAgICAgICAgIFJlYWRSZWNv
+          cmRzUmVxdWVzdCgKICAgICAgICAgICAgICAgICAgICAgICAgcmVjb3JkVHlwZSA9IFNsZWVwU2Vzc2lvblJlY29yZDo6Y2xhc3Ms
+          CiAgICAgICAgICAgICAgICAgICAgICAgIHRpbWVSYW5nZUZpbHRlciA9IFRpbWVSYW5nZUZpbHRlci5iZXR3ZWVuKHN0YXJ0LCBl
+          bmQpCiAgICAgICAgICAgICAgICAgICAgKQogICAgICAgICAgICAgICAgKQogICAgICAgICAgICAgICAgdmFsIGFyciA9IEpTQXJy
+          YXkoKQogICAgICAgICAgICAgICAgdmFyIHRvdGFsID0gMEwKICAgICAgICAgICAgICAgIGZvciAociBpbiByZXMucmVjb3Jkcykg
+          ewogICAgICAgICAgICAgICAgICAgIHZhbCBtaW5zID0gRHVyYXRpb24uYmV0d2VlbihyLnN0YXJ0VGltZSwgci5lbmRUaW1lKS50
+          b01pbnV0ZXMoKQogICAgICAgICAgICAgICAgICAgIHRvdGFsICs9IG1pbnMKICAgICAgICAgICAgICAgICAgICB2YWwgbyA9IEpT
+          T2JqZWN0KCkKICAgICAgICAgICAgICAgICAgICBvLnB1dCgic3RhcnREYXRlIiwgci5zdGFydFRpbWUudG9TdHJpbmcoKSkKICAg
+          ICAgICAgICAgICAgICAgICBvLnB1dCgiZW5kRGF0ZSIsIHIuZW5kVGltZS50b1N0cmluZygpKQogICAgICAgICAgICAgICAgICAg
+          IG8ucHV0KCJtaW51dGVzIiwgbWlucykKICAgICAgICAgICAgICAgICAgICB0cnkgeyBvLnB1dCgic291cmNlIiwgci5tZXRhZGF0
+          YS5kYXRhT3JpZ2luLnBhY2thZ2VOYW1lKSB9IGNhdGNoIChlOiBFeGNlcHRpb24pIHt9CiAgICAgICAgICAgICAgICAgICAgYXJy
+          LnB1dChvKQogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgdmFsIG91dCA9IEpTT2JqZWN0KCkKICAgICAgICAgICAg
+          ICAgIG91dC5wdXQoImF2YWlsYWJsZSIsIHRydWUpCiAgICAgICAgICAgICAgICBvdXQucHV0KCJ0b3RhbE1pbnV0ZXMiLCB0b3Rh
+          bCkKICAgICAgICAgICAgICAgIG91dC5wdXQoImNvdW50IiwgcmVzLnJlY29yZHMuc2l6ZSkKICAgICAgICAgICAgICAgIG91dC5w
+          dXQoInNlc3Npb25zIiwgYXJyKQogICAgICAgICAgICAgICAgY2FsbC5yZXNvbHZlKG91dCkKICAgICAgICAgICAgfSBjYXRjaCAo
+          ZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgICAgICBjYWxsLnJlamVjdChlLm1lc3NhZ2UgPzogInNsZWVwIHJlYWQgZXJyb3Ii
+          KQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQoKICAgIC8vINCf0YPQu9GM0YEg0Lgg0L3QsNGB0YvRidC10L3QuNC1INC6
+          0YDQvtCy0Lgg0LrQuNGB0LvQvtGA0L7QtNC+0LwgKFNwTzIpLgogICAgLy8g0JLQvtC30LLRgNCw0YnQsNC10Lwg0YLQvtC70YzQ
+          utC+INGC0L4sINGH0YLQviDRgNC10LDQu9GM0L3QviDQu9C10LbQuNGCINCyIEhlYWx0aCBDb25uZWN0LgogICAgQFBsdWdpbk1l
+          dGhvZAogICAgZnVuIHF1ZXJ5Vml0YWxzKGNhbGw6IFBsdWdpbkNhbGwpIHsKICAgICAgICB2YWwgc3RhcnRTdHIgPSBjYWxsLmdl
+          dFN0cmluZygic3RhcnREYXRlIikKICAgICAgICB2YWwgZW5kU3RyID0gY2FsbC5nZXRTdHJpbmcoImVuZERhdGUiKQogICAgICAg
+          IENvcm91dGluZVNjb3BlKERpc3BhdGNoZXJzLklPKS5sYXVuY2ggewogICAgICAgICAgICB2YWwgb3V0ID0gSlNPYmplY3QoKQog
+          ICAgICAgICAgICB0cnkgewogICAgICAgICAgICAgICAgdmFsIGMgPSBoY0NsaWVudCgpCiAgICAgICAgICAgICAgICBpZiAoYyA9
+          PSBudWxsKSB7CiAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgiYXZhaWxhYmxlIiwgZmFsc2UpCiAgICAgICAgICAgICAgICAg
+          ICAgY2FsbC5yZXNvbHZlKG91dCkKICAgICAgICAgICAgICAgICAgICByZXR1cm5AbGF1bmNoCiAgICAgICAgICAgICAgICB9CiAg
+          ICAgICAgICAgICAgICBvdXQucHV0KCJhdmFpbGFibGUiLCB0cnVlKQogICAgICAgICAgICAgICAgdmFsIHN0YXJ0ID0gSW5zdGFu
+          dC5wYXJzZShzdGFydFN0cikKICAgICAgICAgICAgICAgIHZhbCBlbmQgPSBJbnN0YW50LnBhcnNlKGVuZFN0cikKCiAgICAgICAg
+          ICAgICAgICAvLyAtLS0gU3BPMiAtLS0KICAgICAgICAgICAgICAgIHRyeSB7CiAgICAgICAgICAgICAgICAgICAgdmFsIHJlcyA9
+          IGMucmVhZFJlY29yZHMoCiAgICAgICAgICAgICAgICAgICAgICAgIFJlYWRSZWNvcmRzUmVxdWVzdCgKICAgICAgICAgICAgICAg
+          ICAgICAgICAgICAgIHJlY29yZFR5cGUgPSBPeHlnZW5TYXR1cmF0aW9uUmVjb3JkOjpjbGFzcywKICAgICAgICAgICAgICAgICAg
+          ICAgICAgICAgIHRpbWVSYW5nZUZpbHRlciA9IFRpbWVSYW5nZUZpbHRlci5iZXR3ZWVuKHN0YXJ0LCBlbmQpCiAgICAgICAgICAg
+          ICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgic3BvMkNvdW50
+          IiwgcmVzLnJlY29yZHMuc2l6ZSkKICAgICAgICAgICAgICAgICAgICB2YXIgYmVzdDogT3h5Z2VuU2F0dXJhdGlvblJlY29yZD8g
+          PSBudWxsCiAgICAgICAgICAgICAgICAgICAgZm9yIChyIGluIHJlcy5yZWNvcmRzKSB7CiAgICAgICAgICAgICAgICAgICAgICAg
+          IHZhbCBiID0gYmVzdAogICAgICAgICAgICAgICAgICAgICAgICBpZiAoYiA9PSBudWxsIHx8IHIudGltZS5pc0FmdGVyKGIudGlt
+          ZSkpIGJlc3QgPSByCiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgIHZhbCBiYiA9IGJlc3QKICAgICAg
+          ICAgICAgICAgICAgICBpZiAoYmIgIT0gbnVsbCkgewogICAgICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJzcG8yIiwgYmIu
+          cGVyY2VudGFnZS52YWx1ZSkKICAgICAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgic3BvMlRpbWUiLCBiYi50aW1lLnRvU3Ry
+          aW5nKCkpCiAgICAgICAgICAgICAgICAgICAgICAgIHRyeSB7IG91dC5wdXQoInNwbzJTb3VyY2UiLCBiYi5tZXRhZGF0YS5kYXRh
+          T3JpZ2luLnBhY2thZ2VOYW1lKSB9IGNhdGNoIChlOiBFeGNlcHRpb24pIHt9CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAg
+          ICAgICAgICAgfSBjYXRjaCAoZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgic3BvMkVycm9yIiwg
+          ZS5tZXNzYWdlID86ICJzcG8yIGVycm9yIikKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICAvLyAtLS0g0J/Rg9C7
+          0YzRgSAtLS0KICAgICAgICAgICAgICAgIHRyeSB7CiAgICAgICAgICAgICAgICAgICAgdmFsIHJlcyA9IGMucmVhZFJlY29yZHMo
+          CiAgICAgICAgICAgICAgICAgICAgICAgIFJlYWRSZWNvcmRzUmVxdWVzdCgKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJl
+          Y29yZFR5cGUgPSBIZWFydFJhdGVSZWNvcmQ6OmNsYXNzLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgdGltZVJhbmdlRmls
+          dGVyID0gVGltZVJhbmdlRmlsdGVyLmJldHdlZW4oc3RhcnQsIGVuZCkKICAgICAgICAgICAgICAgICAgICAgICAgKQogICAgICAg
+          ICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJockNvdW50IiwgcmVzLnJlY29yZHMuc2l6ZSkKICAg
+          ICAgICAgICAgICAgICAgICB2YXIgYnBtID0gMEwKICAgICAgICAgICAgICAgICAgICB2YXIgYXQ6IEluc3RhbnQ/ID0gbnVsbAog
+          ICAgICAgICAgICAgICAgICAgIHZhciBzcmMgPSAiIgogICAgICAgICAgICAgICAgICAgIGZvciAociBpbiByZXMucmVjb3Jkcykg
+          ewogICAgICAgICAgICAgICAgICAgICAgICBmb3IgKHNtIGluIHIuc2FtcGxlcykgewogICAgICAgICAgICAgICAgICAgICAgICAg
+          ICAgdmFsIGEgPSBhdAogICAgICAgICAgICAgICAgICAgICAgICAgICAgaWYgKGEgPT0gbnVsbCB8fCBzbS50aW1lLmlzQWZ0ZXIo
+          YSkpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBhdCA9IHNtLnRpbWUKICAgICAgICAgICAgICAgICAgICAgICAg
+          ICAgICAgICBicG0gPSBzbS5iZWF0c1Blck1pbnV0ZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHNyYyA9IHRyeSB7
+          IHIubWV0YWRhdGEuZGF0YU9yaWdpbi5wYWNrYWdlTmFtZSB9IGNhdGNoIChlOiBFeGNlcHRpb24pIHsgIiIgfQogICAgICAgICAg
+          ICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAg
+          ICAgICAgICAgICAgIHZhbCBhdHYgPSBhdAogICAgICAgICAgICAgICAgICAgIGlmIChhdHYgIT0gbnVsbCAmJiBicG0gPiAwTCkg
+          ewogICAgICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJociIsIGJwbSkKICAgICAgICAgICAgICAgICAgICAgICAgb3V0LnB1
+          dCgiaHJUaW1lIiwgYXR2LnRvU3RyaW5nKCkpCiAgICAgICAgICAgICAgICAgICAgICAgIGlmIChzcmMuaXNOb3RFbXB0eSgpKSBv
+          dXQucHV0KCJoclNvdXJjZSIsIHNyYykKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9IGNhdGNoIChlOiBF
+          eGNlcHRpb24pIHsKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJockVycm9yIiwgZS5tZXNzYWdlID86ICJociBlcnJvciIp
+          CiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgY2FsbC5yZXNvbHZlKG91dCkKICAgICAgICAgICAgfSBjYXRjaCAo
+          ZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgICAgICBjYWxsLnJlamVjdChlLm1lc3NhZ2UgPzogInZpdGFscyByZWFkIGVycm9y
+          IikKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KfQo=
+          B64
+          python3 - <<'PY'
+          import io, os, glob, base64, re
+
+          # 1) Находим исходники плагина здоровья — там уже есть Kotlin,
+          #    корутины и библиотека Health Connect.
+          dirs = glob.glob("node_modules/capacitor-health/android/src/main/java/com/fit_up/health/capacitor")
+          if not dirs:
+              dirs = [os.path.dirname(f) for f in glob.glob(
+                  "node_modules/capacitor-health/android/src/main/**/HealthPlugin.kt", recursive=True)]
+          if not dirs:
+              raise SystemExit("ОШИБКА: не найден исходный код плагина здоровья")
+          src_dir = dirs[0]
+          pkg = src_dir.split("java/")[-1].replace("/", ".")
+          print("пакет плагина:", pkg)
+
+          raw = io.open("/tmp/near_extra.b64", encoding="utf-8").read()
+          raw = "".join(raw.split())
+          kt = base64.b64decode(raw).decode("utf-8")
+          # если пакет плагина вдруг другой — подставляем настоящий
+          kt = re.sub(r"^package .*$", "package " + pkg, kt, count=1, flags=re.M)
+
+          out_path = os.path.join(src_dir, "NearSleepPlugin.kt")
+          io.open(out_path, "w", encoding="utf-8").write(kt)
+          print("создан", out_path, len(kt), "символов")
+
+          # 2) Регистрируем наш плагин в MainActivity
+          mains = glob.glob("android/app/src/main/java/**/MainActivity.java", recursive=True)
+          if not mains:
+              raise SystemExit("ОШИБКА: MainActivity.java не найден")
+          for mp in mains:
+              t = io.open(mp, encoding="utf-8").read()
+              if "NearSleepPlugin" in t:
+                  print("MainActivity уже настроен"); continue
+              method = ("    @Override\n"
+                        "    public void onCreate(android.os.Bundle savedInstanceState) {\n"
+                        "        registerPlugin(" + pkg + ".NearSleepPlugin.class);\n"
+                        "        super.onCreate(savedInstanceState);\n"
+                        "    }\n")
+              t2 = re.sub(r"public class MainActivity extends BridgeActivity \{\s*\}",
+                          "public class MainActivity extends BridgeActivity {\n" + method + "}", t)
+              if t2 == t:
+                  i = t.rstrip().rfind("}")
+                  t2 = t[:i] + method + t[i:]
+              io.open(mp, "w", encoding="utf-8").write(t2)
+              print("MainActivity пропатчен:", mp)
+          PY
       - name: Синхронизировать веб-код в приложение
         script: |
           npx cap sync android
@@ -255,7 +538,12 @@ workflows:
           grep -q "capacitor-health" android/capacitor.settings.gradle || { echo 'ОШИБКА: плагин браслета не подключился к Android-проекту'; exit 1; }
           grep -q "READ_STEPS" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешений Health Connect'; exit 1; }
           grep -q "ACCESS_FINE_LOCATION" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на геолокацию'; exit 1; }
-          echo "проверка пройдена: браслет, здоровье и геолокация подключены"
+          grep -q "READ_SLEEP" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на чтение сна'; exit 1; }
+          grep -q "READ_OXYGEN_SATURATION" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на SpO2'; exit 1; }
+          grep -q "queryVitals" node_modules/capacitor-health/android/src/main/java/com/fit_up/health/capacitor/NearSleepPlugin.kt || { echo 'ОШИБКА: чтение пульса и SpO2 не добавилось'; exit 1; }
+          grep -rq "NearSleepPlugin" android/app/src/main/java || { echo 'ОШИБКА: чтение сна не зарегистрировано'; exit 1; }
+          test -f node_modules/capacitor-health/android/src/main/java/com/fit_up/health/capacitor/NearSleepPlugin.kt || echo 'ВНИМАНИЕ: файл сна лежит в другом месте — проверьте лог выше'
+          echo "проверка пройдена: браслет, здоровье, сон, пульс, SpO2 и геолокация подключены"
 
       - name: Собрать debug APK
         script: |
