@@ -1,6 +1,276 @@
-# Codemagic — облачная сборка Near под Android (с фитнес-браслетом через Health Connect).
-# Правки: разрешения Health Connect, минимум Android 8, нужные версии инструментов,
-# и исправление опечатки в коде плагина (dataOriginsFilter -> dataOriginFilter).
+# Codemagic — облачная сборка Near под Android.
+#
+# Что делает сборка помимо обычного `cap add android`:
+#   1) прописывает разрешения Health Connect (включая сон и кислород, которых
+#      раньше не было) и разрешения для непрерывной фоновой геолокации;
+#   2) чинит два бага в чужом плагине capacitor-health;
+#   3) вкладывает наши нативные исходники из native/android/ — фоновую службу
+#      геолокации и расширенное чтение Health Connect;
+#   4) регистрирует оба наших плагина в MainActivity.
+#
+# Исходники лежат обычными .kt файлами в репозитории (native/android/),
+# их можно читать и править — раньше они были зашиты в base64.
+
+definitions:
+  scripts:
+    - &install_deps
+      name: Установить зависимости
+      script: |
+        npm install
+        # Гарантируем наличие плагинов, даже если package.json в репозитории устарел
+        npm install capacitor-health@^7.1.0 @capacitor/geolocation@^7.0.0 --save
+        echo "--- зависимости после установки ---"
+        node -e "const p=require('./package.json'); console.log(JSON.stringify(p.dependencies,null,1));"
+        test -d node_modules/capacitor-health || { echo 'ОШИБКА: плагин браслета не установился'; exit 1; }
+        test -d native/android || { echo 'ОШИБКА: нет папки native/android с нашими исходниками'; exit 1; }
+        echo "плагин браслета и наши исходники на месте"
+
+    - &add_android
+      name: Добавить платформу Android
+      script: npx cap add android || true
+
+    - &patch_android
+      name: Разрешения, версии инструментов и правки чужого плагина
+      script: |
+        python3 - <<'PY'
+        import re, io, glob
+
+        # ---------- 1) AndroidManifest.xml ----------
+        mpath = "android/app/src/main/AndroidManifest.xml"
+        m = io.open(mpath, encoding="utf-8").read()
+
+        COMPONENTS = '''
+            <!-- near:components -->
+            <activity
+                android:name="com.fit_up.health.capacitor.PermissionsRationaleActivity"
+                android:exported="true">
+                <intent-filter>
+                    <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+                </intent-filter>
+            </activity>
+            <activity-alias
+                android:name="ViewPermissionUsageActivity"
+                android:exported="true"
+                android:targetActivity="com.fit_up.health.capacitor.PermissionsRationaleActivity"
+                android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+                <intent-filter>
+                    <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                    <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+                </intent-filter>
+            </activity-alias>
+
+            <!-- Непрерывное отслеживание: служба с постоянным уведомлением.
+                 stopWithTask=false — слежение продолжается, даже если приложение
+                 смахнули из списка запущенных. -->
+            <service
+                android:name="com.fit_up.health.capacitor.NearGeoService"
+                android:enabled="true"
+                android:exported="false"
+                android:stopWithTask="false"
+                android:foregroundServiceType="location" />
+
+            <!-- Возобновление слежения после перезагрузки телефона -->
+            <receiver
+                android:name="com.fit_up.health.capacitor.NearBootReceiver"
+                android:enabled="true"
+                android:exported="true">
+                <intent-filter>
+                    <action android:name="android.intent.action.BOOT_COMPLETED" />
+                    <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                    <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                </intent-filter>
+            </receiver>
+        '''
+
+        PERMISSIONS = '''
+            <!-- near:permissions -->
+            <queries>
+                <package android:name="com.google.android.apps.healthdata" />
+            </queries>
+
+            <!-- фитнес-браслет через Health Connect -->
+            <uses-permission android:name="android.permission.health.READ_STEPS" />
+            <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
+            <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
+            <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+            <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+            <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTE" />
+            <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+            <uses-permission android:name="android.permission.health.READ_SLEEP" />
+            <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
+
+            <!-- непрерывная геолокация -->
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+            <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+            <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+            <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+            <uses-permission android:name="android.permission.WAKE_LOCK" />
+            <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+            <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+            <!-- «вопрос дня» -->
+            <uses-permission android:name="android.permission.RECORD_AUDIO" />
+            <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+        '''
+
+        changed = False
+        if "near:components" not in m:
+            m = m.replace("</application>", COMPONENTS + "    </application>", 1)
+            changed = True
+        if "near:permissions" not in m:
+            m = m.replace("</manifest>", PERMISSIONS + "</manifest>", 1)
+            changed = True
+        if changed:
+            io.open(mpath, "w", encoding="utf-8").write(m)
+            print("AndroidManifest.xml пропатчен")
+        else:
+            print("AndroidManifest.xml уже настроен")
+
+        # ---------- 2) версии инструментов ----------
+        vpath = "android/variables.gradle"
+        v = io.open(vpath, encoding="utf-8").read()
+        v = re.sub(r"minSdkVersion\s*=\s*\d+", "minSdkVersion = 26", v)
+        v = re.sub(r"compileSdkVersion\s*=\s*\d+", "compileSdkVersion = 36", v)
+        v = re.sub(r"targetSdkVersion\s*=\s*\d+", "targetSdkVersion = 36", v)
+        io.open(vpath, "w", encoding="utf-8").write(v)
+        print("variables.gradle:", [l for l in v.splitlines() if "SdkVersion" in l])
+
+        bpath = "android/build.gradle"
+        b = io.open(bpath, encoding="utf-8").read()
+        b = re.sub(r"com\.android\.tools\.build:gradle:[0-9.]+", "com.android.tools.build:gradle:8.9.1", b)
+        io.open(bpath, "w", encoding="utf-8").write(b)
+
+        wpath = "android/gradle/wrapper/gradle-wrapper.properties"
+        w = io.open(wpath, encoding="utf-8").read()
+        w = re.sub(r"gradle-[0-9.]+-(all|bin)\.zip", "gradle-8.11.1-all.zip", w)
+        io.open(wpath, "w", encoding="utf-8").write(w)
+
+        # ---------- 3) два бага в чужом плагине capacitor-health ----------
+        #    (а) опечатка dataOriginsFilter -> dataOriginFilter
+        #    (б) suspend-функция hasPermission вызывается из обычного контекста
+        fixed = 0
+        decl = "private suspend fun hasPermission(p: CapHealthPermission): Boolean {"
+        wrap = ("private fun hasPermission(p: CapHealthPermission): Boolean = "
+                "kotlinx.coroutines.runBlocking { hasPermissionSuspend(p) }\n\n"
+                "    private suspend fun hasPermissionSuspend(p: CapHealthPermission): Boolean {")
+        for f in glob.glob("node_modules/capacitor-health/android/src/main/**/*.kt", recursive=True):
+            t = io.open(f, encoding="utf-8").read()
+            orig = t
+            t = t.replace("dataOriginsFilter", "dataOriginFilter")
+            if decl in t and "hasPermissionSuspend" not in t:
+                t = t.replace(decl, wrap)
+            if t != orig:
+                io.open(f, "w", encoding="utf-8").write(t)
+                fixed += 1
+                print("плагин пропатчен:", f)
+        print("исправлено файлов плагина:", fixed)
+        PY
+
+    - &copy_native
+      name: Вложить наши нативные исходники и зарегистрировать плагины
+      script: |
+        python3 - <<'PY'
+        import io, os, re, glob, shutil
+
+        PKG = "com.fit_up.health.capacitor"
+        FILES = ["NearSleepPlugin.kt", "NearGeoPlugin.kt", "NearGeoService.kt",
+                 "NearCloudPush.kt", "NearBootReceiver.kt"]
+
+        # Кладём рядом с чужим плагином здоровья: в этом модуле уже настроен Kotlin
+        # и подключена библиотека Health Connect, отдельная сборка не нужна.
+        dirs = [os.path.dirname(f) for f in glob.glob(
+            "node_modules/capacitor-health/android/src/main/**/HealthPlugin.kt", recursive=True)]
+        if not dirs:
+            dirs = [d for d in glob.glob(
+                "node_modules/capacitor-health/android/src/main/java/**/", recursive=True)
+                if d.rstrip("/").endswith("capacitor")]
+        if not dirs:
+            raise SystemExit("ОШИБКА: не найден исходный код плагина здоровья")
+        dst = dirs[0]
+        real_pkg = dst.split("java/")[-1].strip("/").replace("/", ".")
+        print("пакет плагина:", real_pkg, "->", dst)
+
+        for name in FILES:
+            src = os.path.join("native", "android", name)
+            if not os.path.exists(src):
+                raise SystemExit("ОШИБКА: нет файла " + src)
+            t = io.open(src, encoding="utf-8").read()
+            # если у плагина внезапно другой пакет — подставляем настоящий
+            t = re.sub(r"^package .*$", "package " + real_pkg, t, count=1, flags=re.M)
+            io.open(os.path.join(dst, name), "w", encoding="utf-8").write(t)
+            print("вложен", name, len(t), "символов")
+
+        # Манифест ссылается на классы по полному имени — поправим, если пакет другой
+        if real_pkg != PKG:
+            mpath = "android/app/src/main/AndroidManifest.xml"
+            m = io.open(mpath, encoding="utf-8").read()
+            m = m.replace(PKG + ".NearGeoService", real_pkg + ".NearGeoService")
+            m = m.replace(PKG + ".NearBootReceiver", real_pkg + ".NearBootReceiver")
+            io.open(mpath, "w", encoding="utf-8").write(m)
+            print("имена классов в манифесте поправлены на", real_pkg)
+
+        # ---------- регистрация плагинов в MainActivity ----------
+        mains = glob.glob("android/app/src/main/java/**/MainActivity.java", recursive=True)
+        if not mains:
+            raise SystemExit("ОШИБКА: MainActivity.java не найден")
+        method = ("    @Override\n"
+                  "    public void onCreate(android.os.Bundle savedInstanceState) {\n"
+                  "        registerPlugin(" + real_pkg + ".NearSleepPlugin.class);\n"
+                  "        registerPlugin(" + real_pkg + ".NearGeoPlugin.class);\n"
+                  "        super.onCreate(savedInstanceState);\n"
+                  "    }\n")
+        for mp in mains:
+            t = io.open(mp, encoding="utf-8").read()
+            if "NearGeoPlugin" in t and "NearSleepPlugin" in t:
+                print("MainActivity уже настроен"); continue
+            if "onCreate" in t:
+                # старая версия регистрировала только сон — переписываем целиком
+                t = re.sub(r"\s*@Override\s*\n\s*public void onCreate\([^)]*\)\s*\{.*?\n\s*\}\n",
+                           "\n" + method, t, flags=re.S)
+                if "NearGeoPlugin" not in t:
+                    i = t.rstrip().rfind("}")
+                    t = t[:i] + method + t[i:]
+            else:
+                t2 = re.sub(r"public class MainActivity extends BridgeActivity \{\s*\}",
+                            "public class MainActivity extends BridgeActivity {\n" + method + "}", t)
+                t = t2 if t2 != t else (t[:t.rstrip().rfind("}")] + method + t[t.rstrip().rfind("}"):])
+            io.open(mp, "w", encoding="utf-8").write(t)
+            print("MainActivity пропатчен:", mp)
+            print(io.open(mp, encoding="utf-8").read())
+        PY
+
+    - &sync_and_check
+      name: Синхронизировать веб-код и проверить сборку
+      script: |
+        npx cap sync android
+        echo "--- плагины, подключённые к Android ---"
+        cat android/capacitor.settings.gradle || true
+
+        M=android/app/src/main/AndroidManifest.xml
+        need_manifest() {
+          grep -q "$1" $M || { echo "ОШИБКА: в манифесте нет $1"; exit 1; }
+        }
+        grep -q "capacitor-health" android/capacitor.settings.gradle || { echo 'ОШИБКА: плагин браслета не подключился'; exit 1; }
+        need_manifest "READ_STEPS"
+        need_manifest "READ_SLEEP"
+        need_manifest "READ_OXYGEN_SATURATION"
+        need_manifest "READ_HEART_RATE"
+        need_manifest "ACCESS_FINE_LOCATION"
+        need_manifest "ACCESS_BACKGROUND_LOCATION"
+        need_manifest "FOREGROUND_SERVICE_LOCATION"
+        need_manifest "NearGeoService"
+        need_manifest "NearBootReceiver"
+
+        SRC=$(dirname $(find node_modules/capacitor-health/android/src/main -name 'HealthPlugin.kt' | head -1))
+        for f in NearSleepPlugin.kt NearGeoPlugin.kt NearGeoService.kt NearCloudPush.kt NearBootReceiver.kt; do
+          test -f "$SRC/$f" || { echo "ОШИБКА: не вложен $f"; exit 1; }
+        done
+        grep -q "requestAccess" "$SRC/NearSleepPlugin.kt" || { echo 'ОШИБКА: запрос разрешений на сон/SpO2 не добавился'; exit 1; }
+        grep -rq "NearSleepPlugin" android/app/src/main/java || { echo 'ОШИБКА: плагин здоровья не зарегистрирован'; exit 1; }
+        grep -rq "NearGeoPlugin" android/app/src/main/java || { echo 'ОШИБКА: плагин геолокации не зарегистрирован'; exit 1; }
+        echo "проверка пройдена: браслет, сон, пульс, SpO2 и непрерывная геолокация подключены"
 
 workflows:
   android-debug:
@@ -10,263 +280,11 @@ workflows:
       node: 20
       java: 21
     scripts:
-      - name: Установить зависимости
-        script: |
-          npm install
-          # Гарантируем наличие плагинов, даже если package.json в репозитории устарел
-          npm install capacitor-health@^7.1.0 @capacitor/geolocation@^7.0.0 --save
-          echo "--- зависимости после установки ---"
-          node -e "const p=require('./package.json'); console.log(JSON.stringify(p.dependencies,null,1));"
-          test -d node_modules/capacitor-health || { echo 'ОШИБКА: плагин браслета не установился'; exit 1; }
-          echo "плагин браслета на месте"
-
-      - name: Добавить платформу Android
-        script: npx cap add android || true
-
-      - name: Правки Health Connect и исправление плагина
-        script: |
-          python3 - <<'PY'
-          import re, io, glob
-          # 1) AndroidManifest.xml — разрешения здоровья и активность-обоснование
-          mpath = "android/app/src/main/AndroidManifest.xml"
-          m = io.open(mpath, encoding="utf-8").read()
-          if "READ_STEPS" not in m:
-              activities = '''
-              <activity
-                  android:name="com.fit_up.health.capacitor.PermissionsRationaleActivity"
-                  android:exported="true">
-                  <intent-filter>
-                      <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
-                  </intent-filter>
-              </activity>
-              <activity-alias
-                  android:name="ViewPermissionUsageActivity"
-                  android:exported="true"
-                  android:targetActivity="com.fit_up.health.capacitor.PermissionsRationaleActivity"
-                  android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
-                  <intent-filter>
-                      <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
-                      <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
-                  </intent-filter>
-              </activity-alias>
-          '''
-              m = m.replace("</application>", activities + "    </application>", 1)
-              health = '''
-              <queries>
-                  <package android:name="com.google.android.apps.healthdata" />
-              </queries>
-              <uses-permission android:name="android.permission.health.READ_STEPS" />
-              <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
-              <uses-permission android:name="android.permission.health.READ_DISTANCE" />
-              <uses-permission android:name="android.permission.health.READ_EXERCISE" />
-              <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTE" />
-              <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
-              <uses-permission android:name="android.permission.health.READ_SLEEP" />
-              <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
-              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-              <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-          '''
-              m = m.replace("</manifest>", health + "</manifest>", 1)
-              io.open(mpath, "w", encoding="utf-8").write(m)
-              print("AndroidManifest.xml пропатчен")
-
-          # 2) variables.gradle — minSdk 26, compileSdk 36, targetSdk 36
-          vpath = "android/variables.gradle"
-          v = io.open(vpath, encoding="utf-8").read()
-          v = re.sub(r"minSdkVersion\s*=\s*\d+", "minSdkVersion = 26", v)
-          v = re.sub(r"compileSdkVersion\s*=\s*\d+", "compileSdkVersion = 36", v)
-          v = re.sub(r"targetSdkVersion\s*=\s*\d+", "targetSdkVersion = 36", v)
-          io.open(vpath, "w", encoding="utf-8").write(v)
-          print("variables.gradle:", [l for l in v.splitlines() if "SdkVersion" in l])
-
-          # 3) build.gradle — Android Gradle Plugin 8.9.1
-          bpath = "android/build.gradle"
-          b = io.open(bpath, encoding="utf-8").read()
-          b = re.sub(r"com\.android\.tools\.build:gradle:[0-9.]+", "com.android.tools.build:gradle:8.9.1", b)
-          io.open(bpath, "w", encoding="utf-8").write(b)
-
-          # 4) Gradle wrapper 8.11.1
-          wpath = "android/gradle/wrapper/gradle-wrapper.properties"
-          w = io.open(wpath, encoding="utf-8").read()
-          w = re.sub(r"gradle-[0-9.]+-(all|bin)\.zip", "gradle-8.11.1-all.zip", w)
-          io.open(wpath, "w", encoding="utf-8").write(w)
-
-          # 5) Исправляем два бага в коде плагина:
-          #    (а) опечатку dataOriginsFilter -> dataOriginFilter
-          #    (б) вызов suspend-функции hasPermission из обычного контекста —
-          #        делаем hasPermission обычной функцией-обёрткой через runBlocking
-          fixed = 0
-          decl = "private suspend fun hasPermission(p: CapHealthPermission): Boolean {"
-          wrap = ("private fun hasPermission(p: CapHealthPermission): Boolean = "
-                  "kotlinx.coroutines.runBlocking { hasPermissionSuspend(p) }\n\n"
-                  "    private suspend fun hasPermissionSuspend(p: CapHealthPermission): Boolean {")
-          for f in glob.glob("node_modules/capacitor-health/android/src/main/**/*.kt", recursive=True):
-              t = io.open(f, encoding="utf-8").read()
-              orig = t
-              t = t.replace("dataOriginsFilter", "dataOriginFilter")
-              if decl in t and "hasPermissionSuspend" not in t:
-                  t = t.replace(decl, wrap)
-              if t != orig:
-                  io.open(f, "w", encoding="utf-8").write(t)
-                  fixed += 1
-                  print("плагин пропатчен:", f)
-          print("исправлено файлов плагина:", fixed)
-          PY
-
-      - name: Добавить чтение сна, пульса и SpO2 (Health Connect)
-        script: |
-          cat > /tmp/near_extra.b64 <<'B64'
-          cGFja2FnZSBjb20uZml0X3VwLmhlYWx0aC5jYXBhY2l0b3IKCmltcG9ydCBhbmRyb2lkeC5oZWFsdGguY29ubmVjdC5jbGllbnQu
-          SGVhbHRoQ29ubmVjdENsaWVudAppbXBvcnQgYW5kcm9pZHguaGVhbHRoLmNvbm5lY3QuY2xpZW50LnJlY29yZHMuSGVhcnRSYXRl
-          UmVjb3JkCmltcG9ydCBhbmRyb2lkeC5oZWFsdGguY29ubmVjdC5jbGllbnQucmVjb3Jkcy5PeHlnZW5TYXR1cmF0aW9uUmVjb3Jk
-          CmltcG9ydCBhbmRyb2lkeC5oZWFsdGguY29ubmVjdC5jbGllbnQucmVjb3Jkcy5TbGVlcFNlc3Npb25SZWNvcmQKaW1wb3J0IGFu
-          ZHJvaWR4LmhlYWx0aC5jb25uZWN0LmNsaWVudC5yZXF1ZXN0LlJlYWRSZWNvcmRzUmVxdWVzdAppbXBvcnQgYW5kcm9pZHguaGVh
-          bHRoLmNvbm5lY3QuY2xpZW50LnRpbWUuVGltZVJhbmdlRmlsdGVyCmltcG9ydCBjb20uZ2V0Y2FwYWNpdG9yLkpTQXJyYXkKaW1w
-          b3J0IGNvbS5nZXRjYXBhY2l0b3IuSlNPYmplY3QKaW1wb3J0IGNvbS5nZXRjYXBhY2l0b3IuUGx1Z2luCmltcG9ydCBjb20uZ2V0
-          Y2FwYWNpdG9yLlBsdWdpbkNhbGwKaW1wb3J0IGNvbS5nZXRjYXBhY2l0b3IuUGx1Z2luTWV0aG9kCmltcG9ydCBjb20uZ2V0Y2Fw
-          YWNpdG9yLmFubm90YXRpb24uQ2FwYWNpdG9yUGx1Z2luCmltcG9ydCBrb3RsaW54LmNvcm91dGluZXMuQ29yb3V0aW5lU2NvcGUK
-          aW1wb3J0IGtvdGxpbnguY29yb3V0aW5lcy5EaXNwYXRjaGVycwppbXBvcnQga290bGlueC5jb3JvdXRpbmVzLmxhdW5jaAppbXBv
-          cnQgamF2YS50aW1lLkR1cmF0aW9uCmltcG9ydCBqYXZhLnRpbWUuSW5zdGFudAoKQENhcGFjaXRvclBsdWdpbihuYW1lID0gIk5l
-          YXJTbGVlcCIpCmNsYXNzIE5lYXJTbGVlcFBsdWdpbiA6IFBsdWdpbigpIHsKCiAgICBwcml2YXRlIGZ1biBoY0NsaWVudCgpOiBI
-          ZWFsdGhDb25uZWN0Q2xpZW50PyA9IHRyeSB7CiAgICAgICAgaWYgKEhlYWx0aENvbm5lY3RDbGllbnQuZ2V0U2RrU3RhdHVzKGNv
-          bnRleHQpID09IEhlYWx0aENvbm5lY3RDbGllbnQuU0RLX0FWQUlMQUJMRSkKICAgICAgICAgICAgSGVhbHRoQ29ubmVjdENsaWVu
-          dC5nZXRPckNyZWF0ZShjb250ZXh0KQogICAgICAgIGVsc2UgbnVsbAogICAgfSBjYXRjaCAoZTogRXhjZXB0aW9uKSB7CiAgICAg
-          ICAgbnVsbAogICAgfQoKICAgIEBQbHVnaW5NZXRob2QKICAgIGZ1biBxdWVyeVNsZWVwKGNhbGw6IFBsdWdpbkNhbGwpIHsKICAg
-          ICAgICB2YWwgc3RhcnRTdHIgPSBjYWxsLmdldFN0cmluZygic3RhcnREYXRlIikKICAgICAgICB2YWwgZW5kU3RyID0gY2FsbC5n
-          ZXRTdHJpbmcoImVuZERhdGUiKQogICAgICAgIENvcm91dGluZVNjb3BlKERpc3BhdGNoZXJzLklPKS5sYXVuY2ggewogICAgICAg
-          ICAgICB0cnkgewogICAgICAgICAgICAgICAgdmFsIGMgPSBoY0NsaWVudCgpCiAgICAgICAgICAgICAgICBpZiAoYyA9PSBudWxs
-          KSB7CiAgICAgICAgICAgICAgICAgICAgdmFsIG91dCA9IEpTT2JqZWN0KCkKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJh
-          dmFpbGFibGUiLCBmYWxzZSkKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJ0b3RhbE1pbnV0ZXMiLCAwKQogICAgICAgICAg
-          ICAgICAgICAgIG91dC5wdXQoInNlc3Npb25zIiwgSlNBcnJheSgpKQogICAgICAgICAgICAgICAgICAgIGNhbGwucmVzb2x2ZShv
-          dXQpCiAgICAgICAgICAgICAgICAgICAgcmV0dXJuQGxhdW5jaAogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgdmFs
-          IHN0YXJ0ID0gSW5zdGFudC5wYXJzZShzdGFydFN0cikKICAgICAgICAgICAgICAgIHZhbCBlbmQgPSBJbnN0YW50LnBhcnNlKGVu
-          ZFN0cikKICAgICAgICAgICAgICAgIHZhbCByZXMgPSBjLnJlYWRSZWNvcmRzKAogICAgICAgICAgICAgICAgICAgIFJlYWRSZWNv
-          cmRzUmVxdWVzdCgKICAgICAgICAgICAgICAgICAgICAgICAgcmVjb3JkVHlwZSA9IFNsZWVwU2Vzc2lvblJlY29yZDo6Y2xhc3Ms
-          CiAgICAgICAgICAgICAgICAgICAgICAgIHRpbWVSYW5nZUZpbHRlciA9IFRpbWVSYW5nZUZpbHRlci5iZXR3ZWVuKHN0YXJ0LCBl
-          bmQpCiAgICAgICAgICAgICAgICAgICAgKQogICAgICAgICAgICAgICAgKQogICAgICAgICAgICAgICAgdmFsIGFyciA9IEpTQXJy
-          YXkoKQogICAgICAgICAgICAgICAgdmFyIHRvdGFsID0gMEwKICAgICAgICAgICAgICAgIGZvciAociBpbiByZXMucmVjb3Jkcykg
-          ewogICAgICAgICAgICAgICAgICAgIHZhbCBtaW5zID0gRHVyYXRpb24uYmV0d2VlbihyLnN0YXJ0VGltZSwgci5lbmRUaW1lKS50
-          b01pbnV0ZXMoKQogICAgICAgICAgICAgICAgICAgIHRvdGFsICs9IG1pbnMKICAgICAgICAgICAgICAgICAgICB2YWwgbyA9IEpT
-          T2JqZWN0KCkKICAgICAgICAgICAgICAgICAgICBvLnB1dCgic3RhcnREYXRlIiwgci5zdGFydFRpbWUudG9TdHJpbmcoKSkKICAg
-          ICAgICAgICAgICAgICAgICBvLnB1dCgiZW5kRGF0ZSIsIHIuZW5kVGltZS50b1N0cmluZygpKQogICAgICAgICAgICAgICAgICAg
-          IG8ucHV0KCJtaW51dGVzIiwgbWlucykKICAgICAgICAgICAgICAgICAgICB0cnkgeyBvLnB1dCgic291cmNlIiwgci5tZXRhZGF0
-          YS5kYXRhT3JpZ2luLnBhY2thZ2VOYW1lKSB9IGNhdGNoIChlOiBFeGNlcHRpb24pIHt9CiAgICAgICAgICAgICAgICAgICAgYXJy
-          LnB1dChvKQogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgdmFsIG91dCA9IEpTT2JqZWN0KCkKICAgICAgICAgICAg
-          ICAgIG91dC5wdXQoImF2YWlsYWJsZSIsIHRydWUpCiAgICAgICAgICAgICAgICBvdXQucHV0KCJ0b3RhbE1pbnV0ZXMiLCB0b3Rh
-          bCkKICAgICAgICAgICAgICAgIG91dC5wdXQoImNvdW50IiwgcmVzLnJlY29yZHMuc2l6ZSkKICAgICAgICAgICAgICAgIG91dC5w
-          dXQoInNlc3Npb25zIiwgYXJyKQogICAgICAgICAgICAgICAgY2FsbC5yZXNvbHZlKG91dCkKICAgICAgICAgICAgfSBjYXRjaCAo
-          ZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgICAgICBjYWxsLnJlamVjdChlLm1lc3NhZ2UgPzogInNsZWVwIHJlYWQgZXJyb3Ii
-          KQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQoKICAgIC8vINCf0YPQu9GM0YEg0Lgg0L3QsNGB0YvRidC10L3QuNC1INC6
-          0YDQvtCy0Lgg0LrQuNGB0LvQvtGA0L7QtNC+0LwgKFNwTzIpLgogICAgLy8g0JLQvtC30LLRgNCw0YnQsNC10Lwg0YLQvtC70YzQ
-          utC+INGC0L4sINGH0YLQviDRgNC10LDQu9GM0L3QviDQu9C10LbQuNGCINCyIEhlYWx0aCBDb25uZWN0LgogICAgQFBsdWdpbk1l
-          dGhvZAogICAgZnVuIHF1ZXJ5Vml0YWxzKGNhbGw6IFBsdWdpbkNhbGwpIHsKICAgICAgICB2YWwgc3RhcnRTdHIgPSBjYWxsLmdl
-          dFN0cmluZygic3RhcnREYXRlIikKICAgICAgICB2YWwgZW5kU3RyID0gY2FsbC5nZXRTdHJpbmcoImVuZERhdGUiKQogICAgICAg
-          IENvcm91dGluZVNjb3BlKERpc3BhdGNoZXJzLklPKS5sYXVuY2ggewogICAgICAgICAgICB2YWwgb3V0ID0gSlNPYmplY3QoKQog
-          ICAgICAgICAgICB0cnkgewogICAgICAgICAgICAgICAgdmFsIGMgPSBoY0NsaWVudCgpCiAgICAgICAgICAgICAgICBpZiAoYyA9
-          PSBudWxsKSB7CiAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgiYXZhaWxhYmxlIiwgZmFsc2UpCiAgICAgICAgICAgICAgICAg
-          ICAgY2FsbC5yZXNvbHZlKG91dCkKICAgICAgICAgICAgICAgICAgICByZXR1cm5AbGF1bmNoCiAgICAgICAgICAgICAgICB9CiAg
-          ICAgICAgICAgICAgICBvdXQucHV0KCJhdmFpbGFibGUiLCB0cnVlKQogICAgICAgICAgICAgICAgdmFsIHN0YXJ0ID0gSW5zdGFu
-          dC5wYXJzZShzdGFydFN0cikKICAgICAgICAgICAgICAgIHZhbCBlbmQgPSBJbnN0YW50LnBhcnNlKGVuZFN0cikKCiAgICAgICAg
-          ICAgICAgICAvLyAtLS0gU3BPMiAtLS0KICAgICAgICAgICAgICAgIHRyeSB7CiAgICAgICAgICAgICAgICAgICAgdmFsIHJlcyA9
-          IGMucmVhZFJlY29yZHMoCiAgICAgICAgICAgICAgICAgICAgICAgIFJlYWRSZWNvcmRzUmVxdWVzdCgKICAgICAgICAgICAgICAg
-          ICAgICAgICAgICAgIHJlY29yZFR5cGUgPSBPeHlnZW5TYXR1cmF0aW9uUmVjb3JkOjpjbGFzcywKICAgICAgICAgICAgICAgICAg
-          ICAgICAgICAgIHRpbWVSYW5nZUZpbHRlciA9IFRpbWVSYW5nZUZpbHRlci5iZXR3ZWVuKHN0YXJ0LCBlbmQpCiAgICAgICAgICAg
-          ICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgic3BvMkNvdW50
-          IiwgcmVzLnJlY29yZHMuc2l6ZSkKICAgICAgICAgICAgICAgICAgICB2YXIgYmVzdDogT3h5Z2VuU2F0dXJhdGlvblJlY29yZD8g
-          PSBudWxsCiAgICAgICAgICAgICAgICAgICAgZm9yIChyIGluIHJlcy5yZWNvcmRzKSB7CiAgICAgICAgICAgICAgICAgICAgICAg
-          IHZhbCBiID0gYmVzdAogICAgICAgICAgICAgICAgICAgICAgICBpZiAoYiA9PSBudWxsIHx8IHIudGltZS5pc0FmdGVyKGIudGlt
-          ZSkpIGJlc3QgPSByCiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgIHZhbCBiYiA9IGJlc3QKICAgICAg
-          ICAgICAgICAgICAgICBpZiAoYmIgIT0gbnVsbCkgewogICAgICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJzcG8yIiwgYmIu
-          cGVyY2VudGFnZS52YWx1ZSkKICAgICAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgic3BvMlRpbWUiLCBiYi50aW1lLnRvU3Ry
-          aW5nKCkpCiAgICAgICAgICAgICAgICAgICAgICAgIHRyeSB7IG91dC5wdXQoInNwbzJTb3VyY2UiLCBiYi5tZXRhZGF0YS5kYXRh
-          T3JpZ2luLnBhY2thZ2VOYW1lKSB9IGNhdGNoIChlOiBFeGNlcHRpb24pIHt9CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAg
-          ICAgICAgICAgfSBjYXRjaCAoZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgic3BvMkVycm9yIiwg
-          ZS5tZXNzYWdlID86ICJzcG8yIGVycm9yIikKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICAvLyAtLS0g0J/Rg9C7
-          0YzRgSAtLS0KICAgICAgICAgICAgICAgIHRyeSB7CiAgICAgICAgICAgICAgICAgICAgdmFsIHJlcyA9IGMucmVhZFJlY29yZHMo
-          CiAgICAgICAgICAgICAgICAgICAgICAgIFJlYWRSZWNvcmRzUmVxdWVzdCgKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJl
-          Y29yZFR5cGUgPSBIZWFydFJhdGVSZWNvcmQ6OmNsYXNzLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgdGltZVJhbmdlRmls
-          dGVyID0gVGltZVJhbmdlRmlsdGVyLmJldHdlZW4oc3RhcnQsIGVuZCkKICAgICAgICAgICAgICAgICAgICAgICAgKQogICAgICAg
-          ICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJockNvdW50IiwgcmVzLnJlY29yZHMuc2l6ZSkKICAg
-          ICAgICAgICAgICAgICAgICB2YXIgYnBtID0gMEwKICAgICAgICAgICAgICAgICAgICB2YXIgYXQ6IEluc3RhbnQ/ID0gbnVsbAog
-          ICAgICAgICAgICAgICAgICAgIHZhciBzcmMgPSAiIgogICAgICAgICAgICAgICAgICAgIGZvciAociBpbiByZXMucmVjb3Jkcykg
-          ewogICAgICAgICAgICAgICAgICAgICAgICBmb3IgKHNtIGluIHIuc2FtcGxlcykgewogICAgICAgICAgICAgICAgICAgICAgICAg
-          ICAgdmFsIGEgPSBhdAogICAgICAgICAgICAgICAgICAgICAgICAgICAgaWYgKGEgPT0gbnVsbCB8fCBzbS50aW1lLmlzQWZ0ZXIo
-          YSkpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBhdCA9IHNtLnRpbWUKICAgICAgICAgICAgICAgICAgICAgICAg
-          ICAgICAgICBicG0gPSBzbS5iZWF0c1Blck1pbnV0ZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHNyYyA9IHRyeSB7
-          IHIubWV0YWRhdGEuZGF0YU9yaWdpbi5wYWNrYWdlTmFtZSB9IGNhdGNoIChlOiBFeGNlcHRpb24pIHsgIiIgfQogICAgICAgICAg
-          ICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAg
-          ICAgICAgICAgICAgIHZhbCBhdHYgPSBhdAogICAgICAgICAgICAgICAgICAgIGlmIChhdHYgIT0gbnVsbCAmJiBicG0gPiAwTCkg
-          ewogICAgICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJociIsIGJwbSkKICAgICAgICAgICAgICAgICAgICAgICAgb3V0LnB1
-          dCgiaHJUaW1lIiwgYXR2LnRvU3RyaW5nKCkpCiAgICAgICAgICAgICAgICAgICAgICAgIGlmIChzcmMuaXNOb3RFbXB0eSgpKSBv
-          dXQucHV0KCJoclNvdXJjZSIsIHNyYykKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9IGNhdGNoIChlOiBF
-          eGNlcHRpb24pIHsKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJockVycm9yIiwgZS5tZXNzYWdlID86ICJociBlcnJvciIp
-          CiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgY2FsbC5yZXNvbHZlKG91dCkKICAgICAgICAgICAgfSBjYXRjaCAo
-          ZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgICAgICBjYWxsLnJlamVjdChlLm1lc3NhZ2UgPzogInZpdGFscyByZWFkIGVycm9y
-          IikKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KfQo=
-          B64
-          python3 - <<'PY'
-          import io, os, glob, base64, re
-
-          # 1) Находим исходники плагина здоровья — там уже есть Kotlin,
-          #    корутины и библиотека Health Connect.
-          dirs = glob.glob("node_modules/capacitor-health/android/src/main/java/com/fit_up/health/capacitor")
-          if not dirs:
-              dirs = [os.path.dirname(f) for f in glob.glob(
-                  "node_modules/capacitor-health/android/src/main/**/HealthPlugin.kt", recursive=True)]
-          if not dirs:
-              raise SystemExit("ОШИБКА: не найден исходный код плагина здоровья")
-          src_dir = dirs[0]
-          pkg = src_dir.split("java/")[-1].replace("/", ".")
-          print("пакет плагина:", pkg)
-
-          raw = io.open("/tmp/near_extra.b64", encoding="utf-8").read()
-          raw = "".join(raw.split())
-          kt = base64.b64decode(raw).decode("utf-8")
-          # если пакет плагина вдруг другой — подставляем настоящий
-          kt = re.sub(r"^package .*$", "package " + pkg, kt, count=1, flags=re.M)
-
-          out_path = os.path.join(src_dir, "NearSleepPlugin.kt")
-          io.open(out_path, "w", encoding="utf-8").write(kt)
-          print("создан", out_path, len(kt), "символов")
-
-          # 2) Регистрируем наш плагин в MainActivity
-          mains = glob.glob("android/app/src/main/java/**/MainActivity.java", recursive=True)
-          if not mains:
-              raise SystemExit("ОШИБКА: MainActivity.java не найден")
-          for mp in mains:
-              t = io.open(mp, encoding="utf-8").read()
-              if "NearSleepPlugin" in t:
-                  print("MainActivity уже настроен"); continue
-              method = ("    @Override\n"
-                        "    public void onCreate(android.os.Bundle savedInstanceState) {\n"
-                        "        registerPlugin(" + pkg + ".NearSleepPlugin.class);\n"
-                        "        super.onCreate(savedInstanceState);\n"
-                        "    }\n")
-              t2 = re.sub(r"public class MainActivity extends BridgeActivity \{\s*\}",
-                          "public class MainActivity extends BridgeActivity {\n" + method + "}", t)
-              if t2 == t:
-                  i = t.rstrip().rfind("}")
-                  t2 = t[:i] + method + t[i:]
-              io.open(mp, "w", encoding="utf-8").write(t2)
-              print("MainActivity пропатчен:", mp)
-          PY
-      - name: Синхронизировать веб-код в приложение
-        script: |
-          npx cap sync android
-          echo "--- плагины, подключённые к Android ---"
-          cat android/capacitor.settings.gradle || true
-          grep -q "capacitor-health" android/capacitor.settings.gradle || { echo 'ОШИБКА: плагин браслета не подключился к Android-проекту'; exit 1; }
-          grep -q "READ_STEPS" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешений Health Connect'; exit 1; }
-          grep -q "ACCESS_FINE_LOCATION" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на геолокацию'; exit 1; }
-          grep -q "READ_SLEEP" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на чтение сна'; exit 1; }
-          grep -q "READ_OXYGEN_SATURATION" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на SpO2'; exit 1; }
-          grep -q "queryVitals" node_modules/capacitor-health/android/src/main/java/com/fit_up/health/capacitor/NearSleepPlugin.kt || { echo 'ОШИБКА: чтение пульса и SpO2 не добавилось'; exit 1; }
-          grep -rq "NearSleepPlugin" android/app/src/main/java || { echo 'ОШИБКА: чтение сна не зарегистрировано'; exit 1; }
-          test -f node_modules/capacitor-health/android/src/main/java/com/fit_up/health/capacitor/NearSleepPlugin.kt || echo 'ВНИМАНИЕ: файл сна лежит в другом месте — проверьте лог выше'
-          echo "проверка пройдена: браслет, здоровье, сон, пульс, SpO2 и геолокация подключены"
-
+      - *install_deps
+      - *add_android
+      - *patch_android
+      - *copy_native
+      - *sync_and_check
       - name: Собрать debug APK
         script: |
           chmod +x android/gradlew || true
@@ -288,268 +306,11 @@ workflows:
       groups:
         - near_keystore
     scripts:
-      - name: Установить зависимости
-        script: |
-          npm install
-          # Гарантируем наличие плагинов, даже если package.json в репозитории устарел
-          npm install capacitor-health@^7.1.0 @capacitor/geolocation@^7.0.0 --save
-          echo "--- зависимости после установки ---"
-          node -e "const p=require('./package.json'); console.log(JSON.stringify(p.dependencies,null,1));"
-          test -d node_modules/capacitor-health || { echo 'ОШИБКА: плагин браслета не установился'; exit 1; }
-          echo "плагин браслета на месте"
-
-      - name: Добавить платформу Android
-        script: npx cap add android || true
-
-      - name: Правки Health Connect и исправление плагина
-        script: |
-          python3 - <<'PY'
-          import re, io, glob
-          # 1) AndroidManifest.xml — разрешения здоровья и активность-обоснование
-          mpath = "android/app/src/main/AndroidManifest.xml"
-          m = io.open(mpath, encoding="utf-8").read()
-          if "READ_STEPS" not in m:
-              activities = '''
-              <activity
-                  android:name="com.fit_up.health.capacitor.PermissionsRationaleActivity"
-                  android:exported="true">
-                  <intent-filter>
-                      <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
-                  </intent-filter>
-              </activity>
-              <activity-alias
-                  android:name="ViewPermissionUsageActivity"
-                  android:exported="true"
-                  android:targetActivity="com.fit_up.health.capacitor.PermissionsRationaleActivity"
-                  android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
-                  <intent-filter>
-                      <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
-                      <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
-                  </intent-filter>
-              </activity-alias>
-          '''
-              m = m.replace("</application>", activities + "    </application>", 1)
-              health = '''
-              <queries>
-                  <package android:name="com.google.android.apps.healthdata" />
-              </queries>
-              <uses-permission android:name="android.permission.health.READ_STEPS" />
-              <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
-              <uses-permission android:name="android.permission.health.READ_DISTANCE" />
-              <uses-permission android:name="android.permission.health.READ_EXERCISE" />
-              <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTE" />
-              <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
-              <uses-permission android:name="android.permission.health.READ_SLEEP" />
-              <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
-              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-              <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-          '''
-              m = m.replace("</manifest>", health + "</manifest>", 1)
-              io.open(mpath, "w", encoding="utf-8").write(m)
-              print("AndroidManifest.xml пропатчен")
-
-          # 2) variables.gradle — minSdk 26, compileSdk 36, targetSdk 36
-          vpath = "android/variables.gradle"
-          v = io.open(vpath, encoding="utf-8").read()
-          v = re.sub(r"minSdkVersion\s*=\s*\d+", "minSdkVersion = 26", v)
-          v = re.sub(r"compileSdkVersion\s*=\s*\d+", "compileSdkVersion = 36", v)
-          v = re.sub(r"targetSdkVersion\s*=\s*\d+", "targetSdkVersion = 36", v)
-          io.open(vpath, "w", encoding="utf-8").write(v)
-          print("variables.gradle:", [l for l in v.splitlines() if "SdkVersion" in l])
-
-          # 3) build.gradle — Android Gradle Plugin 8.9.1
-          bpath = "android/build.gradle"
-          b = io.open(bpath, encoding="utf-8").read()
-          b = re.sub(r"com\.android\.tools\.build:gradle:[0-9.]+", "com.android.tools.build:gradle:8.9.1", b)
-          io.open(bpath, "w", encoding="utf-8").write(b)
-
-          # 4) Gradle wrapper 8.11.1
-          wpath = "android/gradle/wrapper/gradle-wrapper.properties"
-          w = io.open(wpath, encoding="utf-8").read()
-          w = re.sub(r"gradle-[0-9.]+-(all|bin)\.zip", "gradle-8.11.1-all.zip", w)
-          io.open(wpath, "w", encoding="utf-8").write(w)
-
-          # 5) Исправляем два бага в коде плагина:
-          #    (а) опечатку dataOriginsFilter -> dataOriginFilter
-          #    (б) вызов suspend-функции hasPermission из обычного контекста —
-          #        делаем hasPermission обычной функцией-обёрткой через runBlocking
-          fixed = 0
-          decl = "private suspend fun hasPermission(p: CapHealthPermission): Boolean {"
-          wrap = ("private fun hasPermission(p: CapHealthPermission): Boolean = "
-                  "kotlinx.coroutines.runBlocking { hasPermissionSuspend(p) }\n\n"
-                  "    private suspend fun hasPermissionSuspend(p: CapHealthPermission): Boolean {")
-          for f in glob.glob("node_modules/capacitor-health/android/src/main/**/*.kt", recursive=True):
-              t = io.open(f, encoding="utf-8").read()
-              orig = t
-              t = t.replace("dataOriginsFilter", "dataOriginFilter")
-              if decl in t and "hasPermissionSuspend" not in t:
-                  t = t.replace(decl, wrap)
-              if t != orig:
-                  io.open(f, "w", encoding="utf-8").write(t)
-                  fixed += 1
-                  print("плагин пропатчен:", f)
-          print("исправлено файлов плагина:", fixed)
-          PY
-
-      - name: Добавить чтение сна, пульса и SpO2 (Health Connect)
-        script: |
-          cat > /tmp/near_extra.b64 <<'B64'
-          cGFja2FnZSBjb20uZml0X3VwLmhlYWx0aC5jYXBhY2l0b3IKCmltcG9ydCBhbmRyb2lkeC5oZWFsdGguY29ubmVjdC5jbGllbnQu
-          SGVhbHRoQ29ubmVjdENsaWVudAppbXBvcnQgYW5kcm9pZHguaGVhbHRoLmNvbm5lY3QuY2xpZW50LnJlY29yZHMuSGVhcnRSYXRl
-          UmVjb3JkCmltcG9ydCBhbmRyb2lkeC5oZWFsdGguY29ubmVjdC5jbGllbnQucmVjb3Jkcy5PeHlnZW5TYXR1cmF0aW9uUmVjb3Jk
-          CmltcG9ydCBhbmRyb2lkeC5oZWFsdGguY29ubmVjdC5jbGllbnQucmVjb3Jkcy5TbGVlcFNlc3Npb25SZWNvcmQKaW1wb3J0IGFu
-          ZHJvaWR4LmhlYWx0aC5jb25uZWN0LmNsaWVudC5yZXF1ZXN0LlJlYWRSZWNvcmRzUmVxdWVzdAppbXBvcnQgYW5kcm9pZHguaGVh
-          bHRoLmNvbm5lY3QuY2xpZW50LnRpbWUuVGltZVJhbmdlRmlsdGVyCmltcG9ydCBjb20uZ2V0Y2FwYWNpdG9yLkpTQXJyYXkKaW1w
-          b3J0IGNvbS5nZXRjYXBhY2l0b3IuSlNPYmplY3QKaW1wb3J0IGNvbS5nZXRjYXBhY2l0b3IuUGx1Z2luCmltcG9ydCBjb20uZ2V0
-          Y2FwYWNpdG9yLlBsdWdpbkNhbGwKaW1wb3J0IGNvbS5nZXRjYXBhY2l0b3IuUGx1Z2luTWV0aG9kCmltcG9ydCBjb20uZ2V0Y2Fw
-          YWNpdG9yLmFubm90YXRpb24uQ2FwYWNpdG9yUGx1Z2luCmltcG9ydCBrb3RsaW54LmNvcm91dGluZXMuQ29yb3V0aW5lU2NvcGUK
-          aW1wb3J0IGtvdGxpbnguY29yb3V0aW5lcy5EaXNwYXRjaGVycwppbXBvcnQga290bGlueC5jb3JvdXRpbmVzLmxhdW5jaAppbXBv
-          cnQgamF2YS50aW1lLkR1cmF0aW9uCmltcG9ydCBqYXZhLnRpbWUuSW5zdGFudAoKQENhcGFjaXRvclBsdWdpbihuYW1lID0gIk5l
-          YXJTbGVlcCIpCmNsYXNzIE5lYXJTbGVlcFBsdWdpbiA6IFBsdWdpbigpIHsKCiAgICBwcml2YXRlIGZ1biBoY0NsaWVudCgpOiBI
-          ZWFsdGhDb25uZWN0Q2xpZW50PyA9IHRyeSB7CiAgICAgICAgaWYgKEhlYWx0aENvbm5lY3RDbGllbnQuZ2V0U2RrU3RhdHVzKGNv
-          bnRleHQpID09IEhlYWx0aENvbm5lY3RDbGllbnQuU0RLX0FWQUlMQUJMRSkKICAgICAgICAgICAgSGVhbHRoQ29ubmVjdENsaWVu
-          dC5nZXRPckNyZWF0ZShjb250ZXh0KQogICAgICAgIGVsc2UgbnVsbAogICAgfSBjYXRjaCAoZTogRXhjZXB0aW9uKSB7CiAgICAg
-          ICAgbnVsbAogICAgfQoKICAgIEBQbHVnaW5NZXRob2QKICAgIGZ1biBxdWVyeVNsZWVwKGNhbGw6IFBsdWdpbkNhbGwpIHsKICAg
-          ICAgICB2YWwgc3RhcnRTdHIgPSBjYWxsLmdldFN0cmluZygic3RhcnREYXRlIikKICAgICAgICB2YWwgZW5kU3RyID0gY2FsbC5n
-          ZXRTdHJpbmcoImVuZERhdGUiKQogICAgICAgIENvcm91dGluZVNjb3BlKERpc3BhdGNoZXJzLklPKS5sYXVuY2ggewogICAgICAg
-          ICAgICB0cnkgewogICAgICAgICAgICAgICAgdmFsIGMgPSBoY0NsaWVudCgpCiAgICAgICAgICAgICAgICBpZiAoYyA9PSBudWxs
-          KSB7CiAgICAgICAgICAgICAgICAgICAgdmFsIG91dCA9IEpTT2JqZWN0KCkKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJh
-          dmFpbGFibGUiLCBmYWxzZSkKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJ0b3RhbE1pbnV0ZXMiLCAwKQogICAgICAgICAg
-          ICAgICAgICAgIG91dC5wdXQoInNlc3Npb25zIiwgSlNBcnJheSgpKQogICAgICAgICAgICAgICAgICAgIGNhbGwucmVzb2x2ZShv
-          dXQpCiAgICAgICAgICAgICAgICAgICAgcmV0dXJuQGxhdW5jaAogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgdmFs
-          IHN0YXJ0ID0gSW5zdGFudC5wYXJzZShzdGFydFN0cikKICAgICAgICAgICAgICAgIHZhbCBlbmQgPSBJbnN0YW50LnBhcnNlKGVu
-          ZFN0cikKICAgICAgICAgICAgICAgIHZhbCByZXMgPSBjLnJlYWRSZWNvcmRzKAogICAgICAgICAgICAgICAgICAgIFJlYWRSZWNv
-          cmRzUmVxdWVzdCgKICAgICAgICAgICAgICAgICAgICAgICAgcmVjb3JkVHlwZSA9IFNsZWVwU2Vzc2lvblJlY29yZDo6Y2xhc3Ms
-          CiAgICAgICAgICAgICAgICAgICAgICAgIHRpbWVSYW5nZUZpbHRlciA9IFRpbWVSYW5nZUZpbHRlci5iZXR3ZWVuKHN0YXJ0LCBl
-          bmQpCiAgICAgICAgICAgICAgICAgICAgKQogICAgICAgICAgICAgICAgKQogICAgICAgICAgICAgICAgdmFsIGFyciA9IEpTQXJy
-          YXkoKQogICAgICAgICAgICAgICAgdmFyIHRvdGFsID0gMEwKICAgICAgICAgICAgICAgIGZvciAociBpbiByZXMucmVjb3Jkcykg
-          ewogICAgICAgICAgICAgICAgICAgIHZhbCBtaW5zID0gRHVyYXRpb24uYmV0d2VlbihyLnN0YXJ0VGltZSwgci5lbmRUaW1lKS50
-          b01pbnV0ZXMoKQogICAgICAgICAgICAgICAgICAgIHRvdGFsICs9IG1pbnMKICAgICAgICAgICAgICAgICAgICB2YWwgbyA9IEpT
-          T2JqZWN0KCkKICAgICAgICAgICAgICAgICAgICBvLnB1dCgic3RhcnREYXRlIiwgci5zdGFydFRpbWUudG9TdHJpbmcoKSkKICAg
-          ICAgICAgICAgICAgICAgICBvLnB1dCgiZW5kRGF0ZSIsIHIuZW5kVGltZS50b1N0cmluZygpKQogICAgICAgICAgICAgICAgICAg
-          IG8ucHV0KCJtaW51dGVzIiwgbWlucykKICAgICAgICAgICAgICAgICAgICB0cnkgeyBvLnB1dCgic291cmNlIiwgci5tZXRhZGF0
-          YS5kYXRhT3JpZ2luLnBhY2thZ2VOYW1lKSB9IGNhdGNoIChlOiBFeGNlcHRpb24pIHt9CiAgICAgICAgICAgICAgICAgICAgYXJy
-          LnB1dChvKQogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgdmFsIG91dCA9IEpTT2JqZWN0KCkKICAgICAgICAgICAg
-          ICAgIG91dC5wdXQoImF2YWlsYWJsZSIsIHRydWUpCiAgICAgICAgICAgICAgICBvdXQucHV0KCJ0b3RhbE1pbnV0ZXMiLCB0b3Rh
-          bCkKICAgICAgICAgICAgICAgIG91dC5wdXQoImNvdW50IiwgcmVzLnJlY29yZHMuc2l6ZSkKICAgICAgICAgICAgICAgIG91dC5w
-          dXQoInNlc3Npb25zIiwgYXJyKQogICAgICAgICAgICAgICAgY2FsbC5yZXNvbHZlKG91dCkKICAgICAgICAgICAgfSBjYXRjaCAo
-          ZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgICAgICBjYWxsLnJlamVjdChlLm1lc3NhZ2UgPzogInNsZWVwIHJlYWQgZXJyb3Ii
-          KQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQoKICAgIC8vINCf0YPQu9GM0YEg0Lgg0L3QsNGB0YvRidC10L3QuNC1INC6
-          0YDQvtCy0Lgg0LrQuNGB0LvQvtGA0L7QtNC+0LwgKFNwTzIpLgogICAgLy8g0JLQvtC30LLRgNCw0YnQsNC10Lwg0YLQvtC70YzQ
-          utC+INGC0L4sINGH0YLQviDRgNC10LDQu9GM0L3QviDQu9C10LbQuNGCINCyIEhlYWx0aCBDb25uZWN0LgogICAgQFBsdWdpbk1l
-          dGhvZAogICAgZnVuIHF1ZXJ5Vml0YWxzKGNhbGw6IFBsdWdpbkNhbGwpIHsKICAgICAgICB2YWwgc3RhcnRTdHIgPSBjYWxsLmdl
-          dFN0cmluZygic3RhcnREYXRlIikKICAgICAgICB2YWwgZW5kU3RyID0gY2FsbC5nZXRTdHJpbmcoImVuZERhdGUiKQogICAgICAg
-          IENvcm91dGluZVNjb3BlKERpc3BhdGNoZXJzLklPKS5sYXVuY2ggewogICAgICAgICAgICB2YWwgb3V0ID0gSlNPYmplY3QoKQog
-          ICAgICAgICAgICB0cnkgewogICAgICAgICAgICAgICAgdmFsIGMgPSBoY0NsaWVudCgpCiAgICAgICAgICAgICAgICBpZiAoYyA9
-          PSBudWxsKSB7CiAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgiYXZhaWxhYmxlIiwgZmFsc2UpCiAgICAgICAgICAgICAgICAg
-          ICAgY2FsbC5yZXNvbHZlKG91dCkKICAgICAgICAgICAgICAgICAgICByZXR1cm5AbGF1bmNoCiAgICAgICAgICAgICAgICB9CiAg
-          ICAgICAgICAgICAgICBvdXQucHV0KCJhdmFpbGFibGUiLCB0cnVlKQogICAgICAgICAgICAgICAgdmFsIHN0YXJ0ID0gSW5zdGFu
-          dC5wYXJzZShzdGFydFN0cikKICAgICAgICAgICAgICAgIHZhbCBlbmQgPSBJbnN0YW50LnBhcnNlKGVuZFN0cikKCiAgICAgICAg
-          ICAgICAgICAvLyAtLS0gU3BPMiAtLS0KICAgICAgICAgICAgICAgIHRyeSB7CiAgICAgICAgICAgICAgICAgICAgdmFsIHJlcyA9
-          IGMucmVhZFJlY29yZHMoCiAgICAgICAgICAgICAgICAgICAgICAgIFJlYWRSZWNvcmRzUmVxdWVzdCgKICAgICAgICAgICAgICAg
-          ICAgICAgICAgICAgIHJlY29yZFR5cGUgPSBPeHlnZW5TYXR1cmF0aW9uUmVjb3JkOjpjbGFzcywKICAgICAgICAgICAgICAgICAg
-          ICAgICAgICAgIHRpbWVSYW5nZUZpbHRlciA9IFRpbWVSYW5nZUZpbHRlci5iZXR3ZWVuKHN0YXJ0LCBlbmQpCiAgICAgICAgICAg
-          ICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgic3BvMkNvdW50
-          IiwgcmVzLnJlY29yZHMuc2l6ZSkKICAgICAgICAgICAgICAgICAgICB2YXIgYmVzdDogT3h5Z2VuU2F0dXJhdGlvblJlY29yZD8g
-          PSBudWxsCiAgICAgICAgICAgICAgICAgICAgZm9yIChyIGluIHJlcy5yZWNvcmRzKSB7CiAgICAgICAgICAgICAgICAgICAgICAg
-          IHZhbCBiID0gYmVzdAogICAgICAgICAgICAgICAgICAgICAgICBpZiAoYiA9PSBudWxsIHx8IHIudGltZS5pc0FmdGVyKGIudGlt
-          ZSkpIGJlc3QgPSByCiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgIHZhbCBiYiA9IGJlc3QKICAgICAg
-          ICAgICAgICAgICAgICBpZiAoYmIgIT0gbnVsbCkgewogICAgICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJzcG8yIiwgYmIu
-          cGVyY2VudGFnZS52YWx1ZSkKICAgICAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgic3BvMlRpbWUiLCBiYi50aW1lLnRvU3Ry
-          aW5nKCkpCiAgICAgICAgICAgICAgICAgICAgICAgIHRyeSB7IG91dC5wdXQoInNwbzJTb3VyY2UiLCBiYi5tZXRhZGF0YS5kYXRh
-          T3JpZ2luLnBhY2thZ2VOYW1lKSB9IGNhdGNoIChlOiBFeGNlcHRpb24pIHt9CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAg
-          ICAgICAgICAgfSBjYXRjaCAoZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgICAgICAgICAgb3V0LnB1dCgic3BvMkVycm9yIiwg
-          ZS5tZXNzYWdlID86ICJzcG8yIGVycm9yIikKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICAvLyAtLS0g0J/Rg9C7
-          0YzRgSAtLS0KICAgICAgICAgICAgICAgIHRyeSB7CiAgICAgICAgICAgICAgICAgICAgdmFsIHJlcyA9IGMucmVhZFJlY29yZHMo
-          CiAgICAgICAgICAgICAgICAgICAgICAgIFJlYWRSZWNvcmRzUmVxdWVzdCgKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJl
-          Y29yZFR5cGUgPSBIZWFydFJhdGVSZWNvcmQ6OmNsYXNzLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgdGltZVJhbmdlRmls
-          dGVyID0gVGltZVJhbmdlRmlsdGVyLmJldHdlZW4oc3RhcnQsIGVuZCkKICAgICAgICAgICAgICAgICAgICAgICAgKQogICAgICAg
-          ICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJockNvdW50IiwgcmVzLnJlY29yZHMuc2l6ZSkKICAg
-          ICAgICAgICAgICAgICAgICB2YXIgYnBtID0gMEwKICAgICAgICAgICAgICAgICAgICB2YXIgYXQ6IEluc3RhbnQ/ID0gbnVsbAog
-          ICAgICAgICAgICAgICAgICAgIHZhciBzcmMgPSAiIgogICAgICAgICAgICAgICAgICAgIGZvciAociBpbiByZXMucmVjb3Jkcykg
-          ewogICAgICAgICAgICAgICAgICAgICAgICBmb3IgKHNtIGluIHIuc2FtcGxlcykgewogICAgICAgICAgICAgICAgICAgICAgICAg
-          ICAgdmFsIGEgPSBhdAogICAgICAgICAgICAgICAgICAgICAgICAgICAgaWYgKGEgPT0gbnVsbCB8fCBzbS50aW1lLmlzQWZ0ZXIo
-          YSkpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBhdCA9IHNtLnRpbWUKICAgICAgICAgICAgICAgICAgICAgICAg
-          ICAgICAgICBicG0gPSBzbS5iZWF0c1Blck1pbnV0ZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHNyYyA9IHRyeSB7
-          IHIubWV0YWRhdGEuZGF0YU9yaWdpbi5wYWNrYWdlTmFtZSB9IGNhdGNoIChlOiBFeGNlcHRpb24pIHsgIiIgfQogICAgICAgICAg
-          ICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAg
-          ICAgICAgICAgICAgIHZhbCBhdHYgPSBhdAogICAgICAgICAgICAgICAgICAgIGlmIChhdHYgIT0gbnVsbCAmJiBicG0gPiAwTCkg
-          ewogICAgICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJociIsIGJwbSkKICAgICAgICAgICAgICAgICAgICAgICAgb3V0LnB1
-          dCgiaHJUaW1lIiwgYXR2LnRvU3RyaW5nKCkpCiAgICAgICAgICAgICAgICAgICAgICAgIGlmIChzcmMuaXNOb3RFbXB0eSgpKSBv
-          dXQucHV0KCJoclNvdXJjZSIsIHNyYykKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9IGNhdGNoIChlOiBF
-          eGNlcHRpb24pIHsKICAgICAgICAgICAgICAgICAgICBvdXQucHV0KCJockVycm9yIiwgZS5tZXNzYWdlID86ICJociBlcnJvciIp
-          CiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgY2FsbC5yZXNvbHZlKG91dCkKICAgICAgICAgICAgfSBjYXRjaCAo
-          ZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgICAgICBjYWxsLnJlamVjdChlLm1lc3NhZ2UgPzogInZpdGFscyByZWFkIGVycm9y
-          IikKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KfQo=
-          B64
-          python3 - <<'PY'
-          import io, os, glob, base64, re
-
-          # 1) Находим исходники плагина здоровья — там уже есть Kotlin,
-          #    корутины и библиотека Health Connect.
-          dirs = glob.glob("node_modules/capacitor-health/android/src/main/java/com/fit_up/health/capacitor")
-          if not dirs:
-              dirs = [os.path.dirname(f) for f in glob.glob(
-                  "node_modules/capacitor-health/android/src/main/**/HealthPlugin.kt", recursive=True)]
-          if not dirs:
-              raise SystemExit("ОШИБКА: не найден исходный код плагина здоровья")
-          src_dir = dirs[0]
-          pkg = src_dir.split("java/")[-1].replace("/", ".")
-          print("пакет плагина:", pkg)
-
-          raw = io.open("/tmp/near_extra.b64", encoding="utf-8").read()
-          raw = "".join(raw.split())
-          kt = base64.b64decode(raw).decode("utf-8")
-          # если пакет плагина вдруг другой — подставляем настоящий
-          kt = re.sub(r"^package .*$", "package " + pkg, kt, count=1, flags=re.M)
-
-          out_path = os.path.join(src_dir, "NearSleepPlugin.kt")
-          io.open(out_path, "w", encoding="utf-8").write(kt)
-          print("создан", out_path, len(kt), "символов")
-
-          # 2) Регистрируем наш плагин в MainActivity
-          mains = glob.glob("android/app/src/main/java/**/MainActivity.java", recursive=True)
-          if not mains:
-              raise SystemExit("ОШИБКА: MainActivity.java не найден")
-          for mp in mains:
-              t = io.open(mp, encoding="utf-8").read()
-              if "NearSleepPlugin" in t:
-                  print("MainActivity уже настроен"); continue
-              method = ("    @Override\n"
-                        "    public void onCreate(android.os.Bundle savedInstanceState) {\n"
-                        "        registerPlugin(" + pkg + ".NearSleepPlugin.class);\n"
-                        "        super.onCreate(savedInstanceState);\n"
-                        "    }\n")
-              t2 = re.sub(r"public class MainActivity extends BridgeActivity \{\s*\}",
-                          "public class MainActivity extends BridgeActivity {\n" + method + "}", t)
-              if t2 == t:
-                  i = t.rstrip().rfind("}")
-                  t2 = t[:i] + method + t[i:]
-              io.open(mp, "w", encoding="utf-8").write(t2)
-              print("MainActivity пропатчен:", mp)
-          PY
-      - name: Синхронизировать веб-код в приложение
-        script: |
-          npx cap sync android
-          echo "--- плагины, подключённые к Android ---"
-          cat android/capacitor.settings.gradle || true
-          grep -q "capacitor-health" android/capacitor.settings.gradle || { echo 'ОШИБКА: плагин браслета не подключился к Android-проекту'; exit 1; }
-          grep -q "READ_STEPS" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешений Health Connect'; exit 1; }
-          grep -q "ACCESS_FINE_LOCATION" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на геолокацию'; exit 1; }
-          grep -q "READ_SLEEP" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на чтение сна'; exit 1; }
-          grep -q "READ_OXYGEN_SATURATION" android/app/src/main/AndroidManifest.xml || { echo 'ОШИБКА: нет разрешения на SpO2'; exit 1; }
-          grep -q "queryVitals" node_modules/capacitor-health/android/src/main/java/com/fit_up/health/capacitor/NearSleepPlugin.kt || { echo 'ОШИБКА: чтение пульса и SpO2 не добавилось'; exit 1; }
-          grep -rq "NearSleepPlugin" android/app/src/main/java || { echo 'ОШИБКА: чтение сна не зарегистрировано'; exit 1; }
-          test -f node_modules/capacitor-health/android/src/main/java/com/fit_up/health/capacitor/NearSleepPlugin.kt || echo 'ВНИМАНИЕ: файл сна лежит в другом месте — проверьте лог выше'
-          echo "проверка пройдена: браслет, здоровье, сон, пульс, SpO2 и геолокация подключены"
-
-      - name: Собрать debug APK
-        script: |
-          chmod +x android/gradlew || true
-          cd android
-          ./gradlew assembleDebug
+      - *install_deps
+      - *add_android
+      - *patch_android
+      - *copy_native
+      - *sync_and_check
       - name: Настроить подпись приложения
         script: |
           echo $NEAR_KEYSTORE | base64 --decode > /tmp/near.keystore

@@ -636,6 +636,7 @@ window.addEventListener('DOMContentLoaded',()=>{
         <div style="font-size:28px">📍</div>
         <div style="flex:1"><b>Поделиться местоположением</b><div id="geoShareHint" style="color:var(--muted); font-size:14px">Выключено — родные не видят, где вы</div></div>
       </div>
+      <div id="geoShareWarn" style="font-size:14px; line-height:1.5; color:var(--warm-d)"></div>
       <button class="bigbtn ghost" style="margin-top:10px" id="geoShareBtn" onclick="shareLocation()">Включить</button>
     </div>
 
@@ -1241,7 +1242,11 @@ function buildNav(role){
 }
 function loginAs(role){
   account.role = role; account.cloud=false; buildNav(role); applySettings();
-  if(role==='elder'){ show('home'); toast('Демо: пользователь'); }
+  if(role==='elder'){
+    show('home'); toast('Демо: пользователь');
+    setTimeout(()=>{ try{ geoAutoResume(); }catch(e){} }, 800);
+    setTimeout(()=>{ try{ healthAutoStart(); }catch(e){} }, 1200);
+  }
   else { show('care'); toast('Демо: близкий'); }
 }
 
@@ -1427,6 +1432,10 @@ function startCloudSync(role){
     window.NearCloud.watchPending(list=>{ cloudPending=list; if(currentScreen==='connect') renderConnect(); });
     window.NearCloud.watchRelatives(list=>{ cloudRelatives=list; cloudRelsLoaded=true; try{ Store.set('relsCache', list.filter(r=>r.status==='approved')); }catch(e){} const ap=list.find(r=>r.status==='approved'); cloudRelUid=ap?ap.uid:null; subscribeChat(); if(currentScreen==='connect') renderConnect(); if(currentScreen==='elder_chat') renderElderChat(); if(currentScreen==='family') renderFamily(); });
     cloudSyncTimer=setInterval(pushCloudLive, 15000); setTimeout(pushCloudLive,2000);
+    // Слежение и чтение браслета возобновляем сами — без этого после перезапуска
+    // приложения близкие переставали видеть и карту, и показатели.
+    setTimeout(()=>{ try{ geoAutoResume(); }catch(e){} }, 1500);
+    setTimeout(()=>{ try{ healthAutoStart(); }catch(e){} }, 2500);
   } else {
     cloudLinked=false;
     try{ if('Notification'in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){}
@@ -1464,7 +1473,25 @@ function pushCloudLive(){
   const ex=Store.get('exStats',null);
   const speech=Store.get('lastSpeech',null);
   const train=Store.get('lastTraining',null);
-  try{ window.NearCloud.pushLive({ name:settings.name, phone:settings.phone||null, steps:liveSteps||0, battery:liveBattery, hr:healthHR!=null?healthHR:null, spo2:healthSpo2!=null?healthSpo2:null, spo2Status:Health.spo2Status, hrStatus:Health.hrStatus, calories:healthCalories!=null?healthCalories:null, sleep:healthSleep!=null?healthSleep:null, workouts:healthWorkouts||null, healthSource:healthSource, lat:last?last[1]:null, lng:last?last[0]:null, ok: ok? (ok.day+', '+ok.time):null, route, ex: ex||null, speech: speech||null, sos: sosActive||null, train: train||null, geoOn: !!geoSharing })
+  // Шаги отправляем только если они действительно измерены.
+  // Ноль вместо «нет данных» близкие раньше читали как «человек не вставал».
+  const stepsOut = (stepsSource==='none') ? null : liveSteps;
+  // Если своей точки ещё нет, не затираем нулём координату, которую могла
+  // записать фоновая служба, пока приложение было закрыто.
+  const geoFields = last
+    ? { lat:last[1], lng:last[0], geoTs:last[2]||null }
+    : {};
+  try{ window.NearCloud.pushLive(Object.assign({ name:settings.name, phone:settings.phone||null,
+      steps: stepsOut, stepsSource: stepsSource, stepsTs: healthStepsTime||null,
+      battery:liveBattery,
+      hr:healthHR!=null?healthHR:null, hrTs: healthHRTime||null, hrStatus:Health.hrStatus,
+      spo2:healthSpo2!=null?healthSpo2:null, spo2Ts: healthSpo2Time||null, spo2Status:Health.spo2Status,
+      calories:healthCalories!=null?healthCalories:null,
+      sleep:healthSleep!=null?healthSleep:null, sleepStatus:Health.sleepStatus, sleepSource: healthSleepSource||null,
+      workouts:healthWorkouts||null, healthSource:healthSource,
+      ok: ok? (ok.day+', '+ok.time):null, route, ex: ex||null, speech: speech||null,
+      sos: sosActive||null, train: train||null,
+      geoOn: !!geoOn, geoMode: geoMode }, geoFields))
     .catch(e=>{ try{ console.log('pushLive error:', e); }catch(_){} toast('Не удалось отправить данные близким: '+cloudErr(e)); });
   }catch(e){ toast('Не удалось отправить данные близким'); }
 }
@@ -2257,10 +2284,12 @@ function renderCareCloud(){
   }
   const list=document.getElementById('bioList'); list.innerHTML='';
   if(cloudLive && cloudLive.steps!=null){
+    const note = cloudLive.stepsSource==='phone' ? t('считает телефон, приблизительно')
+               : (cloudLive.stepsTs? agoText(cloudLive.stepsTs) : '');
     const d=document.createElement('div'); d.className='bio';
-    d.innerHTML=`<div class="mi">🚶</div><div class="bv"><b>${t('Активность сегодня')}</b><span class="now">${cloudLive.steps} ${t('шагов')}</span></div><div class="trend up">✓</div>`;
+    d.innerHTML=`<div class="mi">🚶</div><div class="bv"><b>${t('Активность сегодня')}</b><span class="now">${cloudLive.steps} ${t('шагов')}${note?' · '+escapeHtml(note):''}</span></div><div class="trend up">✓</div>`;
     list.appendChild(d);
-  } else { list.innerHTML='<div style="color:var(--muted); padding:10px 2px">Данных об активности нет.</div>'; }
+  } else { list.innerHTML='<div style="color:var(--muted); padding:10px 2px">'+t('Данных об активности нет.')+'</div>'; }
 }
 function renderCare(){
   if(cloudRel()){ renderCareCloud(); return; }
@@ -2287,9 +2316,10 @@ function renderCare(){
   // Биомаркеры: показываем ТОЛЬКО реально измеренное. Никаких «раньше/сейчас» из воздуха.
   const list=document.getElementById('bioList'); list.innerHTML='';
   const rows=[];
-  if(liveSteps>0) rows.push(['🚶', t('Шаги за сегодня'), String(liveSteps)]);
-  if(healthHR!=null) rows.push(['❤️', t('Пульс'), healthHR+' '+t('уд/мин')]);
-  if(healthSpo2!=null) rows.push(['🫁', t('Кислород в крови (SpO₂)'), healthSpo2+'%']);
+  recalcSteps();
+  if(stepsSource!=='none') rows.push(['🚶', t('Шаги за сегодня'), String(liveSteps)+(stepsSource==='phone'? ' · '+t('считает телефон, приблизительно') : '')]);
+  if(healthHR!=null) rows.push(['❤️', t('Пульс'), healthHR+' '+t('уд/мин')+(healthHRTime? ' · '+freshLabel(healthHRTime) : '')]);
+  if(healthSpo2!=null) rows.push(['🫁', t('Кислород в крови (SpO₂)'), healthSpo2+'%'+(healthSpo2Time? ' · '+freshLabel(healthSpo2Time) : '')]);
   if(healthCalories!=null) rows.push(['🔥', t('Калории за сегодня'), healthCalories+' '+t('ккал')]);
   if(healthSleep!=null) rows.push(['😴', t('Сон'), healthSleep+' '+t('ч')]);
   const st=Store.get('exStats',null);
@@ -2323,9 +2353,20 @@ function buildReportHTML(){
   let upd=''; try{ if(L&&L.ts) upd=new Date(L.ts).toLocaleString(LOC()); }catch(e){}
 
   const steps = (L && L.steps!=null) ? L.steps : null;
-  const stepsNote = steps==null ? '' : (healthSource==='bracelet' ? 'источник: фитнес-браслет' : 'источник: датчик телефона (без браслета — приблизительно)');
+  const src = L && (L.stepsSource || L.healthSource);
+  const stepsNote = steps==null ? '' : (src==='bracelet' ? 'источник: фитнес-браслет' : 'источник: датчик телефона (без браслета — приблизительно)');
   const ok = (L && L.ok) ? L.ok : null;
   const geo = (L && L.geoOn) ? 'включена пользователем' : 'выключена';
+
+  // Сон и пульс — ровно то, что пришло с браслета, со временем измерения
+  const hr = (L && L.hr!=null) ? L.hr : null;
+  const hrNote = (L && L.hrTs) ? ('измерено: '+agoText(L.hrTs)) : (L && L.hrStatus==='unsupported' ? 'браслет не передаёт этот показатель' : '');
+  const spo2 = (L && L.spo2!=null) ? L.spo2 : null;
+  const spo2Note = (L && L.spo2Ts) ? ('измерено: '+agoText(L.spo2Ts)) : (L && L.spo2Status==='unsupported' ? 'браслет не передаёт этот показатель' : '');
+  const sleep = (L && L.sleep!=null) ? L.sleep : null;
+  const sleepNote = sleep!=null ? 'за прошлую ночь, по данным браслета'
+    : (L && L.sleepStatus==='denied' ? 'нет доступа к «Сну» в Health Connect'
+    : (L && L.sleepStatus==='empty' ? 'браслет не записал сон' : ''));
 
   // тренировки
   const tr = L && L.train;
@@ -2383,7 +2424,13 @@ function buildReportHTML(){
   </table>
 
   <h3>Сон и пульс</h3>
-  <p><i>Нет данных.</i> <span class="muted">Эти показатели собираются только при подключённом фитнес-браслете или часах через Health Connect / Apple Health.</span></p>
+  <table>
+    <tr><th>Показатель</th><th>Значение</th><th>Примечание</th></tr>
+    ${_rowOrNone('Сон прошлой ночью', sleep!=null? (sleep+' ч') : null, sleepNote)}
+    ${_rowOrNone('Пульс (последнее измерение)', hr!=null? (hr+' уд/мин') : null, hrNote)}
+    ${_rowOrNone('Кислород в крови (SpO₂)', spo2!=null? (spo2+'%') : null, spo2Note)}
+  </table>
+  <p class="muted">Показатели собираются только при подключённом фитнес-браслете или часах через Health Connect / Apple Health. Это не медицинские измерения.</p>
 
   <h3>Когнитивные задания в приложении</h3>
   ${trainBlock}
@@ -3038,8 +3085,13 @@ function renderMap(){
     drawLatLngs(croute.map(p=>[p[1],p[0]]));
     drawPlaces(visitedSet(croute));
     const nn=nearestPlace(cloudLive.lat, cloudLive.lng);
-    document.getElementById('liveLabel').textContent='🟢 '+(cloudLive.name||settings.name)+(nn?': рядом с «'+nn+'»':': сейчас здесь');
-    document.getElementById('mapUpdated').textContent='онлайн, только что';
+    // Честно показываем возраст координаты, а не безусловное «только что»
+    const gts=cloudLive.geoTs||cloudLive.ts||0;
+    const stale=gts && (Date.now()-gts>10*60*1000);
+    const where = nn ? (': '+(stale?t('был(а) рядом с'):t('рядом с'))+' «'+nn+'»') : (stale? (': '+t('последнее известное место')) : (': '+t('сейчас здесь')));
+    document.getElementById('liveLabel').textContent=(stale?'🟡 ':'🟢 ')+(cloudLive.name||settings.name)+where;
+    document.getElementById('mapUpdated').textContent = gts
+      ? (t('обновлено')+' '+agoText(gts)) : t('время обновления неизвестно');
     document.getElementById('placeList').innerHTML=`<div class="place"><div class="pt">📍</div><div class="pl"><b>${escapeHtml(cloudLive.name||'Близкий')}</b><span>${cloudLive.lat.toFixed(5)}, ${cloudLive.lng.toFixed(5)}</span></div></div>`;
     renderMyPlaces(croute);
     return;
@@ -3050,7 +3102,7 @@ function renderMap(){
     const last=realRoute[realRoute.length-1];
     const nn=nearestPlace(last[1],last[0]);
     document.getElementById('liveLabel').textContent = nn ? ('🟢 Сейчас рядом: '+nn) : '🟢 Реальное местоположение';
-    document.getElementById('mapUpdated').textContent='обновлено только что';
+    document.getElementById('mapUpdated').textContent = t('обновлено')+' '+agoText(geoLastFix||last[2]);
     document.getElementById('placeList').innerHTML=`<div class="place"><div class="pt">📍</div><div class="pl"><b>Текущая точка</b><span>${last[1].toFixed(5)}, ${last[0].toFixed(5)}${nn?' · рядом с «'+nn+'»':''}</span></div><div class="ptime">${realRoute.length} точек</div></div>`;
     renderMyPlaces(realRoute);
     return;
@@ -3122,13 +3174,22 @@ function renderHealthCloud(){
   // Показываем ровно то, что реально пришло из Health Connect
   const L=cloudLive||{};
   const rows=[];
-  if(L.steps!=null) rows.push(['🚶', t('Шаги за сегодня'), L.steps]);
-  if(L.hr!=null) rows.push(['❤️', t('Пульс'), L.hr+' '+t('уд/мин')]);
+  // Каждое число сопровождаем временем измерения: иначе нельзя понять,
+  // это пульс пять минут назад или последний за неделю.
+  if(L.steps!=null){
+    const note = L.stepsSource==='phone' ? t('считает телефон, приблизительно') : (L.stepsTs? agoText(L.stepsTs) : '');
+    rows.push(['🚶', t('Шаги за сегодня'), L.steps + (note? ' · '+note : '')]);
+  }
+  if(L.hr!=null) rows.push(['❤️', t('Пульс'), L.hr+' '+t('уд/мин') + (L.hrTs? ' · '+freshLabel(L.hrTs) : '')]);
   else if(L.hrStatus==='unsupported') rows.push(['❤️', t('Пульс'), t('браслет не поддерживает этот показатель')]);
-  if(L.spo2!=null) rows.push(['🫁', t('Кислород в крови (SpO₂)'), L.spo2+'%']);
+  else if(L.hrStatus==='denied') rows.push(['❤️', t('Пульс'), t('нет доступа — включите в Health Connect')]);
+  if(L.spo2!=null) rows.push(['🫁', t('Кислород в крови (SpO₂)'), L.spo2+'%' + (L.spo2Ts? ' · '+freshLabel(L.spo2Ts) : '')]);
   else if(L.spo2Status==='unsupported') rows.push(['🫁', t('Кислород в крови (SpO₂)'), t('браслет не поддерживает этот показатель')]);
+  else if(L.spo2Status==='denied') rows.push(['🫁', t('Кислород в крови (SpO₂)'), t('нет доступа — включите в Health Connect')]);
   if(L.calories!=null) rows.push(['🔥', t('Калории за сегодня'), L.calories+' '+t('ккал')]);
   if(L.sleep!=null) rows.push(['😴', t('Сон прошлой ночью'), L.sleep+' '+t('ч')]);
+  else if(L.sleepStatus==='denied') rows.push(['😴', t('Сон'), t('нет доступа — включите «Сон» в Health Connect')]);
+  else if(L.sleepStatus==='empty') rows.push(['😴', t('Сон'), t('браслет не записал сон этой ночью')]);
   if(L.workouts&&L.workouts.count) rows.push(['🏃', t('Тренировки за неделю'), L.workouts.count+' ('+L.workouts.minutes+' '+t('мин')+')']);
   const src = L.healthSource==='bracelet' ? t('источник: фитнес-браслет') : (L.healthSource==='phone' ? t('источник: датчик телефона') : '');
   document.getElementById('healthRings').innerHTML = rows.length
@@ -3185,11 +3246,12 @@ function renderHealth(){
 
   // Только реальные показатели с телефона/браслета. Ничего не додумываем.
   const rows=[];
-  if(liveSteps>0) rows.push(['🚶', t('Шаги за сегодня'), liveSteps]);
-  if(healthHR!=null) rows.push(['❤️', t('Пульс'), healthHR+' '+t('уд/мин')]);
+  recalcSteps();
+  if(stepsSource!=='none') rows.push(['🚶', t('Шаги за сегодня'), liveSteps+(stepsSource==='phone'? ' · '+t('считает телефон, приблизительно') : '')]);
+  if(healthHR!=null) rows.push(['❤️', t('Пульс'), healthHR+' '+t('уд/мин')+(healthHRTime? ' · '+freshLabel(healthHRTime) : '')]);
   else if(Health.hrStatus==='unsupported') rows.push(['❤️', t('Пульс'), t('браслет не поддерживает этот показатель')]);
   else if(Health.hrStatus==='denied') rows.push(['❤️', t('Пульс'), t('нет доступа — включите в Health Connect')]);
-  if(healthSpo2!=null) rows.push(['🫁', t('Кислород в крови (SpO₂)'), healthSpo2+'%']);
+  if(healthSpo2!=null) rows.push(['🫁', t('Кислород в крови (SpO₂)'), healthSpo2+'%'+(healthSpo2Time? ' · '+freshLabel(healthSpo2Time) : '')]);
   else if(Health.spo2Status==='unsupported') rows.push(['🫁', t('Кислород в крови (SpO₂)'), t('браслет не поддерживает этот показатель')]);
   else if(Health.spo2Status==='denied') rows.push(['🫁', t('Кислород в крови (SpO₂)'), t('нет доступа — включите в Health Connect')]);
   if(healthCalories!=null) rows.push(['🔥', t('Калории за сегодня'), healthCalories+' '+t('ккал')]);
@@ -3252,31 +3314,56 @@ function sendChat(){
 function callPensioner(){ const num=(account.cloud&&cloudLive&&cloudLive.phone)||settings.phone; dialNumber(num, patientName()); }
 function videoPensioner(){ const n=(settings.phone||'').replace(/[^\d+]/g,''); if(!n){ toast('Номер не указан'); return; } toast('📹 Видеозвонок…'); try{ window.location.href='facetime:'+n; }catch(e){} }
 
-/* ---------- REAL device sensors (steps, battery, GPS) ---------- */
-let liveSteps = (function(){ const s=Store.get('steps',null); const t=new Date().toDateString(); return (s&&s.date===t)? s.count : 0; })();
+/* ---------- Датчики телефона и показатели браслета ----------
+   Шаги телефона и шаги браслета — разные вещи, и мы их больше не смешиваем.
+   Акселерометр телефона считает очень грубо (любая тряска = «шаг»), поэтому
+   его показания идут в дело, только когда браслета нет, и всегда подписаны
+   как «с телефона». Данные браслета всегда важнее. */
+let stepsPhone = (function(){ const s=Store.get('steps',null); const d=new Date().toDateString(); return (s&&s.date===d)? s.count : 0; })();
+let stepsHealth = null;              // шаги из Health Connect / Apple Health
+let liveSteps = stepsPhone;          // то, что показываем и отправляем близким
+let stepsSource = 'none';            // none | phone | bracelet
 let liveBattery = null, motionOn=false, lastStepT=0;
 let healthSource='none', healthSleep=null, healthHR=null, healthSpo2=null, healthCalories=null, healthWorkouts=null;
-function saveSteps(){ Store.set('steps', {date:new Date().toDateString(), count:liveSteps}); }
+// Время измерения обязательно: без него нельзя отличить свежий пульс от прошлогоднего
+let healthHRTime=null, healthSpo2Time=null, healthStepsTime=null, healthSleepSource=null;
+
+function recalcSteps(){
+  if(stepsHealth!=null){ liveSteps=stepsHealth; stepsSource='bracelet'; }
+  else if(motionOn || stepsPhone>0){ liveSteps=stepsPhone; stepsSource='phone'; }
+  else { liveSteps=0; stepsSource='none'; }
+}
+function saveSteps(){ Store.set('steps', {date:new Date().toDateString(), count:stepsPhone}); }
+
+/* Показатель считаем сегодняшним, только если он измерен не слишком давно. */
+const HR_FRESH_MS = 6*3600*1000;
+function freshLabel(ts, freshMs){
+  if(!ts) return '';
+  return (Date.now()-ts) <= (freshMs||HR_FRESH_MS) ? agoText(ts) : (t('последнее измерение')+': '+agoText(ts));
+}
+
 function renderLiveCard(){
+  recalcSteps();
   const v=document.getElementById('liveStepsVal'); if(v) v.textContent=liveSteps||'—';
   const b=document.getElementById('liveBattIco'); if(b) b.textContent = liveBattery!=null ? ('🔋 '+liveBattery+'%') : '';
   const ex=document.getElementById('liveExtra');
   if(ex){ const parts=[];
-    if(healthHR!=null) parts.push('❤️ '+t('пульс')+' '+healthHR);
+    if(healthHR!=null) parts.push('❤️ '+t('пульс')+' '+healthHR+(healthHRTime? ' ('+freshLabel(healthHRTime)+')' : ''));
+    if(healthSpo2!=null) parts.push('🫁 SpO₂ '+healthSpo2+'%');
     if(healthCalories!=null) parts.push('🔥 '+healthCalories+' '+t('ккал'));
     if(healthWorkouts&&healthWorkouts.count) parts.push('🏃 '+healthWorkouts.count+' '+t('тренировок за неделю'));
     if(healthSleep!=null) parts.push('😴 '+t('сон')+' '+healthSleep+' '+t('ч'));
     ex.textContent=parts.join('   ·   '); }
   const s=document.getElementById('liveSource');
   if(s){
-    if(healthSource==='bracelet'){ s.textContent='✅ Источник: браслет / часы'; s.style.color='var(--green-d)'; }
-    else if(healthSource==='phone'){ s.textContent='📱 Источник: телефон (браслет не найден)'; s.style.color='var(--warm-d)'; }
+    if(stepsSource==='bracelet'){ s.textContent='✅ '+t('Источник: браслет / часы'); s.style.color='var(--green-d)'; }
+    else if(stepsSource==='phone'){ s.textContent='📱 '+t('Источник: телефон (браслет не найден)'); s.style.color='var(--warm-d)'; }
     else { s.textContent=''; }
   }
 }
 function addStep(){
-  liveSteps++;
-  if(liveSteps%5===0){ saveSteps(); if(account.cloud&&account.role==='elder') pushCloudLive(); }
+  stepsPhone++;
+  if(stepsPhone%5===0){ saveSteps(); if(account.cloud&&account.role==='elder') pushCloudLive(); }
   renderLiveCard();
 }
 function onMotion(e){
@@ -3299,7 +3386,23 @@ async function enableSensors(){
   toast('✅ Датчики телефона включены'); saveSteps(); renderLiveCard();
 }
 
-let realRoute=Store.get('route',[]); let geoWatch=null; let geoOn=false; let geoNative=false;
+/* ---------- ГЕОЛОКАЦИЯ: непрерывное отслеживание ----------
+   Главное требование: слежение не должно прерываться.
+
+   В приложении на телефоне работает нативная служба NearGeo: она держит
+   постоянное уведомление, не даёт процессору уснуть, копит точки на диске
+   и сама отправляет их в облако — даже когда экран выключен, приложение
+   свёрнуто или смахнуто из списка задач.
+
+   В браузере такой возможности нет, поэтому там watchPosition плюс сторож:
+   если координаты перестали приходить, слежение перезапускается само. */
+let realRoute=Store.get('route',[]);
+let geoWatch=null, geoOn=false, geoNative=false, geoMode='none';
+let geoLastFix=Store.get('geoLastFix',0)||0;
+let geoWatchdog=null, geoWakeLock=null, geoListenerOn=false, geoLastPush=0;
+let geoState=null;            // что сообщает нативная служба
+let geoSharing=!!Store.get('geoSharing', false);
+
 function realMapSVG(route){
   const w=340,h=200,pad=24;
   const lngs=route.map(p=>p[0]), lats=route.map(p=>p[1]);
@@ -3316,118 +3419,294 @@ function realMapSVG(route){
     <circle cx="${last[0]}" cy="${last[1]}" r="9" fill="#12b886" stroke="#fff" stroke-width="3"/>
   </svg>`;
 }
-let geoSharing=false;
+
+/* ---- нативная служба ---- */
+function nearGeo(){
+  const C=window.Capacitor;
+  if(!(C && C.isNativePlatform && C.isNativePlatform())) return null;
+  try{ if(C.Plugins && C.Plugins.NearGeo) return C.Plugins.NearGeo; }catch(e){}
+  try{
+    if(typeof C.registerPlugin==='function'){
+      const p=C.registerPlugin('NearGeo');
+      if(p && typeof p.start==='function') return p;
+    }
+  }catch(e){}
+  return null;
+}
+
+function geoHint(msg){ const h=document.getElementById('geoShareHint'); if(h) h.textContent=msg; }
+function geoErr(code,msg){
+  let human=t('Не удалось определить местоположение');
+  if(code===1) human=t('Нет доступа к местоположению. Разрешите его в настройках телефона.');
+  else if(code===2||code===3) human=t('Сигнал GPS не найден. Выйдите к окну или на улицу.');
+  geoHint(human); toast(human);
+  if(msg) try{ console.log('geo error:', code, msg); }catch(e){}
+}
+
+/* Понятная подпись «когда была последняя точка» */
+function agoText(ts){
+  if(!ts) return '';
+  const s=Math.max(0, Math.round((Date.now()-ts)/1000));
+  if(s<90) return t('только что');
+  const m=Math.round(s/60);
+  if(m<60) return m+' '+t('мин назад');
+  const h=Math.round(m/60);
+  if(h<24) return h+' '+t('ч назад');
+  try{ return new Date(ts).toLocaleString(LOC(),{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}); }
+  catch(e){ return Math.round(h/24)+' '+t('дн назад'); }
+}
+
 function renderGeoShare(){
   const hint=document.getElementById('geoShareHint'), btn=document.getElementById('geoShareBtn');
   if(!hint||!btn) return;
-  // Состояние берём из реальности: включено ТОЛЬКО пока идёт слежение прямо сейчас.
-  // Старые точки в памяти телефона не значат, что близкие видят вас сейчас.
-  const active = !!geoOn;
-  geoSharing = active;
-  hint.textContent = active ? t('Включено — близкие видят, где вы') : t('Выключено — близкие не видят, где вы');
-  btn.textContent = active ? t('Выключить') : t('Включить');
-}
-function shareLocation(){
-  geoSharing=!geoSharing;
-  const hint=document.getElementById('geoShareHint'), btn=document.getElementById('geoShareBtn');
-  // Включаем/выключаем GPS осознанно, а не «переключаем вслепую»
-  if(geoSharing){
-    if(!geoOn) toggleGeo();
-    if(hint) hint.textContent=t('Включаю… родные скоро увидят ваше местоположение');
-    if(btn) btn.textContent='Выключить';
-    if(account.cloud){ setTimeout(pushCloudLive,1500); setTimeout(pushCloudLive,5000); }
-  } else {
-    if(geoOn) toggleGeo();
-    if(hint) hint.textContent='Выключено — родные не видят, где вы';
-    if(btn) btn.textContent='Включить';
-    if(account.cloud) setTimeout(pushCloudLive,300);
+  hint.textContent = geoOn
+    ? (t('Включено — близкие видят, где вы') + (geoLastFix? (' · '+agoText(geoLastFix)) : ''))
+    : t('Выключено — близкие не видят, где вы');
+  btn.textContent = geoOn ? t('Выключить') : t('Включить');
+
+  // Честно предупреждаем о том, что может оборвать слежение
+  const warn=document.getElementById('geoShareWarn');
+  if(warn){
+    const bits=[];
+    if(geoOn && geoMode==='native' && geoState){
+      if(geoState.background===false) bits.push('⚠️ '+t('Чтобы слежение не прерывалось, разрешите доступ к местоположению «Всегда».')+' <a href="#" onclick="geoFixBackground();return false">'+t('Настроить')+'</a>');
+      if(geoState.battery===false) bits.push('⚠️ '+t('Телефон экономит батарею и может остановить слежение.')+' <a href="#" onclick="geoFixBattery();return false">'+t('Отключить экономию')+'</a>');
+      if(geoState.gps===false) bits.push('⚠️ '+t('Геолокация выключена в настройках телефона.')+' <a href="#" onclick="geoFixGps();return false">'+t('Включить')+'</a>');
+    }
+    if(geoOn && geoMode==='browser'){
+      bits.push(t('В браузере слежение идёт, только пока страница открыта. Для непрерывной работы установите приложение на телефон.'));
+    }
+    warn.innerHTML = bits.length? bits.map(b=>'<div style="margin-top:6px">'+b+'</div>').join('') : '';
   }
-  Store.set('geoSharing', geoSharing);
 }
-function stopGeoWatch(){
-  const C=window.Capacitor;
+
+function geoFixBackground(){ const P=nearGeo(); if(P) P.requestBackground().then(s=>{ geoState=s; renderGeoShare(); }).catch(()=>{}); }
+function geoFixBattery(){ const P=nearGeo(); if(P) P.openBatterySettings().then(s=>{ geoState=s; renderGeoShare(); }).catch(()=>{}); }
+function geoFixGps(){ const P=nearGeo(); if(P) P.openLocationSettings().then(s=>{ geoState=s; renderGeoShare(); }).catch(()=>{}); }
+
+/* ---- приём координат ---- */
+/* Точка попадает в след на своё место по времени.
+   Это важно: когда приложение открывают, фоновая служба отдаёт накопленные
+   точки уже ПОСЛЕ свежей — если просто дописывать в конец, старые терялись
+   и в маршруте оставались дыры. */
+function pushRoutePoint(lat,lng,ts){
+  if(lat==null||lng==null||isNaN(lat)||isNaN(lng)) return false;
+  ts = ts || Date.now();
+
+  // куда встаёт точка по времени
+  let i=realRoute.length;
+  while(i>0 && realRoute[i-1][2] > ts) i--;
+
+  const prev = i>0 ? realRoute[i-1] : null;
+  const next = i<realRoute.length ? realRoute[i] : null;
+  // рядом по времени и по месту — значит человек стоял здесь же, не дублируем
+  const near = p => p && Math.abs(p[2]-ts)<180000 && haversine(p[1],p[0],lat,lng)<15;
+  if(near(prev)){ if(ts>prev[2]) prev[2]=ts; return false; }
+  if(near(next)) return false;
+
+  realRoute.splice(i, 0, [lng,lat,ts]);
+  if(realRoute.length>500) realRoute=realRoute.slice(-500);
+  return true;
+}
+
+function onGeoFix(lat,lng,ts,acc){
+  if(lat==null||lng==null||isNaN(lat)||isNaN(lng)) return;
+  const added=pushRoutePoint(lat,lng,ts);
+  geoLastFix=Math.max(geoLastFix, ts||Date.now());
+  Store.set('geoLastFix', geoLastFix);
+  geoOn=true;
+  if(added) Store.set('route',realRoute);
+
+  const btn=document.getElementById('geoBtn');
+  if(btn) btn.textContent='⏹ '+t('Остановить отслеживание');
+  if(currentScreen==='rmap') renderMap();
+  if(currentScreen==='home') renderGeoShare();
+
+  // Не спамим облако: не чаще раза в 15 секунд (нативная служба шлёт сама)
+  if(account.cloud && account.role==='elder' && Date.now()-geoLastPush>15000){
+    geoLastPush=Date.now(); pushCloudLive();
+  }
+}
+
+/* ---- нативный путь ---- */
+function attachGeoListener(){
+  const P=nearGeo(); if(!P || geoListenerOn) return;
   try{
-    if(geoNative && C&&C.Plugins&&C.Plugins.Geolocation){ if(geoWatch!=null) C.Plugins.Geolocation.clearWatch({id:geoWatch}); }
-    else if(geoWatch!=null && navigator.geolocation){ navigator.geolocation.clearWatch(geoWatch); }
+    P.addListener('location', p=>{ if(p) onGeoFix(p.lat, p.lng, p.ts, p.acc); });
+    geoListenerOn=true;
   }catch(e){}
+}
+
+/* Передаём службе реквизиты, чтобы она могла слать координаты в облако сама,
+   без открытого приложения. Токен служба обновляет по refresh-токену. */
+async function geoConfigureNative(){
+  const P=nearGeo(); if(!P) return;
+  try{
+    if(!cloudEnabled() || !window.NearCloud.nativeCreds) return;
+    const c=await window.NearCloud.nativeCreds();
+    if(c && c.uid && c.projectId) await P.configure(c);
+  }catch(e){ try{ console.log('geo configure:', e); }catch(_){} }
+}
+
+async function geoStartNative(){
+  const P=nearGeo(); if(!P) return false;
+  attachGeoListener();
+  try{
+    geoState=await P.requestAccess();
+    if(geoState && geoState.location===false){ geoErr(1); return false; }
+  }catch(e){ geoErr(1, String(e&&e.message||e)); return false; }
+  try{ geoState=await P.requestNotifications(); }catch(e){}
+  await geoConfigureNative();
+  try{
+    geoState=await P.start({ interval:60000, distance:0 });
+  }catch(e){ geoErr(2, String(e&&e.message||e)); return false; }
+  geoMode='native'; geoNative=true; geoOn=true;
+  geoHint(t('Включено — близкие видят, где вы'));
+  await geoDrain();
+  // «Всегда» просим вторым шагом: Android не выдаёт его в одном окне с обычным
+  if(geoState && geoState.background===false){
+    toast(t('Ещё один шаг: разрешите доступ к местоположению «Всегда» — иначе слежение прервётся.'));
+  }
+  startGeoWatchdog();
+  return true;
+}
+
+/* Забираем точки, накопленные, пока приложение было закрыто. */
+async function geoDrain(){
+  const P=nearGeo(); if(!P) return;
+  try{
+    const r=await P.drain();
+    const pts=(r&&r.points)||[];
+    let changed=false;
+    pts.forEach(p=>{ if(pushRoutePoint(p.lat,p.lng,p.ts)) changed=true; });
+    const last=(r&&r.last)||(pts.length? pts[pts.length-1] : null);
+    if(last && last.ts){ geoLastFix=Math.max(geoLastFix, last.ts); Store.set('geoLastFix', geoLastFix); }
+    if(r) geoOn=!!r.running;
+    if(changed){
+      Store.set('route',realRoute);
+      if(currentScreen==='rmap') renderMap();
+    }
+    if(changed && account.cloud && account.role==='elder'){ geoLastPush=Date.now(); pushCloudLive(); }
+    try{ geoState=await P.status(); if(geoState){ geoOn=!!geoState.running; geoMode = geoOn?'native':geoMode; } }catch(e){}
+  }catch(e){}
+}
+
+/* ---- браузерный путь ---- */
+function stopGeoWatch(){
+  try{ if(geoWatch!=null && navigator.geolocation) navigator.geolocation.clearWatch(geoWatch); }catch(e){}
   geoWatch=null;
 }
-async function toggleGeo(){
+
+async function requestScreenWakeLock(){
+  try{
+    if(!('wakeLock' in navigator) || document.visibilityState!=='visible') return;
+    geoWakeLock=await navigator.wakeLock.request('screen');
+    geoWakeLock.addEventListener('release', ()=>{ geoWakeLock=null; });
+  }catch(e){ geoWakeLock=null; }
+}
+
+function geoStartBrowser(){
+  if(!navigator.geolocation){ geoErr(0); return false; }
+  stopGeoWatch();
+  const opts={enableHighAccuracy:true, maximumAge:5000, timeout:25000};
+  const ok=p=>onGeoFix(p.coords.latitude, p.coords.longitude, Date.now(), p.coords.accuracy);
+  navigator.geolocation.getCurrentPosition(ok, e=>{ if(e.code===1) geoErr(1, e.message); }, opts);
+  geoWatch=navigator.geolocation.watchPosition(ok, e=>{
+    // Таймаут — не повод пугать человека: сторож ниже сам перезапустит слежение.
+    if(e.code===1) geoErr(1, e.message);
+  }, opts);
+  geoMode='browser'; geoNative=false; geoOn=true;
+  requestScreenWakeLock();
+  startGeoWatchdog();
+  setTimeout(()=>{ if(geoOn && !geoLastFix) geoErr(2); }, 25000);
+  return true;
+}
+
+/* Сторож: следит, что координаты продолжают приходить, и чинит слежение. */
+function startGeoWatchdog(){
+  if(geoWatchdog) return;
+  geoWatchdog=setInterval(()=>{
+    if(!geoOn) return;
+    if(geoMode==='native'){ geoDrain().then(()=>renderGeoShare()); return; }
+    const idle=Date.now()-(geoLastFix||0);
+    if(idle>150000){                 // 2,5 минуты без координат — перезапускаем
+      try{ console.log('geo: перезапуск слежения после', Math.round(idle/1000), 'с тишины'); }catch(e){}
+      geoStartBrowser();
+    }
+    renderGeoShare();
+  }, 30000);
+}
+function stopGeoWatchdog(){ if(geoWatchdog){ clearInterval(geoWatchdog); geoWatchdog=null; } }
+
+/* ---- общий вход ---- */
+async function geoStart(){
+  toast(t('Запрашиваю геопозицию…')); geoHint(t('Запрашиваю геопозицию…'));
+  let ok=false;
+  if(nearGeo()){
+    ok=await geoStartNative();
+    // Если человек не дал доступ к местоположению, браузерный путь тоже
+    // не сработает — не делаем вид, что слежение включилось.
+    if(!ok && geoState && geoState.location===false){ renderGeoShare(); return false; }
+  }
+  if(!ok) ok=geoStartBrowser();
+  if(ok){
+    geoSharing=true; Store.set('geoSharing', true);
+    if(account.cloud && account.role==='elder'){ setTimeout(pushCloudLive, 1500); }
+  }
+  renderGeoShare(); renderMap();
+  return ok;
+}
+
+async function geoStop(){
+  const P=nearGeo();
+  if(P){ try{ await P.stop(); }catch(e){} }
+  stopGeoWatch(); stopGeoWatchdog();
+  try{ if(geoWakeLock) geoWakeLock.release(); }catch(e){}
+  geoWakeLock=null;
+  geoOn=false; geoMode='none'; geoNative=false;
+  geoSharing=false; Store.set('geoSharing', false);
   const btn=document.getElementById('geoBtn');
-  if(geoOn){ stopGeoWatch(); geoOn=false; if(btn) btn.textContent='📍 '+t('Показать реальное местоположение'); renderMap(); return; }
-  const hint=document.getElementById('geoShareHint');
-  const setHint=(m)=>{ if(hint) hint.textContent=m; };
-  toast(t('Запрашиваю геопозицию…')); setHint(t('Запрашиваю геопозицию…'));
+  if(btn) btn.textContent='📍 '+t('Показать реальное местоположение');
+  renderGeoShare(); renderMap();
+  if(account.cloud && account.role==='elder') pushCloudLive();
+}
 
-  let got=false;
-  const onPos=(lat,lng)=>{
-    if(lat==null||lng==null||isNaN(lat)||isNaN(lng)) return;
-    got=true;
-    realRoute.push([lng,lat,Date.now()]);
-    if(realRoute.length>500) realRoute=realRoute.slice(-500);
-    Store.set('route',realRoute); geoOn=true;
-    if(btn) btn.textContent='⏹ '+t('Остановить отслеживание');
-    setHint(t('Местоположение получено ✓'));
-    try{ const gb=document.getElementById('geoShareBtn'); if(gb) gb.textContent=t('Выключить'); }catch(e){}
-    renderMap();
-    if(account.cloud) pushCloudLive();
-  };
-  const onErr=(code,msg)=>{
-    let human=t('Не удалось определить местоположение');
-    if(code===1) human=t('Нет доступа к местоположению. Разрешите его в настройках телефона.');
-    else if(code===2||code===3) human=t('Сигнал GPS не найден. Выйдите к окну или на улицу.');
-    setHint(human); toast(human);
-    if(msg) try{ console.log('geo error:', code, msg); }catch(e){}
-  };
+async function toggleGeo(){ if(geoOn) return geoStop(); return geoStart(); }
+function shareLocation(){ toggleGeo(); }
 
-  const C=window.Capacitor;
-  const isNative = !!(C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.Geolocation);
-
-  // --- 1) нативный путь (приложение на телефоне) ---
-  if(isNative){
-    const G=C.Plugins.Geolocation;
-    try{
-      // Сначала СМОТРИМ, выдано ли разрешение. Спрашиваем только если ещё не выдано.
-      let st='';
-      try{ const cur=await G.checkPermissions(); st=(cur&&(cur.location||cur.coarseLocation))||''; }catch(e){}
-      if(st!=='granted'){
-        const perm=await G.requestPermissions();
-        st=(perm&&(perm.location||perm.coarseLocation))||'';
-      }
-      if(st==='denied'){ onErr(1); return; }
-    }catch(e){}
-    // сначала одна быстрая попытка — чтобы точка появилась сразу
-    try{
-      const pos=await G.getCurrentPosition({enableHighAccuracy:true, timeout:15000});
-      if(pos&&pos.coords) onPos(pos.coords.latitude,pos.coords.longitude);
-    }catch(e){}
-    // затем постоянное слежение
-    try{
-      geoNative=true;
-      geoWatch=await G.watchPosition({enableHighAccuracy:true, timeout:30000, maximumAge:3000}, (pos,err)=>{
-        if(err){ if(!got) onErr(2, err.message); return; }
-        if(pos&&pos.coords) onPos(pos.coords.latitude,pos.coords.longitude);
-      });
-    }catch(e){ if(!got) onErr(2, String(e&&e.message||e)); }
-    // если за 20 секунд ничего не пришло — честно говорим об этом
-    setTimeout(()=>{ if(!got) onErr(2); }, 20000);
+/* После перезапуска приложения слежение должно вернуться само —
+   пожилой человек не обязан включать его заново каждый раз. */
+async function geoAutoResume(){
+  if(account.role!=='elder') return;
+  const P=nearGeo();
+  if(P){
+    attachGeoListener();
+    try{ geoState=await P.status(); }catch(e){ geoState=null; }
+    if(geoState && geoState.running){
+      geoOn=true; geoMode='native'; geoNative=true;
+      await geoConfigureNative();      // токен мог протухнуть, пока приложение было закрыто
+      await geoDrain();
+      renderGeoShare(); if(currentScreen==='rmap') renderMap();
+      return;
+    }
+    if((geoState && geoState.wanted) || geoSharing){ await geoStart(); return; }
     return;
   }
-
-  // --- 2) браузер ---
-  geoNative=false;
-  if(!navigator.geolocation){ onErr(0); return; }
-  const opts={enableHighAccuracy:true, maximumAge:5000, timeout:20000};
-  navigator.geolocation.getCurrentPosition(
-    p=>onPos(p.coords.latitude,p.coords.longitude),
-    e=>{ if(!got) onErr(e.code, e.message); },
-    opts);
-  geoWatch=navigator.geolocation.watchPosition(
-    p=>onPos(p.coords.latitude,p.coords.longitude),
-    e=>{ if(!got) onErr(e.code, e.message); },
-    opts);
-  setTimeout(()=>{ if(!got) onErr(2); }, 25000);
+  if(geoSharing) await geoStart();
 }
+
+/* Приложение вернулось на экран — забираем накопленное и чиним слежение. */
+function geoOnResume(){
+  if(!geoOn) return;
+  if(geoMode==='native'){ geoDrain().then(()=>{ renderGeoShare(); if(currentScreen==='rmap') renderMap(); }); return; }
+  if(!geoWakeLock) requestScreenWakeLock();
+  if(Date.now()-(geoLastFix||0) > 60000) geoStartBrowser();
+  renderGeoShare();
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') geoOnResume(); });
+window.addEventListener('focus', geoOnResume);
+window.addEventListener('online', geoOnResume);
+document.addEventListener('resume', geoOnResume, false);
 
 /* ---------- Health: bracelet/watch via HealthKit / Health Connect, else phone ---------- */
 const Health = {
@@ -3473,13 +3752,41 @@ const Health = {
       this.available=true; // плагин есть — попробуем прочитать данные по-настоящему
     }catch(e){}
   },
+  access:null,        // что именно разрешил пользователь в Health Connect
+  accessError:null,
   async requestPermissions(){
-    if(!this.plugin) return false;
-    // Разрешения ровно по API плагина capacitor-health (Health Connect / HealthKit)
-    try{
-      await this.plugin.requestHealthPermissions({ permissions:['READ_STEPS','READ_WORKOUTS','READ_HEART_RATE','READ_CALORIES','READ_DISTANCE','READ_ROUTE'] });
-    }catch(e){}
-    return true; // диалог показан; данные подтянем при обновлении
+    // ВАЖНО. Health Connect выдаёт доступ отдельно к каждому показателю.
+    // Готовый плагин просит только шаги, тренировки, калории и дистанцию —
+    // «Сон» и «Кислород в крови» он не просит вообще, поэтому раньше эти
+    // показатели всегда приходили пустыми. Теперь просим весь набор сразу,
+    // одним окном, через нашу часть плагина.
+    const SP=this.getSleepPlugin();
+    if(SP && typeof SP.requestAccess==='function'){
+      try{
+        this.access=await SP.requestAccess();
+        this.accessError=null;
+        if(this.access && this.access.available!==false) return true;
+      }catch(e){ this.accessError=String(e&&e.message||e); }
+    }
+    // Запасной путь — окно готового плагина (без сна и SpO2)
+    if(this.plugin){
+      try{
+        await this.plugin.requestHealthPermissions({ permissions:['READ_STEPS','READ_WORKOUTS','READ_HEART_RATE','READ_CALORIES','READ_DISTANCE','READ_ROUTE'] });
+        return true;
+      }catch(e){ this.accessError=String(e&&e.message||e); }
+    }
+    return false;
+  },
+  async checkPermissions(){
+    const SP=this.getSleepPlugin();
+    if(!SP || typeof SP.checkAccess!=='function') return null;
+    try{ this.access=await SP.checkAccess(); return this.access; }catch(e){ return null; }
+  },
+  // Каких разрешений не хватает — чтобы объяснить человеку словами, а не молчать
+  missingAccess(){
+    const a=this.access; if(!a) return [];
+    const names={steps:'Шаги', sleep:'Сон', heartRate:'Пульс', spo2:'Кислород в крови', calories:'Калории', exercise:'Тренировки', distance:'Расстояние'};
+    return Object.keys(names).filter(k=>a[k]===false).map(k=>names[k]);
   },
   // Плагин возвращает ответ в разных формах: число, массив чисел, массив объектов.
   // Разбираем ЛЮБУЮ форму, иначе теряем реальные данные.
@@ -3534,16 +3841,33 @@ const Health = {
     const start=new Date(Date.now()-days*24*3600*1000); start.setHours(0,0,0,0);
     return await this._agg('steps', start.toISOString(), end.toISOString());
   },
+  stepsApp:null, stepsTime:null, stepsError:null, stepsRaw:null,
   async todaySteps(){
-    if(!this.plugin) return null;
     const end=new Date();
     const start=new Date(); start.setHours(0,0,0,0);
-    let v=await this._agg('steps', start.toISOString(), end.toISOString());
-    if(v==null){
-      // запасной вариант — последние сутки
-      const s2=new Date(Date.now()-24*3600*1000);
-      v=await this._agg('steps', s2.toISOString(), end.toISOString());
+
+    // 1) Читаем сами записи о шагах, а не сводку: у части браслетов сводка
+    //    приходит пустой, хотя записи в Health Connect есть.
+    const SP=this.getSleepPlugin();
+    if(SP && typeof SP.querySteps==='function'){
+      try{
+        const r=await SP.querySteps({startDate:start.toISOString(), endDate:end.toISOString()});
+        this.stepsRaw=r; this.stepsError=(r&&r.error)||null;
+        if(r && r.available!==false && !r.error){
+          this.stepsApp = r.source||null;
+          this.stepsTime = r.lastTime? Date.parse(r.lastTime) : null;
+          this.lastEmpty = !(r.count>0);
+          if(r.count>0) return Math.round(Number(r.total)||0);
+          return null;   // записей за сегодня нет
+        }
+      }catch(e){ this.stepsError=String(e&&e.message||e); }
     }
+
+    // 2) Запасной путь — сводка готового плагина, строго за сегодня.
+    //    Брать «последние сутки» нельзя: во вчера+сегодня шаги удваивались,
+    //    и близкие видели завышенное число.
+    if(!this.plugin) return null;
+    const v=await this._agg('steps', start.toISOString(), end.toISOString());
     return v!=null? Math.round(v) : null;
   },
   sleepPlugin:null,
@@ -3587,6 +3911,11 @@ const Health = {
       const r=await this.sleepPlugin.queryVitals({startDate:start.toISOString(), endDate:end.toISOString()});
       this.vitalsRaw=r;
       if(r && r.available===false){ this.spo2Status='absent'; this.hrStatus='absent'; return {spo2:null, hr:null}; }
+      // Время измерения — обязательно. Без него нельзя отличить пульс,
+      // снятый пять минут назад, от снятого позавчера.
+      this.hrTime = (r && r.hrTime!=null) ? Number(r.hrTime) : null;
+      this.spo2Time = (r && r.spo2Time!=null) ? Number(r.spo2Time) : null;
+      this.hrSourceApp = (r && r.hrSource) || null;
       let spo2=null, hr=null;
       // --- SpO2 ---
       if(r && r.spo2Error){ this.spo2Status='denied'; }
@@ -3673,7 +4002,7 @@ const Health = {
 
 
 /* ---------- Мастер подключения браслета: подсказки под конкретный телефон ---------- */
-const APP_BUILD='v22 · 07.08.2026';
+const APP_BUILD='v23 · 08.08.2026';
 function detectPhone(){
   const ua=navigator.userAgent||'';
   let vendor='other', vname=t('ваш телефон'), app=t('приложение вашего браслета');
@@ -3772,7 +4101,7 @@ async function bandRecheck(){
   const res=document.getElementById('bsResult');
   res.innerHTML=t('Проверяю…'); res.classList.add('show');
   await Health.init();
-  if(!Health.plugin){
+  if(!Health.plugin && !Health.getSleepPlugin()){
     res.innerHTML='❌ '+t('Приложение собрано без части для браслета. Нужна новая сборка.');
     return;
   }
@@ -3782,8 +4111,11 @@ async function bandRecheck(){
   if(st==null){
     // Проверяем шире: может, записи есть, но не за сегодня
     let week=null; try{ week=await Health.anyStepsWithin(7); }catch(e){}
+    const missing=Health.missingAccess();
     let why;
-    if(err){
+    if(missing.length){
+      why=t('Не выдан доступ к показателям')+': '+missing.join(', ')+'. '+t('Откройте Health Connect и разрешите их приложению Near.');
+    } else if(err){
       why=t('Ошибка чтения')+': '+err;
     } else if(week!=null && week>0){
       why=t('Health Connect отвечает, и записи о шагах в нём есть, но не за сегодня. Откройте приложение вашего браслета и дождитесь синхронизации.');
@@ -3802,10 +4134,11 @@ async function bandRecheck(){
       + '<div style="color:var(--muted); font-size:13px; margin-top:8px">'+t('В Health Connect откройте «Данные и доступ» → «Шаги» и посмотрите, какое приложение туда пишет. Если список пуст — данные не поступают ни от кого.')+'</div>';
     return;
   }
-  healthSource='bracelet'; liveSteps=st; saveSteps(); renderLiveCard();
-  if(account.cloud && account.role==='elder') pushCloudLive();
-  res.innerHTML='✅ '+t('Готово! Браслет подключён')+' — '+st+' '+t('шагов');
-  if(!window._healthTimer) window._healthTimer=setInterval(()=>{ refreshHealth(); }, 60000);
+  healthSource='bracelet'; stepsHealth=st; healthStepsTime=Health.stepsTime||Date.now();
+  await refreshHealth(true);
+  res.innerHTML='✅ '+t('Готово! Браслет подключён')+' — '+st+' '+t('шагов')
+    + (Health.stepsApp? '<div style="color:var(--muted); font-size:13px; margin-top:6px">'+t('данные пишет')+': '+escapeHtml(Health.stepsApp)+'</div>' : '');
+  startHealthTimer();
 }
 
 async function healthDiag(){
@@ -3895,15 +4228,28 @@ async function healthDiag(){
         const txt=JSON.stringify(rw);
         add('7e. Тренировки за 30 дней', txt.length>200? txt.slice(0,200)+'…' : txt);
       }catch(e){ add('7e. Тренировки за 30 дней','ОШИБКА '+(e&&e.message||e)); }
-      add('7f. ВЫВОД', wide===null
-        ? 'В Health Connect НЕТ записей о шагах ни за один период. Приложение читает правильно — туда просто никто ничего не записал. Виновато приложение браслета, а не Near.'
-        : ('Записи о шагах в Health Connect есть — самые свежие в пределах '+wide+' дней.'));
+      add('7f. ВЫВОД по сводке', wide===null
+        ? 'В сводке Health Connect НЕТ шагов ни за один период.'
+        : ('Записи о шагах в сводке есть — самые свежие в пределах '+wide+' дней.'));
     }
+    // Основной путь чтения шагов — сами записи, а не сводка. Сводка у части
+    // браслетов пустая, хотя записи есть, поэтому её вывод отдельно.
+    try{
+      const st2=await Health.todaySteps();
+      add('7g. Шаги за сегодня (чтение записей)', st2!=null
+        ? (st2+' шагов'+(Health.stepsApp? ', пишет: '+Health.stepsApp : '')+(Health.stepsTime? ', последняя запись '+agoText(Health.stepsTime) : ''))
+        : ('нет записей за сегодня'+(Health.stepsError? ' — '+Health.stepsError : '')));
+    }catch(e){ add('7g. Шаги (чтение записей)', 'ОШИБКА '+(e&&e.message||e)); }
     // сон — отдельная наша часть
     try{
       const SP=Health.getSleepPlugin();
       add('9. Чтение сна в сборке', SP? 'ЕСТЬ' : 'НЕТ — нужна новая сборка');
       if(SP){
+        // Самая частая причина пустых показателей — не выданные разрешения
+        const acc=await Health.checkPermissions();
+        add('9a. Разрешения Health Connect', acc? JSON.stringify(acc) : 'проверка недоступна');
+        const miss=Health.missingAccess();
+        add('9a2. Не хватает доступа к', miss.length? miss.join(', ') : 'всё выдано');
         const h=await Health.lastNightSleep();
         const st={ok:'данные получены', empty:'ответ пришёл, но записей о сне нет', denied:'нет доступа к «Сну» в Health Connect', absent:'Health Connect недоступен'}[Health.sleepStatus]||Health.sleepStatus;
         add('9b. Сон прошлой ночью', (h!=null? (h+' ч') : '—')+' ('+st+')');
@@ -3918,8 +4264,27 @@ async function healthDiag(){
         if(Health.vitalsError) add('10d. Ошибка', Health.vitalsError);
       }
     }catch(e){ add('9. Чтение сна','СБОЙ '+(e&&e.message||e)); }
-    add('8. Что сейчас показывает приложение', 'шагов '+liveSteps+', источник '+healthSource);
+    add('8. Что сейчас показывает приложение', 'шагов '+liveSteps+', источник '+stepsSource);
   }catch(e){ add('СБОЙ', String(e&&e.message||e)); }
+
+  // --- геолокация: почему может прерываться ---
+  try{
+    const P=nearGeo();
+    add('11. Фоновая служба геолокации', P? 'ЕСТЬ в сборке' : 'НЕТ — работает только пока приложение открыто');
+    if(P){
+      const s=await P.status();
+      add('11a. Состояние', JSON.stringify(s));
+      const problems=[];
+      if(s && s.location===false) problems.push('нет доступа к местоположению');
+      if(s && s.background===false) problems.push('доступ не «Всегда» — слежение прервётся при выключении экрана');
+      if(s && s.battery===false) problems.push('включена экономия батареи — Android остановит слежение');
+      if(s && s.gps===false) problems.push('геолокация выключена в настройках телефона');
+      if(s && s.configured===false) problems.push('нет реквизитов облака — служба не сможет слать координаты сама');
+      add('11b. Что мешает непрерывности', problems.length? problems.join('; ') : 'ничего, слежение не прервётся');
+    }
+    add('11c. Последняя точка', geoLastFix? agoText(geoLastFix)+' · режим '+geoMode : 'точек ещё не было');
+  }catch(e){ add('11. Геолокация', 'СБОЙ '+(e&&e.message||e)); }
+
   box.textContent=L.join('\n');
 }
 async function connectHealth(){
@@ -3944,16 +4309,17 @@ async function connectHealth(){
   }
 
   await Health.requestPermissions();
-  healthSource='bracelet';
   const ok = await refreshHealth(true);
   if(!ok){
     // Разбираемся, ЧТО именно не так, и говорим об этом прямо
-    healthSource='phone';
     await enableSensors();
     let week=null;
     try{ week=await Health.anyStepsWithin(7); }catch(e){}
+    const missing=Health.missingAccess();
     if(hint){
-      if(week!=null && week>0){
+      if(missing.length){
+        hint.textContent=t('Не выдан доступ к показателям')+': '+missing.join(', ')+'. '+t('Откройте Health Connect и разрешите их приложению Near.');
+      } else if(week!=null && week>0){
         hint.textContent=t('Health Connect отвечает, и записи о шагах в нём есть, но не за сегодня. Откройте приложение вашего браслета и дождитесь синхронизации.');
       } else if(Health.lastEmpty){
         hint.textContent=t('Приложение читает Health Connect правильно, но в нём нет НИ ОДНОЙ записи о шагах. Значит, приложение вашего браслета туда ничего не передаёт — включите передачу в его настройках.');
@@ -3961,53 +4327,113 @@ async function connectHealth(){
         hint.textContent=t('Health Connect не дал данных. Проверьте, что в его настройках приложению Near разрешено читать шаги.');
       }
     }
+    startHealthTimer();
     renderLiveCard(); return;
   }
   if(hint) hint.textContent=t('Подключено к браслету / часам через Apple Health / Health Connect. Данные обновляются автоматически.');
   if(btn){ btn.textContent='↻ '+t('Обновить данные'); btn.setAttribute('onclick','refreshHealth()'); }
   toast('✅ '+t('Браслет подключён ✓'));
-  if(!window._healthTimer) window._healthTimer=setInterval(()=>{ refreshHealth(); }, 60000);
+  startHealthTimer();
   renderLiveCard(); return;
 }
+
+function startHealthTimer(){
+  if(window._healthTimer) return;
+  window._healthTimer=setInterval(()=>{ refreshHealth(); }, 60000);
+}
+
+/* Читаем браслет сами при запуске и при возврате в приложение.
+   Раньше данные обновлялись только после нажатия «Подключить браслет»,
+   поэтому после перезапуска приложения близкие видели старые числа. */
+async function healthAutoStart(){
+  if(account.role!=='elder') return;
+  const C=window.Capacitor;
+  if(!(C && C.isNativePlatform && C.isNativePlatform())) return;
+  await Health.init();
+  if(!Health.plugin && !Health.getSleepPlugin()) return;
+  await Health.checkPermissions();
+  await refreshHealth(true);
+  startHealthTimer();
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && account.role==='elder') refreshHealth();
+});
+
+/* Одно место, где читаются ВСЕ показатели.
+   Ключевое отличие от прежней версии: читаем всегда, а не только когда
+   браслет уже помечен подключённым, и источник определяем по факту
+   полученных данных, а не по нажатой кнопке. */
 async function refreshHealth(first){
-  if(healthSource!=='bracelet'){
-    // даже без шагов пробуем прочитать сон, пульс и SpO2 — они приходят отдельно
-    try{
-      const sl=await Health.lastNightSleep(); if(sl!=null) healthSleep=sl;
-      const v=await Health.vitals();
-      if(v.spo2!=null) healthSpo2=v.spo2;
-      if(v.hr!=null && healthHR==null) healthHR=v.hr;
-      if(sl!=null || v.spo2!=null || v.hr!=null){ renderLiveCard(); if(account.cloud && account.role==='elder') pushCloudLive(); }
-    }catch(e){}
-    return false;
-  }
+  if(!Health.plugin && !Health.getSleepPlugin()){ try{ await Health.init(); }catch(e){} }
   let any=false;
-  const st=await Health.todaySteps();
-  if(st!=null){
-    // данные браслета/Health Connect всегда важнее, чем счётчик телефона
-    liveSteps=st; saveSteps(); any=true;
-  }
-  const hr=await Health.latestHeartRate(); if(hr!=null){ healthHR=hr; any=true; }
-  // пульс и SpO2 из нашей части — она видит то, чего не умеет основной плагин
+
+  // --- шаги ---
+  let st=null;
+  try{ st=await Health.todaySteps(); }catch(e){}
+  if(st!=null){ stepsHealth=st; healthStepsTime=Health.stepsTime||Date.now(); any=true; }
+  else stepsHealth=null;
+
+  // --- пульс и SpO2 ---
+  // Сначала настоящие записи пульса со временем измерения. Показания из
+  // тренировок берём только как крайний случай: у пожилого человека тренировок
+  // обычно нет, а старое значение оттуда выглядело как «текущий пульс».
   try{
     const v=await Health.vitals();
-    if(v.spo2!=null){ healthSpo2=v.spo2; any=true; }
-    if(v.hr!=null && healthHR==null){ healthHR=v.hr; any=true; }
+    if(v.hr!=null){ healthHR=v.hr; healthHRTime=Health.hrTime||null; any=true; }
+    if(v.spo2!=null){ healthSpo2=v.spo2; healthSpo2Time=Health.spo2Time||null; any=true; }
   }catch(e){}
-  const cal=await Health.todayCalories(); if(cal!=null){ healthCalories=cal; any=true; }
-  const wk=await Health.recentWorkouts(); if(wk!=null){ healthWorkouts=wk; any=true; }
-  healthSleep=await Health.lastNightSleep();
-  if(healthSleep!=null) any=true;   // сон — тоже настоящие данные с браслета
-  if(navigator.getBattery){ try{ const bt=await navigator.getBattery(); liveBattery=Math.round(bt.level*100); }catch(e){} }
-  renderLiveCard();
-  if(account.cloud && account.role==='elder') pushCloudLive();
-  if(!any){
-    // Health Connect отвечает, но пуст — не выдаём это за работающий браслет
-    healthSource='phone';
-    await enableSensors();
-    renderLiveCard();
-    if(!first) toast(t('В Health Connect нет данных о шагах'));
+  if(healthHR==null){
+    try{
+      const hr=await Health.latestHeartRate();
+      if(hr!=null){ healthHR=hr; healthHRTime=null; any=true; }
+    }catch(e){}
   }
+
+  // --- сон ---
+  try{
+    healthSleep=await Health.lastNightSleep();
+    healthSleepSource=Health.sleepSource||null;
+    if(healthSleep!=null) any=true;
+  }catch(e){ healthSleep=null; }
+
+  // --- калории и тренировки ---
+  try{ const cal=await Health.todayCalories(); if(cal!=null){ healthCalories=cal; any=true; } }catch(e){}
+  try{ const wk=await Health.recentWorkouts(); if(wk!=null){ healthWorkouts=wk; if(wk.count) any=true; } }catch(e){}
+
+  if(navigator.getBattery){ try{ const bt=await navigator.getBattery(); liveBattery=Math.round(bt.level*100); }catch(e){} }
+
+  if(stepsHealth==null){
+    // браслет молчит — считаем шаги телефоном, но подписываем это честно
+    try{ await enableSensors(); }catch(e){}
+    if(!first && !any) toast(t('В Health Connect нет данных о шагах'));
+  }
+
+  // Источник — по факту полученных данных, а не по нажатой кнопке
+  if(stepsHealth!=null || any) healthSource='bracelet';
+  else if(motionOn) healthSource='phone';
+  else healthSource='none';
+
+  recalcSteps();
+  renderLiveCard();
+
+  // Подсказку пишем последней: enableSensors выше тоже её меняет
+  const hint=document.getElementById('liveHint');
+  const missing=Health.missingAccess();
+  if(hint){
+    if(missing.length){
+      hint.textContent = t('Health Connect не дал доступа к показателям')+': '+missing.join(', ')+'. '
+        + t('Откройте Health Connect и разрешите их приложению Near.');
+    } else if(stepsHealth!=null || any){
+      hint.textContent = t('Подключено к браслету / часам через Apple Health / Health Connect. Данные обновляются автоматически.');
+    } else if(healthSource==='phone'){
+      hint.textContent = t('Браслет не передаёт данные — считаем шаги датчиком телефона, он менее точный.');
+    }
+  }
+  const btn=document.getElementById('enableSensorsBtn');
+  if(btn && (stepsHealth!=null || any)){ btn.textContent='↻ '+t('Обновить данные'); btn.setAttribute('onclick','refreshHealth()'); }
+
+  if(currentScreen==='health') renderHealth();
+  if(account.cloud && account.role==='elder') pushCloudLive();
   return any;
 }
 
@@ -4117,6 +4543,19 @@ window.addEventListener('appinstalled',()=>toast('✅ Near установлен 
           return code;
         };
         NC.pushLive = async (obj)=>{ const uid=auth.currentUser&&auth.currentUser.uid; if(!uid) return; await F.setDoc(F.doc(db,'pensioners',uid,'live','state'), {...obj, ts:Date.now()}, {merge:true}); };
+        // Реквизиты для фоновой службы геолокации: она шлёт координаты в облако
+        // сама, без открытого приложения, и обновляет токен по refresh-токену.
+        NC.nativeCreds = async ()=>{
+          const u=auth.currentUser; if(!u) return null;
+          let idToken=null; try{ idToken=await u.getIdToken(); }catch(e){}
+          return {
+            apiKey: cfg.apiKey,
+            projectId: cfg.projectId,
+            uid: u.uid,
+            idToken: idToken,
+            refreshToken: u.refreshToken || null
+          };
+        };
         NC.watchPending = (cb)=>{ const uid=auth.currentUser.uid; const q=F.query(F.collection(db,'pensioners',uid,'rel'), F.where('status','==','pending')); const u=F.onSnapshot(q,(snap)=>{ cb(snap.docs.map(d=>({uid:d.id,...d.data()}))); }); NC._unsub.push(u); };
         NC.watchRelatives = (cb)=>{ const uid=auth.currentUser.uid; const u=F.onSnapshot(F.collection(db,'pensioners',uid,'rel'),(snap)=>{ cb(snap.docs.map(d=>({uid:d.id,...d.data()}))); }); NC._unsub.push(u); };
         NC.approve = async (relUid)=>{
